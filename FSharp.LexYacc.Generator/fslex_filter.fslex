@@ -1,0 +1,16 @@
+{
+module FSharp.LexYacc.Bootstrap.FslexFilter
+open System
+open FSharp.LexYacc
+open FSharp.LexYacc.Bootstrap
+}
+
+let common = [ "ID" "QUOTE" "APOSTROPHE" "UNDERSCORE" ]
+let lst = [ common ")" "]" "*" "+" "?" ]
+let fst = [ common "(" "[" "[^" ]
+
+rule : FslexToken list -> FslexToken list =
+"RULE" & [^ "=" ]* & "=" { buff }
+[ "[^" "[" ] & [^ "]" ]* / "]" { buff }
+lst / fst { buff @ [AMP] }
+_ { buff }

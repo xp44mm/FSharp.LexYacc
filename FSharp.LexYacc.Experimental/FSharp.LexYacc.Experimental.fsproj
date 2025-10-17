@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Dir.fs" />
+	  
+    <!--<Compile Include="legacy\EscapeLexer.fs" />
+    <Compile Include="legacy\EscapeLexerTailer.fs" />
+    <Compile Include="legacy\BlockCommentLexer.fs" />
+    <Compile Include="legacy\BlockCommentLexerTailer.fs" />
+    <Compile Include="legacy\BracesToken.fs" />
+    <Compile Include="legacy\BracesLexer.fs" />
+    <Compile Include="legacy\BracesLexerTailer.fs" />
+    <Compile Include="legacy\FslexToken.fs" />
+    <Compile Include="legacy\FslexLexer.fs" />
+    <Compile Include="legacy\FslexLexerTailer.fs" />
+    <Compile Include="legacy\FslexFile.fs" />
+    <Compile Include="legacy\FslexFilter.fs" />
+    <Compile Include="legacy\FslexFilterTailer.fs" />
+    <Compile Include="legacy\FslexYacc.fs" />
+    <Compile Include="legacy\FslexTagYacc.fs" />
+    <Compile Include="legacy\FslexCompiler.fs" />
+    <Compile Include="legacy\FslexTagCompiler.fs" />
+    <Compile Include="legacy\FslexFilePrinter.fs" />
+    <Compile Include="legacy\FsyaccLexer.fs" />
+    <Compile Include="legacy\FsyaccLexerTailer.fs" />-->
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="FSharp.xUnit" Version="1.2.32" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSharp.LexYacc.ToolBox\FSharp.LexYacc.ToolBox.fsproj" />
+    <ProjectReference Include="..\FSharp.LexYacc\FSharp.LexYacc.fsproj" />
+  </ItemGroup>
+
+</Project>

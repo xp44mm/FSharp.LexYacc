@@ -1,0 +1,22 @@
+﻿{
+module FSharp.LexYacc.Bootstrap.EscapeLexer
+open System
+open FSharp.LexYacc
+open FSharp.LexYacc.Bootstrap
+}
+
+let hex_digit = [ '0'-'9' 'a'-'f' 'A'-'F' ]
+
+rule : char list -> char =
+'\\' & '\\' { '\\' }
+'\\' & 'u' & hex_digit & hex_digit & hex_digit & hex_digit { buff |> List.skip 2 |> Hexadecimal.getChar 4 }
+'\\' & 'x' & hex_digit & hex_digit { buff |> List.skip 2 |> Hexadecimal.getChar 2 }
+'\\' & '"' { '"' }
+'\\' & 'a' { '\a' }
+'\\' & 'b' { '\b' }
+'\\' & 't' { '\t' }
+'\\' & 'n' { '\n' }
+'\\' & 'v' { '\v' }
+'\\' & 'f' { '\f' }
+'\\' & 'r' { '\r' }
+_ { buff.[0] }

@@ -1,0 +1,41 @@
+{
+module FSharp.LexYacc.Bootstrap.FsyaccLexer
+open System
+open FSharp.Idioms
+open FSharp.Idioms.Literal
+open FSharp.LexYacc
+open FSharp.LexYacc.Bootstrap
+}
+
+let digit = [ '0'-'9' ]
+let lowercase = [ 'a'-'z' ]
+let uppercase = [ 'A'-'Z' ]
+let letter = [ lowercase uppercase ]
+let alphanumeric = [ letter digit ]
+let hex_digit = [ digit 'a'-'f' 'A'-'F' ]
+let whitespace = [ ' ' '\r' '\n' ]
+let dot = [^ '\r' '\n' ]
+let identifier_start = [ letter '_' ]
+let identifier_continue = [ identifier_start digit ]
+
+rule restBlockComment restBraces : char list -> FsyaccToken list =
+'(' '*' { 
+  let _ = restBlockComment()
+  []
+}
+'{' { 
+  let rest = restBraces()
+  [FsyaccToken.BRACES("{"+String.fromChars rest)]
+}
+whitespace+ {[]}
+':' { [FsyaccToken.COLON] }
+'|' { [FsyaccToken.BAR] }
+'/' '/' dot* {[]}
+'%' 't' 'y' 'p' 'e' '<' dot* '>' { [FsyaccToken.PERCENT_TYPE(String.fromChars buff)] }
+'%' 'l' 'e' 'f' 't'  { [FsyaccToken.LEFTASSOC] }
+'%' 'r' 'i' 'g' 'h' 't' { [FsyaccToken.RIGHTASSOC] }
+'%' 'n' 'o' 'n' 'a' 's' 's' 'o' 'c' { [FsyaccToken.NONASSOC] }
+'%' 'p' 'r' 'e' 'c' { [FsyaccToken.PREC] }
+'"' ([^ '\\' '"' ] | '\\' _ )* '"' { [FsyaccToken.QUOTE(EscapeLexerTailer.unquote buff)] }
+identifier_start identifier_continue* {[FsyaccToken.ID(String.fromChars buff)]}
+_ { failwith(stringify buff.[0]) }

@@ -1,0 +1,79 @@
+﻿{
+module FSharp.LexYacc.Bootstrap.FslexLexer
+open System
+open FSharp.Idioms
+open FSharp.Idioms.Literal
+open FSharp.LexYacc
+open FSharp.LexYacc.Bootstrap
+}
+
+let digit = [ '0'-'9' ]
+let lowercase = [ 'a'-'z' ]
+let uppercase = [ 'A'-'Z' ]
+let letter = [ lowercase uppercase ]
+let alphanumeric = [ letter digit ]
+let hex_digit = [ digit 'a'-'f' 'A'-'F' ]
+let whitespace = [ ' ' '\r' '\n' ]
+let identifier_start = [ letter '_' ]
+let identifier_continue = [ identifier_start digit ]
+let dot = [^ '\r' '\n' ]
+
+rule restBlockComment restBraces : char list -> FslexToken list =
+
+'(' & '*' { 
+  let _ = restBlockComment()
+  []
+}
+'{' {
+  let rest = restBraces()
+  [BRACES("{"+String.fromChars rest)]
+}
+':' & [^ '=' ]* { [COLON;FUN_TYPE(String.fromChars buff.Tail)] }
+'&' { [AMP] }
+'(' { [LPAREN] }
+')' { [RPAREN] }
+'*' { [STAR] }
+'+' { [PLUS] }
+'/' { [SLASH] }
+'=' { [EQUALS] }
+'?' { [QMARK] }
+'[' { [LBRACK] }
+'[' & '^' { [LBRACK_CARET] }
+']' { [RBRACK] }
+'|' { [BAR] }
+'-' { [HYPHEN] }
+whitespace+ {[]}
+'/' & '/' & dot* {[]}
+'_' { [UNDERSCORE] }
+'l' & 'e' & 't' { [LET] }
+'r' & 'u' & 'l' & 'e' { [RULE] }
+uppercase & [uppercase '_' ]* {[QUOTE(String.fromChars buff)]}
+identifier_start & identifier_continue* {[ID(String.fromChars buff)]}
+'"' & ([^ '\\' '"' ] | '\\' & _ )* & '"' { [QUOTE(EscapeLexerTailer.unquote buff)] }
+'\'' & [^ '\\' '\'' ] & '\'' { [APOSTROPHE buff.[1]] }
+'\'' & '\\' & '\'' & '\'' { [APOSTROPHE '\''] }
+'\'' & '\\' & '\\' & '\'' { [APOSTROPHE '\\'] }
+'\'' & '\\' & 'a' & '\'' { [APOSTROPHE '\a'] }
+'\'' & '\\' & 'b' & '\'' { [APOSTROPHE '\b'] }
+'\'' & '\\' & 't' & '\'' { [APOSTROPHE '\t'] }
+'\'' & '\\' & 'n' & '\'' { [APOSTROPHE '\n'] }
+'\'' & '\\' & 'v' & '\'' { [APOSTROPHE '\v'] }
+'\'' & '\\' & 'f' & '\'' { [APOSTROPHE '\f'] }
+'\'' & '\\' & 'r' & '\'' { [APOSTROPHE '\r'] }
+'\'' & '\\' & 'x' & hex_digit & hex_digit & '\'' {
+    let i =
+        buff
+        |> List.skip 3
+        |> Hexadecimal.getValueN 2
+        |> fst
+    [ APOSTROPHE(char i) ]
+    }
+'\'' & '\\' & 'u' & hex_digit & hex_digit & hex_digit & hex_digit & '\'' {
+    let i =
+        buff
+        |> List.skip 3
+        |> Hexadecimal.getValueN 4
+        |> fst
+    [ APOSTROPHE(char i) ]
+    }
+_ { failwith(stringify buff.[0]) }

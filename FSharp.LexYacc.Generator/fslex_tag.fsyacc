@@ -1,0 +1,68 @@
+{
+module FSharp.LexYacc.Bootstrap.FslexTagYacc
+open FSharp.LexYacc
+open FSharp.LexYacc.Bootstrap
+}
+
+file :
+    | BRACES definitions ruler { FslexFile.just(s0, List.rev s1, s2) }
+
+definitions :
+    | definitions definition {s1::s0}
+    | (*empty*) {[]}
+
+definition :
+    | LET ID "=" expr {s1,s3}
+
+expr :
+    | UNDERSCORE { ParsedRgxAny }
+    | ID {ParsedRgxId s0}
+    | QUOTE {ParsedRgxSingle s0}
+    | "[" elems "]" {ParsedRgxClass s1}
+    | "[^" elems "]" {ParsedRgxNegClass s1}
+    | expr "|" expr {ParsedRgxAlt(s0,s2)}
+    | expr "&" expr {ParsedRgxCat(s0,s2)}
+    | expr "*" {ParsedRgxStar s0}
+    | expr "+" {ParsedRgxPlus s0}
+    | expr "?" {ParsedRgxOpt s0}
+    | "(" expr ")" {s1}
+
+elems :
+    | elems elem {s1::s0}
+    | elem {[s0]}
+
+elem :
+    | ID { ParsedRgxId s0 }
+    | QUOTE {ParsedRgxSingle s0}
+    | QUOTE "-" QUOTE {ParsedRgxRange(s0,s2)}
+
+ruler:
+    | RULE parameters ":" FUN_TYPE "=" rules {Ruler.just(List.rev s1, s3, List.rev s5)}
+    | RULE parameters "=" rules {Ruler.just(List.rev s1, "_", List.rev s3)}
+
+rules :
+    | rules rule {s1::s0}
+    | rule {[s0]}
+
+rule :
+    | expr "/" expr BRACES { LexicalRule.just(s0,Some s2,s3) }
+    | expr BRACES { LexicalRule.just(s0,None,s1) }
+
+parameters:
+    | parameters ID {s1::s0}
+    | (*empty*) {[]}
+
+%left "|"
+%left "&"
+%nonassoc "*" "+" "?"
+
+%type<string> BRACES ID QUOTE FUN_TYPE
+%type<string list> parameters
+%type<ParsedRgx<string>> elem expr
+%type<ParsedRgx<string> list> elems
+%type<string*ParsedRgx<string>> definition
+%type<(string*ParsedRgx<string>)list> definitions
+%type<LexicalRule<string>> rule
+%type<LexicalRule<string> list> rules
+%type<Ruler<string>> ruler
+%type<FslexFile<string>> file

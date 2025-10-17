@@ -1,0 +1,21 @@
+﻿{
+module FSharp.LexYacc.Bootstrap.BracesLexer
+open System
+open FSharp.LexYacc
+open FSharp.LexYacc.Bootstrap
+}
+
+let dot = [^ '\r' '\n' ]
+
+rule restBlockComment : char list -> BracesToken =
+'/' '/' dot* { BUFF buff }
+'(' '*' { 
+  let rest = restBlockComment()
+  BUFF [ yield! buff; yield! rest ]
+}
+'`' '`' ([^ '`' ] | '`' [^ '`' ])+ '`' '`' { BUFF buff }
+'\'' [ '{' '}' ] '\'' { BUFF buff }
+'"' ([^ '\\' '"' ] | '\\' _ )* '"' { BUFF buff }
+'{' { LBRACE }
+'}' { RBRACE }
+_ { BUFF buff }

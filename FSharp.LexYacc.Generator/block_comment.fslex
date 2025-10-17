@@ -1,0 +1,11 @@
+﻿{
+module FSharp.LexYacc.Bootstrap.BlockCommentLexer
+open System
+open FSharp.LexYacc
+open FSharp.LexYacc.Bootstrap
+}
+
+rule : char list -> char list =
+'*' ')' { buff }
+'*' / [^ ')' ] { buff }
+_ { buff }

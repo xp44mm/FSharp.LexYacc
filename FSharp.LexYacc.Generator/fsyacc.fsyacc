@@ -1,0 +1,92 @@
+{
+module FSharp.LexYacc.Bootstrap.FsyaccYacc
+open FSharp.LexYacc
+}
+
+file :
+    | BRACES ruleGroups {RawFsyaccFile.just(s0,List.rev s1,[],[])}
+    | BRACES ruleGroups precedences {RawFsyaccFile.just(s0,List.rev s1,List.rev s2,[])}
+    | BRACES ruleGroups declarations {RawFsyaccFile.just(s0,List.rev s1,[],List.rev s2)}
+    | BRACES ruleGroups precedences declarations {RawFsyaccFile.just(s0,List.rev s1,List.rev s2,List.rev s3)}
+
+ruleGroups :
+    | ruleGroup {[s0]}
+    | ruleGroups ruleGroup {s1::s0}
+
+ruleGroup :
+    | symbol ":" bar_opt ruleBodies {
+        let lhs = s0
+        let bodies = List.rev s3
+        RuleGroup.just(lhs, bodies)
+    }
+
+symbol :
+    | ID { s0 }
+    | QUOTE { s0 }
+
+require_symbols :
+    | symbol {[s0]}
+    | require_symbols symbol {s1::s0}
+
+nullable_symbols :
+    | (* empty *) {[]}
+    | require_symbols {s0}
+
+bar_opt :
+    | (* empty *) {}
+    | "|" {}
+
+ruleBodies :
+    | ruleBody {[s0]}
+    | ruleBodies "|" ruleBody {s2::s0}
+
+ruleBody :
+    | nullable_symbols prec_opt BRACES {
+        let s0 = s0 |> List.rev
+        RuleBody.just( s0, s1, s2 )
+    }
+
+prec_opt :
+    | (* empty *) {""}
+    | "%prec" ID {s1}
+
+precedences :
+    | precedence {[s0]}
+    | precedences precedence {s1::s0}
+
+precedence :
+    | assoc require_symbols {
+        let s1 = s1 |> List.rev
+        PrecedenceStatement.just(s0,s1)
+    }
+
+assoc :
+    | "%left" {LeftAssoc}
+    | "%right" {RightAssoc}
+    | "%nonassoc" {NonAssoc}
+
+declarations :
+    | declaration {[s0]}
+    | declarations declaration {s1::s0}
+
+declaration :
+    | PERCENT_TYPE require_symbols {
+        let symbols =
+            s1
+            |> List.rev
+        DeclarationStatement.just(s0,symbols)
+    }
+
+%type<string> BRACES ID QUOTE PERCENT_TYPE prec_opt symbol
+%type<string list> nullable_symbols require_symbols
+%type<Associativity> assoc
+%type<RuleBody> ruleBody
+%type<RuleBody list> ruleBodies
+%type<RuleGroup> ruleGroup
+%type<RuleGroup list> ruleGroups
+%type<PrecedenceStatement> precedence
+%type<PrecedenceStatement list> precedences
+%type<DeclarationStatement> declaration
+%type<DeclarationStatement list> declarations
+%type<RawFsyaccFile> file
+

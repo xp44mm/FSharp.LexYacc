@@ -1,0 +1,128 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<Title>Fslex/Fsyacc generation tools</Title>
+		<Version>0.0.5</Version>
+		
+		<Authors>xp44m</Authors>
+		<Company>34696643@qq.com</Company>
+		<Copyright>xp44mm</Copyright>
+		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+		
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		
+		<Description>The Parsing and Lexing modules, adapted to F#.</Description>
+		
+		<PackageReleaseNotes>fslex.fslex</PackageReleaseNotes>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="Interval.fs" />
+		<Compile Include="CharClass.fs" />
+		<Compile Include="Transition.fs" />
+		<Compile Include="RegExp.fs" />
+		<Compile Include="NFAFinalState.fs" />
+		<Compile Include="DFAStateFlag.fs" />
+		<Compile Include="RegExpNFA.fs" />
+		<Compile Include="LookaheadNFA.fs" />
+		<Compile Include="LexerNFA.fs" />
+		<Compile Include="SubsetConstruction.fs" />
+		<Compile Include="DFA.fs" />
+		<Compile Include="Partition.fs" />
+		<Compile Include="LazyAnalyzer.fs" />
+		<Compile Include="LexicalIterator.fs" />
+		<Compile Include="Analyzer.fs" />
+		<Compile Include="Yacc\ItemCoreRow.fs" />
+		<Compile Include="Yacc\ItemCoreRowUtils.fs" />
+		<Compile Include="Yacc\ItemCore.fs" />
+		<Compile Include="Yacc\DummyToken.fs" />
+		<Compile Include="Yacc\ProductionUtils.fs" />
+		<Compile Include="Yacc\NullableUtils.fs" />
+		<Compile Include="Yacc\FirstUtils.fs" />
+		<Compile Include="Yacc\LastUtils.fs" />
+		<Compile Include="Yacc\FollowUtils.fs" />
+		<Compile Include="Yacc\PrecedeUtils.fs" />
+		<Compile Include="Yacc\GrammarRow.fs" />
+		<Compile Include="Yacc\GrammarRowUtils.fs" />
+		<Compile Include="Yacc\Grammar.fs" />
+		<Compile Include="Yacc\Associativity.fs" />
+		<Compile Include="Yacc\Precedence.fs" />
+		<Compile Include="Yacc\ParseTableAction.fs" />
+		<Compile Include="Yacc\Conflict.fs" />
+		<Compile Include="Bnf\LALR.fs" />
+		<Compile Include="Bnf\LALRCollection.fs" />
+		<Compile Include="Bnf\Grammar.fs" />
+		<Compile Include="Bnf\SpreadClosure.fs" />
+		<Compile Include="Bnf\SLR.fs" />
+		<Compile Include="Bnf\BNFRow.fs" />
+		<Compile Include="Bnf\BNFRowUtils.fs" />
+		<Compile Include="Bnf\BNF.fs" />
+		<Compile Include="Bnf\ParseTableEncoder.fs" />
+		<Compile Include="Bnf\ParseTableDecoder.fs" />
+		<Compile Include="Bnf\YaccRow.fs" />
+		<Compile Include="Bnf\YaccRowUtils.fs" />
+		<Compile Include="Bnf\Yacc.fs" />
+		<Compile Include="Fsyacc\RuleBody.fs" />
+		<Compile Include="Fsyacc\RuleGroup.fs" />
+		<Compile Include="Fsyacc\RawFsyaccFile.fs" />
+		<Compile Include="Fsyacc\RawFsyaccFilePrinter.fs" />
+		<Compile Include="Fsyacc\Rule.fs" />
+		<Compile Include="Fsyacc\RuleSet.fs" />
+		<Compile Include="Fsyacc\ConflictedProduction.fs" />
+		<Compile Include="Fsyacc\OperatorsLine.fs" />
+		<Compile Include="Fsyacc\Declaration.fs" />
+		<Compile Include="Fsyacc\Symbol.fs" />
+		<Compile Include="Fsyacc\FlatFsyaccFile.fs" />
+		<Compile Include="NextState.fs" />
+		<Compile Include="ParseTable.fs" />
+		<Compile Include="Hexadecimal.fs" />
+		<Compile Include="ParsedRgx.fs" />
+		<Compile Include="Braces.fs" />
+		<Compile Include="FslexToken.fs" />
+		<Compile Include="FsyaccToken.fs" />
+		<Compile Include="Bootstrap\EscapeLexer.fs" />
+		<Compile Include="Bootstrap\EscapeLexerTailer.fs" />
+		<Compile Include="Bootstrap\BlockCommentLexer.fs" />
+		<Compile Include="Bootstrap\BlockCommentLexerTailer.fs" />
+		<Compile Include="Bootstrap\BracesToken.fs" />
+		<Compile Include="Bootstrap\BracesLexer.fs" />
+		<Compile Include="Bootstrap\BracesLexerTailer.fs" />
+		<Compile Include="Bootstrap\FslexLexer.fs" />
+		<Compile Include="Bootstrap\FslexLexerTailer.fs" />
+		<Compile Include="Bootstrap\Ruler.fs" />
+		<Compile Include="Bootstrap\FslexFile.fs" />
+		<Compile Include="Bootstrap\FslexFilter.fs" />
+		<Compile Include="Bootstrap\FslexFilterTailer.fs" />
+		<Compile Include="Bootstrap\FslexYacc.fs" />
+		<Compile Include="Bootstrap\FslexTagYacc.fs" />
+		<Compile Include="Bootstrap\FslexCompiler.fs" />
+		<Compile Include="Bootstrap\FslexTagCompiler.fs" />
+		<Compile Include="Bootstrap\FslexFilePrinter.fs" />
+		<Compile Include="Bootstrap\FsyaccLexer.fs" />
+		<Compile Include="Bootstrap\FsyaccLexerTailer.fs" />
+		<Compile Include="Bootstrap\FsyaccYacc.fs" />
+		<Compile Include="Bootstrap\FsyaccCompiler.fs" />
+		<Compile Include="Bootstrap\ReducerRender.fs" />
+		<Compile Include="Bootstrap\FsyaccFilePrinter.fs" />
+
+		<!--<Compile Include="legacy\EscapeLexer.fs" />
+		<Compile Include="legacy\EscapeLexerTailer.fs" />
+		<Compile Include="legacy\FslexToken.fs" />
+		<Compile Include="legacy\FslexYaccNew.fs" />
+		<Compile Include="legacy\FslexTagYaccNew.fs" />
+		<Compile Include="legacy\FslexFilter.fs" />
+		<Compile Include="legacy\FslexLexer.fs" />
+		<Compile Include="legacy\FslexCompiler.fs" />
+		<Compile Include="legacy\FslexTagCompiler.fs" />
+		<Compile Include="legacy\FslexFilePrinter.fs" />
+		<Compile Include="legacy\FsyaccLexer.fs" />-->
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FSharp.Idioms" Version="1.4.37" />
+	</ItemGroup>
+
+</Project>
