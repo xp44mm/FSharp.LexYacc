@@ -12,12 +12,11 @@ open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
 
 type BlockCommentLexerTest(output: ITestOutputHelper) as this =
-    let name = 
+    let name =
         let x = this.GetType().Name
         x.Substring(0, x.Length - 4)
 
-    let srcPath =
-        Path.Combine(__SOURCE_DIRECTORY__, "block_comment.fslex")
+    let srcPath = Path.Combine(__SOURCE_DIRECTORY__, "block_comment.fslex")
 
     let text = File.ReadAllText(srcPath, Encoding.UTF8)
 
@@ -27,7 +26,7 @@ type BlockCommentLexerTest(output: ITestOutputHelper) as this =
         let src = printer.print()
         output.WriteLine(src)
 
-        //let path = Path.Combine(Dir.bootstrap, name+".fs")
+        //let path = Path.Combine(Dir.bootstrap, name + ".fs")
         //File.WriteAllText(path, src, Encoding.UTF8)
         //output.WriteLine($"output:\r\n{path}")
 

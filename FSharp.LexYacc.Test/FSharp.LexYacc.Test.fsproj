@@ -24,7 +24,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="FSharp.Idioms" Version="1.4.37" />
+    <PackageReference Include="FSharp.Idioms" Version="1.4.38" />
     <PackageReference Include="FSharp.xUnit" Version="1.2.32" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
     <PackageReference Include="xunit" Version="2.9.3" />

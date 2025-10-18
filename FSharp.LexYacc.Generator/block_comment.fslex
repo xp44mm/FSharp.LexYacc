@@ -7,5 +7,4 @@ open FSharp.LexYacc.Bootstrap
 
 rule : char list -> char list =
 '*' ')' { buff }
-'*' / [^ ')' ] { buff }
 _ { buff }
