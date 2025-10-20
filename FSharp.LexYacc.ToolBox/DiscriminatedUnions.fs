@@ -67,16 +67,17 @@ let generate<'u> (symbols: ('u * string) list) =
     let lexeme_outp = [
         $"let lexeme (tok:{unionType.Name}) ="
         Line.ident 4 "match tok with"
-        for (i, c) in cases do
-            match c.GetFields().Length with
-            | 0 -> Line.ident 4 $"| {unionType.Name}.{c.Name} -> null"
-            | 1 -> Line.ident 4 $"| {unionType.Name}.{c.Name} x -> box x"
+        for (i, case) in cases do
+            let fields = case.GetFields()
+            match fields.Length with
+            | 0 -> Line.ident 4 $"| {unionType.Name}.{case.Name} -> null"
+            | 1 -> Line.ident 4 $"| {unionType.Name}.{case.Name} x -> box x"
             | len ->
                 let ps =
-                    Array.create len "_"
+                    [0 .. len-1]
+                    |> List.map(fun i -> string(char (int 'a' + i)))
                     |> String.concat ","
-                    |> sprintf "(%s)"
-                Line.ident 4 $"| {unionType.Name}.{c.Name}({ps} as ps) -> box ps"
+                Line.ident 4 $"| {unionType.Name}.{case.Name}({ps}) -> box({ps})"
     ]
 
     let content =

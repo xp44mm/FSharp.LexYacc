@@ -26,10 +26,10 @@ type FsyaccYaccTest(output: ITestOutputHelper) as this =
 
         let yaccFile = FsyaccFilePrinter.from flatFsyacc
         let src = yaccFile.printYaccModule(flatFsyacc.header)
-        output.WriteLine(src)
+        //output.WriteLine(src)
 
-        //let path =
-        //    Path.Combine(Dir.bootstrap, name + ".fs")
-        //File.WriteAllText(path, src, Encoding.UTF8)
-        //output.WriteLine($"output:\r\n{path}")
+        let path =
+            Path.Combine(Dir.bootstrap, name + ".fs")
+        File.WriteAllText(path, src, Encoding.UTF8)
+        output.WriteLine($"output:\r\n{path}")
         ()

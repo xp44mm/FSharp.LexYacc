@@ -4,7 +4,7 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Title>Fslex/Fsyacc generation tools</Title>
-		<Version>0.0.5</Version>
+		<Version>0.0.6</Version>
 		
 		<Authors>xp44m</Authors>
 		<Company>34696643@qq.com</Company>
@@ -15,7 +15,7 @@
 		
 		<Description>The Parsing and Lexing modules, adapted to F#.</Description>
 		
-		<PackageReleaseNotes>fslex.fslex</PackageReleaseNotes>
+		<PackageReleaseNotes>stateSymbols</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>
