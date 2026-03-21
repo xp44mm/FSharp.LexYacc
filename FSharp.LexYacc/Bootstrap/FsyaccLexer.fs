@@ -11,17 +11,17 @@ let actions restBlockComment restBraces: Map<byte,  char list -> FsyaccToken lis
         []
     1uy, fun buff -> 
         let rest = restBraces()
-        [FsyaccToken.BRACES("{"+String.fromChars rest)]
+        [FsyaccToken.BRACES("{"+String.build rest)]
     2uy, fun buff -> []
     3uy, fun buff -> [FsyaccToken.COLON]
     4uy, fun buff -> [FsyaccToken.BAR]
     5uy, fun buff -> []
-    6uy, fun buff -> [FsyaccToken.PERCENT_TYPE(String.fromChars buff)]
+    6uy, fun buff -> [FsyaccToken.PERCENT_TYPE(String.build buff)]
     7uy, fun buff -> [FsyaccToken.LEFTASSOC]
     8uy, fun buff -> [FsyaccToken.RIGHTASSOC]
     9uy, fun buff -> [FsyaccToken.NONASSOC]
     10uy, fun buff -> [FsyaccToken.PREC]
     11uy, fun buff -> [FsyaccToken.QUOTE(EscapeLexerTailer.unquote buff)]
-    12uy, fun buff -> [FsyaccToken.ID(String.fromChars buff)]
+    12uy, fun buff -> [FsyaccToken.ID(String.build buff)]
     13uy, fun buff -> failwith(stringify buff.[0])
     ]

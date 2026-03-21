@@ -30,7 +30,7 @@ type BracesLexerTailerTest(output: ITestOutputHelper) =
 
         let buff =
             Bootstrap.BracesLexerTailer.restBraces iter
-            |> String.fromChars
+            |> String.build
 
         output.WriteLine(stringify buff)
         output.WriteLine(stringify(iter.tryNext()))

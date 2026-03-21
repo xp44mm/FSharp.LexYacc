@@ -25,17 +25,17 @@ rule restBlockComment restBraces : char list -> FsyaccToken list =
 }
 '{' { 
   let rest = restBraces()
-  [FsyaccToken.BRACES("{"+String.fromChars rest)]
+  [FsyaccToken.BRACES("{"+String.build rest)]
 }
 whitespace+ {[]}
 ':' { [FsyaccToken.COLON] }
 '|' { [FsyaccToken.BAR] }
 '/' '/' dot* {[]}
-'%' 't' 'y' 'p' 'e' '<' dot* '>' { [FsyaccToken.PERCENT_TYPE(String.fromChars buff)] }
+'%' 't' 'y' 'p' 'e' '<' dot* '>' { [FsyaccToken.PERCENT_TYPE(String.build buff)] }
 '%' 'l' 'e' 'f' 't'  { [FsyaccToken.LEFTASSOC] }
 '%' 'r' 'i' 'g' 'h' 't' { [FsyaccToken.RIGHTASSOC] }
 '%' 'n' 'o' 'n' 'a' 's' 's' 'o' 'c' { [FsyaccToken.NONASSOC] }
 '%' 'p' 'r' 'e' 'c' { [FsyaccToken.PREC] }
 '"' ([^ '\\' '"' ] | '\\' _ )* '"' { [FsyaccToken.QUOTE(EscapeLexerTailer.unquote buff)] }
-identifier_start identifier_continue* {[FsyaccToken.ID(String.fromChars buff)]}
+identifier_start identifier_continue* {[FsyaccToken.ID(String.build buff)]}
 _ { failwith(stringify buff.[0]) }

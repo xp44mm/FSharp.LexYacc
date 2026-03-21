@@ -11,8 +11,8 @@ let actions restBlockComment restBraces: Map<byte,  char list -> FslexToken list
         []
     1uy, fun buff -> 
         let rest = restBraces()
-        [BRACES("{"+String.fromChars rest)]
-    2uy, fun buff -> [COLON;FUN_TYPE(String.fromChars buff.Tail)]
+        [BRACES("{"+String.build rest)]
+    2uy, fun buff -> [COLON;FUN_TYPE(String.build buff.Tail)]
     3uy, fun buff -> [AMP]
     4uy, fun buff -> [LPAREN]
     5uy, fun buff -> [RPAREN]
@@ -31,8 +31,8 @@ let actions restBlockComment restBraces: Map<byte,  char list -> FslexToken list
     18uy, fun buff -> [UNDERSCORE]
     19uy, fun buff -> [LET]
     20uy, fun buff -> [RULE]
-    21uy, fun buff -> [QUOTE(String.fromChars buff)]
-    22uy, fun buff -> [ID(String.fromChars buff)]
+    21uy, fun buff -> [QUOTE(String.build buff)]
+    22uy, fun buff -> [ID(String.build buff)]
     23uy, fun buff -> [QUOTE(EscapeLexerTailer.unquote buff)]
     24uy, fun buff -> [APOSTROPHE buff.[1]]
     25uy, fun buff -> [APOSTROPHE '\'']

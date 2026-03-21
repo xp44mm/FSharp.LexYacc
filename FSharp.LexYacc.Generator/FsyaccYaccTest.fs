@@ -1,10 +1,6 @@
 ﻿namespace FSharp.LexYacc
 
 open Xunit
-
-
-open FSharp.xUnit
-open FSharp.Idioms.Literal
 open System.IO
 open System.Text
 open FSharp.LexYacc

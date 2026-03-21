@@ -24,4 +24,4 @@ let unquote (buff: char list) =
         let action = EscapeLexer.actions.[rule_id]
         action buff
     )
-    |> String.fromChars
+    |> String.build

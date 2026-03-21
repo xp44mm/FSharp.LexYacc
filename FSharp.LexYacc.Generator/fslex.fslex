@@ -26,9 +26,9 @@ rule restBlockComment restBraces : char list -> FslexToken list =
 }
 '{' {
   let rest = restBraces()
-  [BRACES("{"+String.fromChars rest)]
+  [BRACES("{"+String.build rest)]
 }
-':' & [^ '=' ]* { [COLON;FUN_TYPE(String.fromChars buff.Tail)] }
+':' & [^ '=' ]* { [COLON;FUN_TYPE(String.build buff.Tail)] }
 '&' { [AMP] }
 '(' { [LPAREN] }
 ')' { [RPAREN] }
@@ -47,8 +47,8 @@ whitespace+ {[]}
 '_' { [UNDERSCORE] }
 'l' & 'e' & 't' { [LET] }
 'r' & 'u' & 'l' & 'e' { [RULE] }
-uppercase & [uppercase '_' ]* {[QUOTE(String.fromChars buff)]}
-identifier_start & identifier_continue* {[ID(String.fromChars buff)]}
+uppercase & [uppercase '_' ]* {[QUOTE(String.build buff)]}
+identifier_start & identifier_continue* {[ID(String.build buff)]}
 '"' & ([^ '\\' '"' ] | '\\' & _ )* & '"' { [QUOTE(EscapeLexerTailer.unquote buff)] }
 '\'' & [^ '\\' '\'' ] & '\'' { [APOSTROPHE buff.[1]] }
 '\'' & '\\' & '\'' & '\'' { [APOSTROPHE '\''] }
