@@ -1,7 +1,7 @@
 ﻿namespace FSharp.LexYacc
 
 open Xunit
-open Xunit.Abstractions
+
 
 open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
