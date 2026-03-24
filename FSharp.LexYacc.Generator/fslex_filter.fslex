@@ -10,7 +10,7 @@ let lst = [ common ")" "]" "*" "+" "?" ]
 let fst = [ common "(" "[" "[^" ]
 
 rule : FslexToken list -> FslexToken list =
-"RULE" & [^ "=" ]* & "=" { buff }
-[ "[^" "[" ] & [^ "]" ]* / "]" { buff }
+"RULE" [^ "=" ]* "=" { buff }
+[ "[^" "[" ] [^ "]" ]* / "]" { buff }
 lst / fst { buff @ [AMP] }
 _ { buff }

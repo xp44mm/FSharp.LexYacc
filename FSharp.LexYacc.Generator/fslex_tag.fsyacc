@@ -1,3 +1,4 @@
+// 对以字符串tag为原子单位的flex解析。另一种是以字符为原子单位。
 {
 module FSharp.LexYacc.Bootstrap.FslexTagYacc
 open FSharp.LexYacc

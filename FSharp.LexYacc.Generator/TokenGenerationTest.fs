@@ -2,11 +2,10 @@
 
 open Xunit
 
-
 open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
 
-type TokenGenerationTest (output: ITestOutputHelper) =
+type TokenGenerationTest(output: ITestOutputHelper) =
 
     [<Fact>]
     member _.``生成FslexToken代码``() =

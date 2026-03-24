@@ -3,19 +3,17 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+        
 		<Title>Fslex/Fsyacc generation tools</Title>
-		<Version>0.0.6</Version>
-		
+		<Version>0.0.6</Version>		
 		<Authors>xp44m</Authors>
 		<Company>34696643@qq.com</Company>
 		<Copyright>xp44mm</Copyright>
-		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
-		
-		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		
-		<Description>The Parsing and Lexing modules, adapted to F#.</Description>
-		
+		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>		
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>		
+		<Description>The Parsing and Lexing modules, adapted to F#.</Description>		
 		<PackageReleaseNotes>stateSymbols</PackageReleaseNotes>
+        
 	</PropertyGroup>
 
 	<ItemGroup>
