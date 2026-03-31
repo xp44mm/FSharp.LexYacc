@@ -1,0 +1,126 @@
+{
+module FSharp.Substance.FSharpLexer
+
+open System
+open FSharp.Idioms
+open FSharp.Idioms.Literal
+open FSharp.LexYacc
+open FSharp.LexYacc.Bootstrap
+open FSharp.Substance
+}
+
+let digit = ['0'-'9']
+
+let integer = digit +
+
+let hex = [digit 'A'-'F' 'a'-'f']
+
+let xinteger =
+     '0' ['x' 'X']  hex +
+   | '0' ['o' 'O']  ['0'-'7'] +
+   | '0' ['b' 'B']  [ '0' '1' ] +
+
+let int8 = (xinteger | integer) 'y'
+
+let int16 = (xinteger | integer) 's'
+
+let int32 = (xinteger | integer) 'l'?
+
+let int64 = (xinteger | integer) 'L'
+
+let uint8 = (xinteger | integer) 'u' 'y'
+
+let uint16 = (xinteger | integer) 'u' 's'
+
+let uint32 = (xinteger | integer) 'u' 'l'?
+
+let uint64 = (xinteger | integer) ['u' 'U'] 'L'
+
+let floatp = digit + '.' digit *
+
+let floate = digit + ('.' digit * )? ['e' 'E'] ['+' '-']? digit +
+
+let float = floatp | floate
+
+let single = float ['f' 'F']
+
+let op_char = ['\x00'-'\x2F' '\x3A'-'\x40' '\x5B'-'\x5E' '\x60' '\x7B'-'\x7F']
+
+let bmp = [ '\u0080' - '\uFFFF' ]
+
+let letter = ['A'-'Z' 'a'-'z' ]
+
+let unicode_letter = ['A'-'Z' 'a'-'z' '\u00C0'-'\u00D6' '\u00D8'-'\u00F6' '\u00F8'-'\uFFFF']
+
+let ident_start_char = [ '_' letter bmp ]
+
+let ident_char = [ ident_start_char digit '\'' ]
+
+let type_param_start = [ '_' letter ]
+
+let type_param_char = [type_param_start digit ]
+
+rule : char list -> FSharpToken list =
+'\r' ? '\n' ' ' * { 
+    let len = buff |> List.skipWhile ((<>) ' ') |> List.length
+    [NEW_LINE len] }
+' ' + { [WHITESPACE]  }
+'.' { [DOT] }
+':' { [COLON] }
+';' { [SEMICOLON] }
+'=' { [EQUALS] }
+',' { [COMMA] }
+'(' { [LPAREN] }
+')' { [RPAREN] }
+'{' { [LBRACE] }
+'}' { [RBRACE] }
+'[' { [LBRACK] }
+']' { [RBRACK] }
+'<' { [LESS] }
+'>' { [GREATER] }
+'#' { [HASH] }
+
+'-' '>' { [RARROW] }
+'-' { [MINUS] }
+'*' { [STAR] }
+
+'[' '|' { [LBRACK_BAR] }
+'|' { [BAR] }
+'|' ']' { [BAR_RBRACK] }
+
+int8 {[LITERAL(Literal.int8 buff)]}
+int16 {[LITERAL(Literal.int16 buff)]}
+int32 {[LITERAL(Literal.int32 buff)]}
+int64 {[LITERAL(Literal.int64 buff)]}
+uint8 {[LITERAL(Literal.uint8 buff)]}
+uint16 {[LITERAL(Literal.uint16 buff)]}
+uint32 {[LITERAL(Literal.uint32 buff)]}
+uint64 {[LITERAL(Literal.uint64 buff)]}
+float {[LITERAL(Literal.float buff)]}
+single {[LITERAL(Literal.single buff)]}
+
+'\'' type_param_start type_param_char* { [TYPAR(String.build buff)] }
+
+'\''  '\\' _ '\'' { [LITERAL(Literal.char buff)] }
+'\''  '\\' 'x' _ _ '\'' { [LITERAL(Literal.char buff)] }
+'\''  '\\' 'u' _ _ _ _ '\'' { [LITERAL(Literal.char buff)] }
+'\'' [^ '\\' '\'' ] '\'' { [LITERAL(Literal.char buff)] }
+'"' ([^ '\\' '"' ] | '\\' _ ) * '"' { [LITERAL(Literal.string buff)] }
+'`' '`' ([^'`' '\n' '\r'] | '`' [^'`' '\n' '\r'] )+ '`' '`' { [IDENT(String.build buff)] }
+
+ident_start_char ident_char* { 
+    let tok =
+        match String.build buff with
+        | "module" -> MODULE
+        | "open" -> OPEN
+        | "let" -> LET
+        | "fun" -> FUN
+        | "match" -> MATCH
+        | "with" -> WITH
+        | "true" -> LITERAL(Literal.TRUE)
+        | "false" -> LITERAL(Literal.FALSE)
+        | s -> IDENT s
+    [tok]
+ }
+
+_ { failwith(stringify buff.[0]) }

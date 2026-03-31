@@ -1,0 +1,12 @@
+localBinding
+sequentialExpr
+declExpr
+hardwhiteLetBindings
+anonMatchingExpr
+anonLambdaExpr
+Undentation rules
+a context is undented.
+offside
+Adjacency precedence rule
+balancing parentheses 补全括号
+FSharp.Compiler\SyntaxTree\LexFilterImpl.fs

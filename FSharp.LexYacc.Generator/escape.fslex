@@ -6,6 +6,8 @@ open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
 }
 
+// todo: U+10FFFF = Unicode 码点空间的 真实最大值
+
 let hex_digit = [ '0'-'9' 'a'-'f' 'A'-'F' ]
 
 rule : char list -> char =

@@ -1,0 +1,26 @@
+{
+module FSharp.Substance.FSharpYacc
+open FSharp.LexYacc
+}
+
+//localBinding
+
+file :
+    | statements { List.rev s0 }
+
+statements :
+    | statement { [s0] }
+    | statements statement { s1::s0 }
+
+statement :
+    | MODULE longid { ModuleIntro(List.rev s1) }
+    | OPEN longid { OpenStatement(List.rev s1) }
+
+longid :
+    | IDENT { [s0] }
+    | longid "." IDENT { s2::s0 }
+
+%type<ModuleStatement list> file statements
+%type<ModuleStatement> statement
+%type<string list> longid
+%type<string> IDENT

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Pen.fs" />
+    <Compile Include="Lookup.fs" />
+    <Compile Include="Literal.fs" />
+    <Compile Include="Structure.fs" />
+    <Compile Include="FSharpToken.fs" />
+    <Compile Include="Light.fs" />
+    <Compile Include="ModuleStatement.fs" />
+    <Compile Include="FSharpLexer.fs" />
+    <Compile Include="FSharpLexerTailer.fs" />
+    <Compile Include="FSharpYacc.fs" />
+    <Compile Include="FSharpCompiler.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSharp.LexYacc\FSharp.LexYacc.fsproj" />
+  </ItemGroup>
+
+</Project>
