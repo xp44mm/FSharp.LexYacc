@@ -5,7 +5,6 @@ open System
 open FSharp.Substance
 open FSharp.Idioms.Literal
 
-
 let res = [
     ModuleIntro [ "FSharp"; "Substance"; "FSharpLexer" ]
     OpenStatement [ "System" ]

@@ -2,6 +2,7 @@
 
 open Xunit
 open FSharp.LexYacc
+open FSharp.Idioms.Literal
 
 type TokenGenerationTest(output: ITestOutputHelper) =
 
@@ -33,5 +34,40 @@ type TokenGenerationTest(output: ITestOutputHelper) =
             FSharpToken.STAR, "*"
         ]
 
-        let outp = DiscriminatedUnions.generate symbols
+        let outp = DiscriminatedUnions.generate_module symbols
         output.WriteLine(outp)
+
+    [<Fact>]
+    member _.``生成Yacc文件中的typedef``() =
+        let symbols = [
+            FSharpToken.BAR, "|"
+            FSharpToken.BAR_RBRACE, "|}"
+            FSharpToken.BAR_RBRACK, "|]"
+            FSharpToken.COLON, ":"
+            FSharpToken.COMMA, ","
+            FSharpToken.DOT, "."
+            FSharpToken.EQUALS, "="
+            FSharpToken.GREATER, ">"
+            FSharpToken.HASH, "#"
+            FSharpToken.LBRACE, "{"
+            FSharpToken.LBRACE_BAR, "{|"
+            FSharpToken.LBRACK, "["
+            FSharpToken.LBRACK_BAR, "[|"
+            FSharpToken.LESS, "<"
+            FSharpToken.LPAREN, "("
+            FSharpToken.MINUS, "-"
+            FSharpToken.RARROW, "->"
+            FSharpToken.RBRACE, "}"
+            FSharpToken.RBRACK, "]"
+            FSharpToken.RPAREN, ")"
+            FSharpToken.SEMICOLON, ";"
+            FSharpToken.STAR, "*"
+        ]
+
+        let outp = DiscriminatedUnions.typedef symbols
+        output.WriteLine outp
+
+    [<Fact>]
+    member _.``生成 offside lexeme``() =
+        let outp = DiscriminatedUnions.offsideLexeme<FSharpToken>
+        output.WriteLine outp

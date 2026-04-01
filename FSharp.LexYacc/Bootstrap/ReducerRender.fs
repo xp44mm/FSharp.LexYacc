@@ -25,7 +25,7 @@ let reducerBody
             if declarations.ContainsKey production.Head then
 
                 $"let result:{declarations.[production.Head]} ="
-                [reducer] |> Line.identAll 4
+                [reducer] |> Line.indentAll 4
                 $"box result"
             else
                 reducer
@@ -46,7 +46,7 @@ let decorateReducer
     let funcDef =
         [
             "fun(ss:obj list)->"
-            [body] |> Line.identAll 4
+            [body] |> Line.indentAll 4
         ]
         |> String.concat Environment.NewLine
     funcDef

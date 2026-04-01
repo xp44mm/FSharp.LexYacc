@@ -1,23 +1,32 @@
 ﻿module FSharp.LexYacc.DiscriminatedUnions
+
 open System
 open System.IO
 open System.Text
 
-open Microsoft.FSharp.Reflection
+open FSharp.Reflection
 
 open FSharp.Idioms
 open FSharp.Idioms.Literal
 
-///利用反射生成TokenDiscriminatedUnion类型所需要的方法模块源代码
-let generate<'u> (symbols: ('u * string) list) =
+let getUnionCases (unionType: Type) =
+    let cases = FSharpType.GetUnionCases(unionType)
+    cases
+    |> Array.mapi(fun i case ->
+        let fields = case.GetFields()
+        let fieldTypes =
+            fields
+            |> Array.map(fun field -> field.PropertyType)
+        i, case.Name, fieldTypes
+    )
+
+let tagedUnionCases<'u> (symbols: ('u * string) list) =
     let unionType = typeof<'u>
-    let cases =
-        FSharpType.GetUnionCases(unionType)
-        |> Array.indexed
+
+    let cases = FSharpType.GetUnionCases(unionType)
 
     let getTag (tok: 'u) =
-        let caseInfo, _ =
-            FSharpValue.GetUnionFields(tok, unionType)
+        let caseInfo, _ = FSharpValue.GetUnionFields(tok, unionType)
         caseInfo.Name
 
     let symbols =
@@ -25,73 +34,178 @@ let generate<'u> (symbols: ('u * string) list) =
         |> List.map(fun (tok, s) -> getTag tok, s)
         |> Map.ofList
 
-    let index_outp = [
-        $"let index (tok:{unionType.Name}) ="
-        Line.ident 4 "match tok with"
-        for (i, c) in cases do
-            if c.GetFields().Length = 0 then
-                Line.ident 4 $"| {unionType.Name}.{c.Name} -> {i}"
+    cases
+    |> Array.mapi(fun i case ->
+        let fields = case.GetFields()
+        let fieldTypes =
+            fields
+            |> Array.map(fun field -> field.PropertyType)
+
+        let tag =
+            if symbols.ContainsKey case.Name then
+                symbols.[case.Name]
             else
-                Line.ident 4 $"| {unionType.Name}.{c.Name} _ -> {i}"
-    ]
+                case.Name
+        i, case.Name, tag, fieldTypes
+    )
 
-    let tag_outp = [
-        $"let tag (tok:{unionType.Name}) ="
-        Line.ident 4 "match tok with"
-        for (i, c) in cases do
-            let tag =
-                if symbols.ContainsKey c.Name then
-                    symbols.[c.Name]
+let module_index<'u> =
+    let unionType = typeof<'u>
+    let cases = getUnionCases unionType
+
+    let rhs = [
+        "match tok with"
+        yield!
+            cases
+            |> Array.map(fun (i, name, fields) ->
+                if fields.Length = 0 then
+                    $"| {unionType.Name}.{name} -> {i}"
                 else
-                    c.Name
-
-            if c.GetFields().Length = 0 then
-                Line.ident 4 $"| {unionType.Name}.{c.Name} -> {stringify tag}"
-            else
-                Line.ident 4 $"| {unionType.Name}.{c.Name} _ -> {stringify tag}"
+                    $"| {unionType.Name}.{name} _ -> {i}"
+            )
     ]
-
-    let tagToValue_outp = [
-        "let tagToValue (tag:string) ="
-        Line.ident 4 "match tag with"
-        for (i, c) in cases do
-            let tag =
-                if symbols.ContainsKey c.Name then
-                    symbols.[c.Name]
-                else
-                    c.Name
-            Line.ident 4 $"| {stringify tag} -> {i}"
-        Line.ident 4 "| _ -> failwith tag"
-    ]
-
-    let lexeme_outp = [
-        $"let lexeme (tok:{unionType.Name}) ="
-        Line.ident 4 "match tok with"
-        for (i, case) in cases do
-            let fields = case.GetFields()
-            match fields.Length with
-            | 0 -> Line.ident 4 $"| {unionType.Name}.{case.Name} -> null"
-            | 1 -> Line.ident 4 $"| {unionType.Name}.{case.Name} x -> box x"
-            | len ->
-                let ps =
-                    [0 .. len-1]
-                    |> List.map(fun i -> string(char (int 'a' + i)))
-                    |> String.concat ","
-                Line.ident 4 $"| {unionType.Name}.{case.Name}({ps}) -> box({ps})"
-    ]
-
-    let content =
-        [
-            index_outp
-            tag_outp
-            tagToValue_outp
-            lexeme_outp
-        ]
-        |> List.concat
-        |> Line.identAll 4
 
     [
-        $"module {unionType.Name} ="
-        content
+        $"let index (tok:{unionType.Name}) ="
+        yield! rhs |> List.map(Line.indent 4)
+    ]
+
+let module_tag<'u> (symbols: ('u * string) list) =
+    let unionType = typeof<'u>
+    let cases = tagedUnionCases symbols
+    let rhs = [
+        "match tok with"
+        yield!
+            cases
+            |> Array.map(fun (i, name, tag, fields) ->
+                if fields.Length = 0 then
+                    $"| {unionType.Name}.{name} -> {stringify tag}"
+                else
+                    $"| {unionType.Name}.{name} _ -> {stringify tag}"
+            )
+    ]
+
+    [
+        $"let tag (tok:{unionType.Name}) ="
+        yield! rhs |> List.map(Line.indent 4)
+    ]
+
+let module_tagToIndex<'u> (symbols: ('u * string) list) =
+    let unionType = typeof<'u>
+    let cases = tagedUnionCases symbols
+    let rhs = [
+        "match tag with"
+        yield!
+            cases
+            |> Array.map(fun (i, name, tag, fields) -> $"| {stringify tag} -> {i}")
+    ]
+
+    [
+        $"let tagToIndex (tok:{unionType.Name}) ="
+        yield! rhs |> List.map(Line.indent 4)
+    ]
+
+let module_lexeme<'u> =
+    let unionType = typeof<'u>
+    let cases = getUnionCases unionType
+    let rhs = [
+        "match tok with"
+        yield!
+            cases
+            |> Array.map(fun (i, name, fields) ->
+                match fields.Length with
+                | 0 -> $"| {unionType.Name}.{name} -> null"
+                | 1 -> $"| {unionType.Name}.{name} x -> box x"
+                | len ->
+                    let ps =
+                        [ 0 .. len - 1 ]
+                        |> List.map(fun i -> string(char(int 'a' + i)))
+                        |> String.concat ","
+                    $"| {unionType.Name}.{name}({ps}) -> box({ps})"
+            )
+    ]
+
+    [
+        $"let index (tok:{unionType.Name}) ="
+        yield! rhs |> List.map(Line.indent 4)
+    ]
+
+///缩进信息传给yacc
+let offsideLexeme<'u> =
+    let unionType = typeof<'u>
+    let cases = getUnionCases unionType
+    let rhs = [
+        "match tok with"
+        yield!
+            cases
+            |> Array.map(fun (i, name, fields) ->
+                match fields.Length with
+                | 0 -> $"| {unionType.Name}.{name} -> box spaces"
+                | 1 -> $"| {unionType.Name}.{name} x -> box(spaces, x)"
+                | len ->
+                    let ps =
+                        [ 0 .. len - 1 ]
+                        |> List.map(fun i -> string(char(int 'a' + i)))
+                        |> String.concat ", "
+                    $"| {unionType.Name}.{name}({ps}) -> box(spaces, {ps})"
+            )
+    ]
+
+    [
+        $"let offsideLexeme (spaces:int option) (tok:{unionType.Name}) ="
+        yield! rhs |> List.map(Line.indent 4)
+    ]
+    |> String.concat "\r\n"
+
+///定义yacc中的token类型
+let typedef<'u> (symbols: ('u * string) list) =
+    let cases = tagedUnionCases symbols
+
+    cases
+    |> Array.filter(fun (i, nm, tag, fs) -> fs.Length > 0)
+    |> Array.map(fun (i, name, tag, fields) ->
+        let typ =
+            match fields.Length with
+            | 0 -> failwith "filtered"
+            | 1 -> fields.[0]
+            | _ -> FSharpType.MakeTupleType fields
+        "%type<"
+        + stringifyTypeDynamic typ
+        + "> "
+        + stringify tag
+    )
+    |> String.concat "\r\n"
+
+///定义yacc中的token类型，带缩进信息
+let offsidetypedef<'u> (symbols: ('u * string) list) =
+    let cases = tagedUnionCases symbols
+    cases
+    |> Array.map(fun (i, name, tag, fields) ->
+        let typ =
+            match fields.Length with
+            | 0 -> typeof<int option>
+            | _ -> FSharpType.MakeTupleType [| typeof<int option>; yield! fields |]
+
+        "%type<"
+        + stringifyTypeDynamic typ
+        + "> "
+        + stringify tag
+    )
+    |> String.concat "\r\n"
+
+/// 生成token模块中的常用方法
+let generate_module<'u> (symbols: ('u * string) list) =
+    let content =
+        [
+            module_index<'u>
+            module_tag symbols
+            module_tagToIndex symbols
+            module_lexeme<'u>
+        ]
+        |> List.concat
+
+    [
+        $"module {typeof<'u>.Name} ="
+        yield! content |> List.map(Line.indent 4)
     ]
     |> String.concat "\r\n"

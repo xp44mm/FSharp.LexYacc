@@ -59,14 +59,14 @@ type RulerPrinter = {
             $"let actions {parameters}: Map<byte, {this.funType}> = Map ["
             for i, act in this.actions do
                 let headLine =
-                    Line.ident 4 $"{stringify i}, fun buff -> "
+                    Line.indent 4 $"{stringify i}, fun buff -> "
                 match act with
                 | Braces.SingleLine ln -> headLine + ln
                 | Braces.MultiLine ls ->
-                    let act = Line.identAll 8 ls
+                    let act = Line.indentAll 8 ls
                     headLine + "\r\n" + act
                 | Braces.Empty -> headLine + "failwith String.empty"
-            Line.ident 4 "]"
+            Line.indent 4 "]"
         ]
         |> List.map(fun line -> line.TrimEnd())
         |> String.concat "\r\n"

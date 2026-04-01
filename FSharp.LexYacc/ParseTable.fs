@@ -9,6 +9,7 @@ type StateInParseStack = {
     state: int
     lexeme: obj
 } with
+
     static member just(state, lexeme) = { state = state; lexeme = lexeme }
 
 type ProductionRule = { production: string list; action: obj list -> obj }
@@ -25,13 +26,10 @@ type TokenRow<'tok> = { token: 'tok; tag: string; lexeme: obj }
 
 type ParseTable = {
     rules: Map<int, ProductionRule>
-    actions: Map<int, Map<string, int>> // action = shift + accept + reduce 
+    actions: Map<int, Map<string, int>> // action = shift + accept + reduce
 } with
 
-    member this.nextAction
-        (states: StateInParseStack list)
-        (maybeToken: TokenRow<'tok> option)
-        =
+    member this.nextAction (states: StateInParseStack list) (maybeToken: TokenRow<'tok> option) =
         let sm = states.Head //.state
 
         if not(this.actions.ContainsKey sm.state) then
@@ -92,10 +90,7 @@ type ParseTable = {
         loop states
 
     /// Reduce + Shift
-    member this.tryReduceBeforeShift
-        (states: StateInParseStack list)
-        (token: TokenRow<'tok>)
-        =
+    member this.tryReduceBeforeShift (states: StateInParseStack list) (token: TokenRow<'tok>) =
         // times用于记录Reduced次数
         let rec loop times states =
             match this.nextAction states (Some token) with
@@ -121,18 +116,14 @@ type ParseTable = {
             | Accepted ->
                 match states with
                 // if s.state = 1 && s0.state = 0 && s0.lexeme = null then
-                | [ { state = 1; lexeme = lxm }; { state = 0; lexeme = null } ] ->
-                    Some lxm
+                | [ { state = 1; lexeme = lxm }; { state = 0; lexeme = null } ] -> Some lxm
                 | _ -> None
             | _ -> None
         loop states
 
     /// 简单解析过程，一步到底
     member this.parse(tokens: Iterator<TokenRow<'tok>>) =
-        let rec loop
-            (states: StateInParseStack list)
-            (maybeToken: TokenRow<'tok> option)
-            =
+        let rec loop (states: StateInParseStack list) (maybeToken: TokenRow<'tok> option) =
             match this.nextAction states maybeToken with
             | Accepted -> states
             | Reduced nextStates -> loop nextStates maybeToken
@@ -148,17 +139,12 @@ type ParseTable = {
 
     ///从打印的BNF获得实例
     static member from
-        (
-            rules: (string list * (obj list -> obj)) list,
-            actions: (string * int) list list
-        )
+        (rules: (string list * (obj list -> obj)) list, actions: (string * int) list list)
         =
         // code -> production * reducer
         let rules =
             rules
-            |> List.mapi(fun i (prod, fn) ->
-                -i, { production = prod; action = fn }
-            )
+            |> List.mapi(fun i (prod, fn) -> -i, { production = prod; action = fn })
             |> Map.ofList
 
         /// state -> lookahead -> action

@@ -6,6 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="PrimitiveType.fs" />
+    <Compile Include="ParseInteger.fs" />
+    <Compile Include="PrimitiveParser.fs" />
     <Compile Include="Pen.fs" />
     <Compile Include="Lookup.fs" />
     <Compile Include="Literal.fs" />

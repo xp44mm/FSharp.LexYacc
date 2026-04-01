@@ -71,10 +71,10 @@ type FsyaccFilePrinter =
             "let actions: (string * int) list list = "
             + stringify this.actions
             "let rules: list<string list*(obj list->obj)> = ["
-            Line.identAll 4 reducers
+            Line.indentAll 4 reducers
             "]"
             "let unboxRoot ="
-            Line.ident 4 $"unbox<{this.startType}>"
+            Line.indent 4 $"unbox<{this.startType}>"
             "let parser = ParseTable.from(rules, actions)"
         ]
         |> String.concat "\r\n"

@@ -54,7 +54,7 @@ type LightTest(output: ITestOutputHelper) =
             DOT
             IDENT "Bootstrap"
         ]
-        let y = Light.transformTokens x
+        let y = Light.transform x |> Seq.toList
         output.WriteLine(stringify y)
         let e = [
             Some 0, MODULE

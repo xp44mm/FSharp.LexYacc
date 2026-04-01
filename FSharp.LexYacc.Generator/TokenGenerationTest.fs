@@ -26,7 +26,7 @@ type TokenGenerationTest(output: ITestOutputHelper) =
             FslexToken.AMP, "&"
             FslexToken.COLON, ":"
         ]
-        let src = DiscriminatedUnions.generate symbols
+        let src = DiscriminatedUnions.generate_module symbols
         output.WriteLine(src)
 
     [<Fact>]
@@ -41,5 +41,5 @@ type TokenGenerationTest(output: ITestOutputHelper) =
             FsyaccToken.PREC, "%prec"
         ]
 
-        let outp = DiscriminatedUnions.generate symbols
+        let outp = DiscriminatedUnions.generate_module symbols
         output.WriteLine(outp)

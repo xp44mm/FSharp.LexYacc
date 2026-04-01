@@ -1,6 +1,9 @@
 ﻿namespace FSharp.Substance
 
 type FSharpToken =
+    | LLPAREN
+    | RRPAREN
+
     | BAR
     | BAR_RBRACE
     | BAR_RBRACK
@@ -35,45 +38,50 @@ type FSharpToken =
     | TYPAR of string
     | WHITESPACE
     | WITH
+
 module FSharpToken =
-    let index (tok: FSharpToken) =
+    let index (tok:FSharpToken) =
         match tok with
-        | FSharpToken.BAR -> 0
-        | FSharpToken.BAR_RBRACE -> 1
-        | FSharpToken.BAR_RBRACK -> 2
-        | FSharpToken.COLON -> 3
-        | FSharpToken.COMMA -> 4
-        | FSharpToken.DOT -> 5
-        | FSharpToken.EOF -> 6
-        | FSharpToken.EQUALS -> 7
-        | FSharpToken.FUN -> 8
-        | FSharpToken.GREATER -> 9
-        | FSharpToken.HASH -> 10
-        | FSharpToken.IDENT _ -> 11
-        | FSharpToken.LBRACE -> 12
-        | FSharpToken.LBRACE_BAR -> 13
-        | FSharpToken.LBRACK -> 14
-        | FSharpToken.LBRACK_BAR -> 15
-        | FSharpToken.LESS -> 16
-        | FSharpToken.LET -> 17
-        | FSharpToken.LITERAL _ -> 18
-        | FSharpToken.LPAREN -> 19
-        | FSharpToken.MATCH -> 20
-        | FSharpToken.MINUS -> 21
-        | FSharpToken.MODULE -> 22
-        | FSharpToken.NEW_LINE _ -> 23
-        | FSharpToken.OPEN -> 24
-        | FSharpToken.RARROW -> 25
-        | FSharpToken.RBRACE -> 26
-        | FSharpToken.RBRACK -> 27
-        | FSharpToken.RPAREN -> 28
-        | FSharpToken.SEMICOLON -> 29
-        | FSharpToken.STAR -> 30
-        | FSharpToken.TYPAR _ -> 31
-        | FSharpToken.WHITESPACE -> 32
-        | FSharpToken.WITH -> 33
-    let tag (tok: FSharpToken) =
+        | FSharpToken.LLPAREN -> 0
+        | FSharpToken.RRPAREN -> 1
+        | FSharpToken.BAR -> 2
+        | FSharpToken.BAR_RBRACE -> 3
+        | FSharpToken.BAR_RBRACK -> 4
+        | FSharpToken.COLON -> 5
+        | FSharpToken.COMMA -> 6
+        | FSharpToken.DOT -> 7
+        | FSharpToken.EOF -> 8
+        | FSharpToken.EQUALS -> 9
+        | FSharpToken.FUN -> 10
+        | FSharpToken.GREATER -> 11
+        | FSharpToken.HASH -> 12
+        | FSharpToken.IDENT _ -> 13
+        | FSharpToken.LBRACE -> 14
+        | FSharpToken.LBRACE_BAR -> 15
+        | FSharpToken.LBRACK -> 16
+        | FSharpToken.LBRACK_BAR -> 17
+        | FSharpToken.LESS -> 18
+        | FSharpToken.LET -> 19
+        | FSharpToken.LITERAL _ -> 20
+        | FSharpToken.LPAREN -> 21
+        | FSharpToken.MATCH -> 22
+        | FSharpToken.MINUS -> 23
+        | FSharpToken.MODULE -> 24
+        | FSharpToken.NEW_LINE _ -> 25
+        | FSharpToken.OPEN -> 26
+        | FSharpToken.RARROW -> 27
+        | FSharpToken.RBRACE -> 28
+        | FSharpToken.RBRACK -> 29
+        | FSharpToken.RPAREN -> 30
+        | FSharpToken.SEMICOLON -> 31
+        | FSharpToken.STAR -> 32
+        | FSharpToken.TYPAR _ -> 33
+        | FSharpToken.WHITESPACE -> 34
+        | FSharpToken.WITH -> 35
+    let tag (tok:FSharpToken) =
         match tok with
+        | FSharpToken.LLPAREN -> "LLPAREN"
+        | FSharpToken.RRPAREN -> "RRPAREN"
         | FSharpToken.BAR -> "|"
         | FSharpToken.BAR_RBRACE -> "|}"
         | FSharpToken.BAR_RBRACK -> "|]"
@@ -108,45 +116,49 @@ module FSharpToken =
         | FSharpToken.TYPAR _ -> "TYPAR"
         | FSharpToken.WHITESPACE -> "WHITESPACE"
         | FSharpToken.WITH -> "WITH"
-    let tagToValue (tag: string) =
+    let tagToValue (tag:string) =
         match tag with
-        | "|" -> 0
-        | "|}" -> 1
-        | "|]" -> 2
-        | ":" -> 3
-        | "," -> 4
-        | "." -> 5
-        | "EOF" -> 6
-        | "=" -> 7
-        | "FUN" -> 8
-        | ">" -> 9
-        | "#" -> 10
-        | "IDENT" -> 11
-        | "{" -> 12
-        | "{|" -> 13
-        | "[" -> 14
-        | "[|" -> 15
-        | "<" -> 16
-        | "LET" -> 17
-        | "LITERAL" -> 18
-        | "(" -> 19
-        | "MATCH" -> 20
-        | "-" -> 21
-        | "MODULE" -> 22
-        | "NEW_LINE" -> 23
-        | "OPEN" -> 24
-        | "->" -> 25
-        | "}" -> 26
-        | "]" -> 27
-        | ")" -> 28
-        | ";" -> 29
-        | "*" -> 30
-        | "TYPAR" -> 31
-        | "WHITESPACE" -> 32
-        | "WITH" -> 33
+        | "LLPAREN" -> 0
+        | "RRPAREN" -> 1
+        | "|" -> 2
+        | "|}" -> 3
+        | "|]" -> 4
+        | ":" -> 5
+        | "," -> 6
+        | "." -> 7
+        | "EOF" -> 8
+        | "=" -> 9
+        | "FUN" -> 10
+        | ">" -> 11
+        | "#" -> 12
+        | "IDENT" -> 13
+        | "{" -> 14
+        | "{|" -> 15
+        | "[" -> 16
+        | "[|" -> 17
+        | "<" -> 18
+        | "LET" -> 19
+        | "LITERAL" -> 20
+        | "(" -> 21
+        | "MATCH" -> 22
+        | "-" -> 23
+        | "MODULE" -> 24
+        | "NEW_LINE" -> 25
+        | "OPEN" -> 26
+        | "->" -> 27
+        | "}" -> 28
+        | "]" -> 29
+        | ")" -> 30
+        | ";" -> 31
+        | "*" -> 32
+        | "TYPAR" -> 33
+        | "WHITESPACE" -> 34
+        | "WITH" -> 35
         | _ -> failwith tag
-    let lexeme (tok: FSharpToken) =
+    let lexeme (tok:FSharpToken) =
         match tok with
+        | FSharpToken.LLPAREN -> null
+        | FSharpToken.RRPAREN -> null
         | FSharpToken.BAR -> null
         | FSharpToken.BAR_RBRACE -> null
         | FSharpToken.BAR_RBRACK -> null

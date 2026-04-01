@@ -55,7 +55,7 @@ let renderRuleGroup this =
         renderSymbol this.lhs + " :"
         this.bodies
         |> List.map(fun bd -> renderRuleBody bd)
-        |> Line.identAll (4*4)
+        |> Line.indentAll (4*4)
     ]
     |> String.concat "\r\n"
 
