@@ -5,31 +5,42 @@ open System
 open FSharp.Idioms
 open FSharp.Idioms.Literal
 
-type StateInParseStack = {
-    state: int
-    lexeme: obj
-} with
+type YaccState =
+    {
+        state: int
+        lexeme: obj
+    }
 
     static member just(state, lexeme) = { state = state; lexeme = lexeme }
 
-type ProductionRule = { production: string list; action: obj list -> obj }
+type ProductionRule =
+    {
+        production: string list
+        action: obj list -> obj
+    }
 
 type NextParseAction =
     | NoSource of state: int
     | NoSymbol of tag: string
     | Rejected of tag: string
     | Accepted
-    | Shifted of states: StateInParseStack list
-    | Reduced of states: StateInParseStack list
+    | Shifted of states: YaccState list
+    | Reduced of states: YaccState list
 
-type TokenRow<'tok> = { token: 'tok; tag: string; lexeme: obj }
+type TokenRow<'tok> =
+    {
+        token: 'tok
+        tag: string
+        lexeme: obj
+    }
 
-type ParseTable = {
-    rules: Map<int, ProductionRule>
-    actions: Map<int, Map<string, int>> // action = shift + accept + reduce
-} with
+type ParseTable =
+    {
+        rules: Map<int, ProductionRule>
+        actions: Map<int, Map<string, int>> // action = shift + accept + reduce
+    }
 
-    member this.nextAction (states: StateInParseStack list) (maybeToken: TokenRow<'tok> option) =
+    member this.nextAction (states: YaccState list) (maybeToken: TokenRow<'tok> option) =
         let sm = states.Head //.state
 
         if not(this.actions.ContainsKey sm.state) then
@@ -52,7 +63,10 @@ type ParseTable = {
                     else
                         Rejected ai
                 elif i > 0 then
-                    Shifted(StateInParseStack.just(i, lexeme) :: states)
+                    Shifted(
+                        YaccState.just(i, lexeme)
+                        :: states
+                    )
                 else
                     //产生式符号列表。比如产生式 e-> e + e 的符号列表为 [e;e;+;e]
                     let rule = this.rules.[i]
@@ -76,31 +90,31 @@ type ParseTable = {
                     let newstate = this.actions.[smr.state].[leftside] // GOTO
                     // 压入新状态
                     Reduced(
-                        StateInParseStack.just(newstate, lexeme)
+                        YaccState.just(newstate, lexeme)
                         :: restStates
                     )
 
-    /// 返回 shift token 执行完成后的状态
-    member this.shift (states: StateInParseStack list) (token: TokenRow<'tok>) =
-        let rec loop states =
-            match this.nextAction states (Some token) with
-            | Shifted nextStates -> nextStates
-            | Reduced nextStates -> loop nextStates
+    /// 返回 shift token 行为执行完成后的状态
+    member this.shift (states: YaccState list) (token: TokenRow<'tok>) =
+        let rec loop ss =
+            match this.nextAction ss (Some token) with
+            | Reduced nss -> loop nss
+            | Shifted nss -> nss //最后一步
             | x -> failwith(stringify x)
         loop states
 
-    /// Reduce + Shift
-    member this.tryReduceBeforeShift (states: StateInParseStack list) (token: TokenRow<'tok>) =
+    /// Reduce / Shift
+    member this.tryReduceBeforeShift (states: YaccState list) (token: TokenRow<'tok>) =
         // times用于记录Reduced次数
-        let rec loop times states =
-            match this.nextAction states (Some token) with
-            | Reduced nextStates -> loop (times + 1) nextStates
-            | Shifted _ -> if times > 0 then Some states else None
+        let rec loop times ss =
+            match this.nextAction ss (Some token) with
+            | Reduced nss -> loop (times + 1) nss
+            | Shifted _ -> if times > 0 then Some ss else None
             | x -> failwith(stringify x)
         loop 0 states
 
-    /// Reduce + Accept
-    member this.tryReduceBeforeAccept(states: StateInParseStack list) =
+    /// Reduce / Accept
+    member this.tryReduceBeforeAccept(states: YaccState list) =
         // times用于记录Reduced次数
         let rec loop times states =
             match this.nextAction states None with
@@ -109,7 +123,7 @@ type ParseTable = {
             | x -> failwith(stringify x)
         loop 0 states
 
-    member this.tryAccept(states: StateInParseStack list) =
+    member this.tryAccept(states: YaccState list) =
         let rec loop states =
             match this.nextAction states None with
             | Reduced nextStates -> loop nextStates
@@ -123,7 +137,7 @@ type ParseTable = {
 
     /// 简单解析过程，一步到底
     member this.parse(tokens: Iterator<TokenRow<'tok>>) =
-        let rec loop (states: StateInParseStack list) (maybeToken: TokenRow<'tok> option) =
+        let rec loop (states: YaccState list) (maybeToken: TokenRow<'tok> option) =
             match this.nextAction states maybeToken with
             | Accepted -> states
             | Reduced nextStates -> loop nextStates maybeToken

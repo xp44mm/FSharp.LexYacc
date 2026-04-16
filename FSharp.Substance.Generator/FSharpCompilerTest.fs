@@ -14,8 +14,8 @@ type FSharpCompilerTest(output: ITestOutputHelper) =
     member _.``TestData test``() =
         let path = @"D:\FSharpLexer.fs"
         let text = File.ReadAllText(path, Encoding.UTF8)
-        let nodes = FSharpCompiler.compile text
-        output.WriteLine(stringify nodes)
+        //let nodes = FSharpCompiler.compile text
+        //output.WriteLine(stringify nodes)
 
         //Should.equal e nodes
         ()

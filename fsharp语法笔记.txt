@@ -10,3 +10,45 @@ offside
 Adjacency precedence rule
 balancing parentheses 补全括号
 FSharp.Compiler\SyntaxTree\LexFilterImpl.fs
+end_of_line
+句柄剪枝产生式的左端，右端不能同时出现。右端只能展开最右的非终结符号。
+PREFIX_OP是一元操作符unary
+退化路径
+Juxtaposition（并置/邻接）指的是两个语法元素直接相邻放置，没有任何运算符或分隔符，以此来表示某种运算或关系。Juxtaposition 来自拉丁语 juxta（靠近）+ position（放置），字面意思是"并排放置"。在语言学中，它也指将词语放在一起产生意义（如"coffee cup"）。编程语言借用了这个术语来描述函数应用的隐式语法。
+hack
+preprocessor
+序列表达式的位置，
+
+declExpr:
+  // | letBinding     { }
+  | tupleExpr { }
+
+tupleExpr:
+  // | tupleExpr COMMA binaryExpr    {}
+  | binaryExpr      {}
+  
+binaryExpr:
+  //| binaryExpr INFIX_OP unaryExpr     {  }
+  | unaryExpr {  }
+    
+unaryExpr:
+  //| PREFIX_OP appExpr      {  }
+  | appExpr      {  }
+
+appExpr:
+  //| appExpr APP_OP atomicExpr       {  }
+  | atomicExpr      {  }
+
+atomicExpr:
+  | LITERAL      {  }
+  | delimitedExpr      { }
+
+delimitedExpr:
+  | "(" sequentialExpr ")"      { }
+  | "[" sequentialExpr "]"      {  }  
+  | "{" sequentialExpr "}"   {  }
+  | "[|" sequentialExpr "|]"      {  }
+  | "{|" sequentialExpr "|}"   {  }
+// semicolons:
+//   | maybe_semicolon {}
+//   | semicolons ";" { }

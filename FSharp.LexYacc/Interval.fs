@@ -1,10 +1,6 @@
 ﻿module FSharp.LexYacc.Interval
 
-open System
-open System.Diagnostics
-
-open FSharp.Idioms.Literal
-
+///本程序仅支持char类型，即uint16，现代unicode已经超出此范围。
 let MIN_NEVER = -7
 let MAX_NEVER = 0xFFFFF
 
@@ -78,10 +74,6 @@ let complement (ranges: (int * int) list) =
             else
                 None
         )
-
-///// 计算两个范围列表的差异 (left - right)
-//let diff (left: (int * int) list) (right: (int * int) list) =
-//    complement left @ right |> merge |> complement
 
 /// 切分标签为字母表中的元素
 let slice (alphabet: (int * int) list) (s: int) (e: int) =

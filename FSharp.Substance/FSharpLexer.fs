@@ -59,6 +59,7 @@ let actions : Map<byte,  char list -> FSharpToken list > = Map [
             | "with" -> WITH
             | "true" -> LITERAL(Literal.TRUE)
             | "false" -> LITERAL(Literal.FALSE)
+            | "null" -> LITERAL(Literal.NULL)
             | s -> IDENT s
         [tok]
     40uy, fun buff -> failwith(stringify buff.[0])

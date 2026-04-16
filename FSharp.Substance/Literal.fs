@@ -3,7 +3,8 @@ namespace FSharp.Substance
 open FSharp.LexYacc.Bootstrap
 
 type Literal =
-    | Unit
+    | UNIT
+    | NULL
     | TRUE
     | FALSE
     | INT8 of int8

@@ -9,6 +9,7 @@ open FSharp.Reflection
 open FSharp.Idioms
 open FSharp.Idioms.Literal
 
+/// 工具函数，获取可区分联合的案例信息
 let getUnionCases (unionType: Type) =
     let cases = FSharpType.GetUnionCases(unionType)
     cases
@@ -20,6 +21,7 @@ let getUnionCases (unionType: Type) =
         i, case.Name, fieldTypes
     )
 
+/// 工具函数，获取可区分联合的案例信息，带Tag符号信息
 let tagedUnionCases<'u> (symbols: ('u * string) list) =
     let unionType = typeof<'u>
 
@@ -98,13 +100,15 @@ let module_tagToIndex<'u> (symbols: ('u * string) list) =
         yield!
             cases
             |> Array.map(fun (i, name, tag, fields) -> $"| {stringify tag} -> {i}")
+        "| _ -> failwithf \"unexpected tag:%s\" tag"
     ]
 
     [
-        $"let tagToIndex (tok:{unionType.Name}) ="
+        "let tagToIndex (tag:string) ="
         yield! rhs |> List.map(Line.indent 4)
     ]
 
+///传给yacc的荷载数据
 let module_lexeme<'u> =
     let unionType = typeof<'u>
     let cases = getUnionCases unionType
@@ -126,12 +130,47 @@ let module_lexeme<'u> =
     ]
 
     [
-        $"let index (tok:{unionType.Name}) ="
+        $"let lexeme (tok:{unionType.Name}) ="
         yield! rhs |> List.map(Line.indent 4)
     ]
 
+/// 生成token模块中的常用方法
+let generate_module<'u> (symbols: ('u * string) list) =
+    let content =
+        [
+            module_index<'u>
+            module_tag symbols
+            module_tagToIndex symbols
+            module_lexeme<'u>
+        ]
+        |> List.concat
+
+    [
+        $"module {typeof<'u>.Name} ="
+        yield! content |> List.map(Line.indent 4)
+    ]
+    |> String.concat "\r\n"
+
+///定义yacc中的token类型
+let percent_type<'u> (symbols: ('u * string) list) =
+    let cases = tagedUnionCases symbols
+    cases
+    |> Array.filter(fun (i, nm, tag, fs) -> fs.Length > 0)
+    |> Array.map(fun (i, name, tag, fields) ->
+        let typ =
+            match fields.Length with
+            | 0 -> failwith "filtered"
+            | 1 -> fields.[0]
+            | _ -> FSharpType.MakeTupleType fields
+        "%type<"
+        + stringifyTypeDynamic typ
+        + "> "
+        + stringify tag
+    )
+    |> String.concat "\r\n"
+
 ///缩进信息传给yacc
-let offsideLexeme<'u> =
+let lexeme_offside<'u> =
     let unionType = typeof<'u>
     let cases = getUnionCases unionType
     let rhs = [
@@ -157,27 +196,8 @@ let offsideLexeme<'u> =
     ]
     |> String.concat "\r\n"
 
-///定义yacc中的token类型
-let typedef<'u> (symbols: ('u * string) list) =
-    let cases = tagedUnionCases symbols
-
-    cases
-    |> Array.filter(fun (i, nm, tag, fs) -> fs.Length > 0)
-    |> Array.map(fun (i, name, tag, fields) ->
-        let typ =
-            match fields.Length with
-            | 0 -> failwith "filtered"
-            | 1 -> fields.[0]
-            | _ -> FSharpType.MakeTupleType fields
-        "%type<"
-        + stringifyTypeDynamic typ
-        + "> "
-        + stringify tag
-    )
-    |> String.concat "\r\n"
-
 ///定义yacc中的token类型，带缩进信息
-let offsidetypedef<'u> (symbols: ('u * string) list) =
+let percent_type_offside<'u> (symbols: ('u * string) list) =
     let cases = tagedUnionCases symbols
     cases
     |> Array.map(fun (i, name, tag, fields) ->
@@ -193,19 +213,3 @@ let offsidetypedef<'u> (symbols: ('u * string) list) =
     )
     |> String.concat "\r\n"
 
-/// 生成token模块中的常用方法
-let generate_module<'u> (symbols: ('u * string) list) =
-    let content =
-        [
-            module_index<'u>
-            module_tag symbols
-            module_tagToIndex symbols
-            module_lexeme<'u>
-        ]
-        |> List.concat
-
-    [
-        $"module {typeof<'u>.Name} ="
-        yield! content |> List.map(Line.indent 4)
-    ]
-    |> String.concat "\r\n"

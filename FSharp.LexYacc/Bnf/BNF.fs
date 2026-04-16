@@ -9,7 +9,7 @@ type BNF =
     static member just(productions) = { productions = productions }
 
     //从文法生成增广文法
-    static member from (input:list<list<string>>) =
+    static member from(input: list<list<string>>) =
         input
         |> ProductionUtils.augment
         |> BNF.just
@@ -73,29 +73,26 @@ type BNF =
         let row = GrammarRowUtils.getRow this.productions
         row.precedes
 
-    member this.nullable (alpha:string list) =
-        NullableUtils.nullable this.nullables alpha
+    member this.nullable(alpha: string list) = NullableUtils.nullable this.nullables alpha
 
-    member this.leftmost (alpha:string list) =        
-        NullableUtils.leftmost this.nullables alpha
+    member this.leftmost(alpha: string list) = NullableUtils.leftmost this.nullables alpha
 
-    member this.rightmost (alpha:string list) =
-        NullableUtils.rightmost this.nullables alpha
+    member this.rightmost(alpha: string list) = NullableUtils.rightmost this.nullables alpha
 
-    member this.first (alpha:string list) =
-        FirstUtils.first this.nullables this.firsts alpha
+    member this.first(alpha: string list) = FirstUtils.first this.nullables this.firsts alpha
 
     member this.getProperConflictActions() =
         [
-            for KeyValue(_,mp) in this.actions do
-            for KeyValue(_,acts) in mp do
-            if acts.Count > 1 then List.ofSeq acts
+            for KeyValue(_, mp) in this.actions do
+                for KeyValue(_, acts) in mp do
+                    if acts.Count > 1 then
+                        List.ofSeq acts
         ]
 
     member bnf.getConflictedProductions() =
         [
             for acts in bnf.getProperConflictActions() do
-            for act in acts do
-            yield! act.getProductions()
+                for act in acts do
+                    yield! act.getProductions()
         ]
         |> Set.ofList

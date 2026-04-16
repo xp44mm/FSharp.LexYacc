@@ -21,7 +21,7 @@ type FslexFilterTest(output: ITestOutputHelper) as this =
     [<Fact(Skip="没有改变，不必重复生成")>] // 
     member _.``生成``() =
         let printer =
-            FslexFilePrinter.forTag FslexToken.tagToValue text
+            FslexFilePrinter.forTag FslexToken.tagToIndex text
         let src = printer.print()
         output.WriteLine(src)
 
@@ -34,7 +34,7 @@ type FslexFilterTest(output: ITestOutputHelper) as this =
     [<Fact>]
     member _.``验证``() =
         let printer =
-            FslexFilePrinter.forTag FslexToken.tagToValue text
+            FslexFilePrinter.forTag FslexToken.tagToIndex text
 
         output.WriteLine(stringify printer.anal)
 

@@ -3,24 +3,117 @@ module FSharp.Substance.FSharpYacc
 open FSharp.LexYacc
 }
 
-//localBinding
+file:
+    | MODULE longid rhsBlock EOF {
+        snd s1, snd s2
+        }
 
-file :
-    | statements { List.rev s0 }
+longid:
+    | revLongid  {
+        let i,ls = s0 |> List.rev |> List.unzip
+        i.[0], ls
+    }
 
-statements :
-    | statement { [s0] }
-    | statements statement { s1::s0 }
-
-statement :
-    | MODULE longid { ModuleIntro(List.rev s1) }
-    | OPEN longid { OpenStatement(List.rev s1) }
-
-longid :
+revLongid :
     | IDENT { [s0] }
-    | longid "." IDENT { s2::s0 }
+    | revLongid "." IDENT { s2 :: s0 }
 
-%type<ModuleStatement list> file statements
-%type<ModuleStatement> statement
-%type<string list> longid
-%type<string> IDENT
+sequentialExpr:
+    | revSequentialExpr {
+        let s0 =
+            match s0 with
+            | (_, DummyExpr) :: tail -> tail
+            | _ -> s0
+        let i,ls = s0 |> List.rev |> List.unzip
+        i.[0], ls
+    }
+
+revSequentialExpr:
+    | revSequentialExpr ";" declExpr  { s2::s0 }
+    | declExpr { [s0] }
+
+declExpr:
+    | OPEN longid {
+        s0, OpenExpr(snd s1)
+        }
+    | letBinding { s0 }
+    | lambdaExpr { s0 }
+    | DUMMY { s0, DummyExpr }
+    
+letBinding :
+    | LET IDENT "=" lambdaExpr RHSEND {
+        s0, LetBindingExpr(snd s1, [snd s3])
+        }
+    | LET IDENT "=" rhsBlock {
+        s0, LetBindingExpr(snd s1, snd s3)
+        }
+        
+rhsBlock:
+    | LLPAREN sequentialExpr RRPAREN { s1 }
+
+lambdaExpr:
+    | FUN IDENT "->" lambdaExpr RHSEND {
+        s0, LambdaExpr(snd s1, [snd s3])
+        }
+    | FUN IDENT "->" rhsBlock {
+        s0, LambdaExpr(snd s1, snd s3)
+        }
+    | tupleExpr { s0 }
+
+tupleExpr:
+    | revTupleExpr  { 
+        let i,ls = s0 |> List.rev |> List.unzip
+        let e = if ls.Length > 1 then TupleExpr(ls) else ls.[0]
+        i.[0], e
+    }
+
+revTupleExpr:
+    | unaryExpr { [s0] }
+    | revTupleExpr "," unaryExpr { s2::s0 }
+
+unaryExpr:
+    | "-" appExpr  { s0, snd s1 }
+    | appExpr {s0}
+
+appExpr:
+    | revAppExpr {
+        let i,ls = s0 |> List.rev |> List.unzip
+        let e = if ls.Length > 1 then AppExpr ls else ls.[0]
+        i.[0], e
+        }
+        
+revAppExpr:
+    | revAppExpr atomicExpr { s1::s0 }
+    | atomicExpr { [s0] }
+
+atomicExpr:
+    | LITERAL {
+        let i,v = s0
+        i,LiteralExpr v
+        }
+    | longid { fst s0, IdentExpr(snd s0) }
+    | parenExpr { s0 }
+    | listExpr { s0 }
+    | arrayExpr { s0 }
+    
+parenExpr:
+    | "(" ")" { s0, LiteralExpr Literal.UNIT }
+    | "(" sequentialExpr ")" { s0, ParenExpr(snd s1) }
+
+listExpr:
+    | "[" "]" { s0, ListExpr [] }
+    | "[" sequentialExpr "]" { s0, ListExpr(snd s1) }
+
+arrayExpr:
+    | "[|" "|]" { s0, ArrayExpr [] }
+    | "[|" sequentialExpr "|]" { s0, ArrayExpr(snd s1) }
+
+%type<string list*Expr list> file
+%type<(option<int>*string) list> revLongid
+%type<option<int>*string list> longid
+%type<option<int>*Expr list> sequentialExpr rhsBlock
+%type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr
+%type<option<int>*Expr> declExpr letBinding lambdaExpr tupleExpr unaryExpr appExpr atomicExpr parenExpr arrayExpr listExpr
+%type<option<int>> "MODULE" LET FUN "OPEN" "." ";" "=" "," "[|" "[" "]" "|]" "(" ")" "-" DUMMY
+%type<option<int>*string> "IDENT"
+%type<option<int>*Literal> "LITERAL"

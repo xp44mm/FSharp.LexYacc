@@ -19,9 +19,9 @@ type FslexFilePrinter = {
         { header = ast.header; anal = anal; ruler = ruler }
 
     /// 用于Tag/string lexer
-    static member forTag (tagToValue: string -> int) (text: string) =
+    static member forTag (tagToIndex: string -> int) (text: string) =
         let ast = FslexTagCompiler.compile text
-        let patterns = ast.getPatterns(tagToValue)
+        let patterns = ast.getPatterns(tagToIndex)
 
         let anal = Analyzer.from patterns
         let ruler: RulerPrinter = RulerPrinter.from ast.ruler

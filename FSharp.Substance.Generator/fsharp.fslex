@@ -119,6 +119,7 @@ ident_start_char ident_char* {
         | "with" -> WITH
         | "true" -> LITERAL(Literal.TRUE)
         | "false" -> LITERAL(Literal.FALSE)
+        | "null" -> LITERAL(Literal.NULL)
         | s -> IDENT s
     [tok]
  }

@@ -5,9 +5,9 @@ open FSharp.Idioms
 open FSharp.Idioms.Literal
 
 type AssocAndPrec =
-    | Left of line:int
-    | Right of line:int
-    | Non of line:int
+    | Left of line: int
+    | Right of line: int
+    | Non of line: int
 
     static member from(assoc: Associativity, line: int) =
         match assoc with
@@ -22,12 +22,13 @@ type AssocAndPrec =
         | Non i -> i, NonAssoc
 
 //集合表示顺序无关
-type FlatFsyaccFile = {
-    header: string
-    augmentRules: Rule Set // augment Rules
-    precedences: Map<string, AssocAndPrec> // symbol -> prec level
-    declarations: Map<string, string> // symbol -> typeName
-} with
+type FlatFsyaccFile =
+    {
+        header: string
+        augmentRules: Rule Set // augment Rules
+        precedences: Map<string, AssocAndPrec> // symbol -> prec level
+        declarations: Map<string, string> // symbol -> typeName
+    }
 
     /// 不要检查，和crawl版本比较异同
     static member from(raw: RawFsyaccFile) =
@@ -74,19 +75,19 @@ type FlatFsyaccFile = {
         |> Set.map(fun rule -> rule.production)
         |> BNF.just
 
-    member this.getYacc() =
+    member flatFsyacc.getYacc() =
         let productions =
-            this.augmentRules
+            flatFsyacc.augmentRules
             |> Set.map(fun rule -> rule.production)
 
         let dummyTokens =
-            this.augmentRules
+            flatFsyacc.augmentRules
             |> Seq.filter(fun rule -> rule.dummy > "")
             |> Seq.map(fun rule -> rule.production, rule.dummy)
             |> Map.ofSeq
 
         let precedences =
-            this.precedences
+            flatFsyacc.precedences
             |> Map.map(fun _ x -> x.toAssoc())
 
         YaccRow.from(productions, dummyTokens, precedences)
@@ -102,15 +103,17 @@ type FlatFsyaccFile = {
                 |> Seq.map(fun (KeyValue(id, assoc)) -> assoc, id)
                 |> Seq.groupBy fst
                 |> Seq.map(fun (assoc, sq) ->
-                    let ls = sq |> Seq.map snd |> Set.ofSeq |> Set.toList
+                    let ls =
+                        sq
+                        |> Seq.map snd
+                        |> Set.ofSeq
+                        |> Set.toList
 
                     let i, assoc = assoc.toAssoc()
                     i, assoc, ls
                 )
                 |> Seq.sort
-                |> Seq.map(fun (i, assoc, ls) ->
-                    PrecedenceStatement.just(assoc, ls)
-                )
+                |> Seq.map(fun (i, assoc, ls) -> PrecedenceStatement.just(assoc, ls))
                 |> Seq.toList
 
             declarationStmts =
@@ -118,12 +121,14 @@ type FlatFsyaccFile = {
                 |> Seq.map(fun (KeyValue(id, typeName)) -> typeName, id)
                 |> Seq.groupBy fst
                 |> Seq.map(fun (typeName, sq) ->
-                    let ls = sq |> Seq.map snd |> Set.ofSeq |> Set.toList
+                    let ls =
+                        sq
+                        |> Seq.map snd
+                        |> Set.ofSeq
+                        |> Set.toList
                     typeName, ls
                 )
-                |> Seq.map(fun (typeName, ls) ->
-                    DeclarationStatement.just(typeName, ls)
-                )
+                |> Seq.map(fun (typeName, ls) -> DeclarationStatement.just(typeName, ls))
                 |> Seq.toList
 
         }

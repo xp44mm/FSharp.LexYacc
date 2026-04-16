@@ -74,7 +74,7 @@ module FslexToken =
         | FslexToken.SLASH -> "/"
         | FslexToken.STAR -> "*"
         | FslexToken.UNDERSCORE -> "UNDERSCORE"
-    let tagToValue (tag:string) =
+    let tagToIndex (tag:string) =
         match tag with
         | "&" -> 0
         | "APOSTROPHE" -> 1

@@ -9,13 +9,8 @@ type CharClass =
     static member empty = Union []
     static member any = Negate CharClass.empty
 
-//static member difference a b =
-//    //Difference(a, b) = Negate(Union [Negate(a); b])
-//    Negate(Union [ Negate a; b ])
-
 open System
 open FSharp.LexYacc.Interval
-open FSharp.Idioms.Literal
 
 module CharClass =
     let validChar c =
@@ -54,8 +49,7 @@ module CharClass =
             | Union [] -> []
             | Union ls -> ls |> List.collect loop
             | Negate(Union []) -> [ Interval.FULL_RANGE ]
-            | Negate((SingleChar _ | RangeChar _ | Union _) as inner) ->
-                complement(loop inner)
+            | Negate((SingleChar _ | RangeChar _ | Union _) as inner) -> complement(loop inner)
             | Negate(Negate inner) -> loop inner
 
         loop charClass |> Interval.merge

@@ -64,7 +64,7 @@ identifier_start & identifier_continue* {[ID(String.build buff)]}
     let i =
         buff
         |> List.skip 3
-        |> Hexadecimal.getValueN 2
+        |> Hexadecimal.take 2
         |> fst
     [ APOSTROPHE(char i) ]
     }
@@ -72,7 +72,7 @@ identifier_start & identifier_continue* {[ID(String.build buff)]}
     let i =
         buff
         |> List.skip 3
-        |> Hexadecimal.getValueN 4
+        |> Hexadecimal.take 4
         |> fst
     [ APOSTROPHE(char i) ]
     }

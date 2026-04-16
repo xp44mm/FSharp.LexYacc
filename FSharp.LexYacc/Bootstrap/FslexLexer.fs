@@ -48,14 +48,14 @@ let actions restBlockComment restBraces: Map<byte,  char list -> FslexToken list
         let i =
             buff
             |> List.skip 3
-            |> Hexadecimal.getValueN 2
+            |> Hexadecimal.take 2
             |> fst
         [ APOSTROPHE(char i) ]
     35uy, fun buff -> 
         let i =
             buff
             |> List.skip 3
-            |> Hexadecimal.getValueN 4
+            |> Hexadecimal.take 4
             |> fst
         [ APOSTROPHE(char i) ]
     36uy, fun buff -> failwith(stringify buff.[0])

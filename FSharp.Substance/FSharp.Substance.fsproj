@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,14 +13,25 @@
     <Compile Include="Pen.fs" />
     <Compile Include="Lookup.fs" />
     <Compile Include="Literal.fs" />
-    <Compile Include="Structure.fs" />
     <Compile Include="FSharpToken.fs" />
     <Compile Include="Light.fs" />
-    <Compile Include="ModuleStatement.fs" />
+    <Compile Include="Expr.fs" />
+    <Compile Include="Structure.fs" />
     <Compile Include="FSharpLexer.fs" />
     <Compile Include="FSharpLexerTailer.fs" />
+    <Compile Include="StyleBlock.fs" />
     <Compile Include="FSharpYacc.fs" />
+    <Compile Include="RightSententialForm.fs" />
+    <Compile Include="StackOps.fs" />
+    <Compile Include="YaccStateSegment.fs" />
     <Compile Include="FSharpCompiler.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="readme.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

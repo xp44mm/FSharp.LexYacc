@@ -1,0 +1,32 @@
+{
+module FSharp.Substance.DelimitFilter
+open System
+}
+
+rule : FslexToken list -> FslexToken list =
+["NEW_LINE" "WHITESPACE" ] / [ "NEW_LINE" "EOF" ] { 
+    // 删除空行/行尾空白
+    []
+    }
+    
+"NEW_LINE" [^ "NEW_LINE" "EOF" ] "WHITESPACE" ? / [ "NEW_LINE" "EOF" ] {
+    // 这是just token
+    }
+    
+"NEW_LINE" [^ "NEW_LINE" "EOF" ] "WHITESPACE" ? / [^ "NEW_LINE" "EOF" ] {
+    // 这是first token
+    }
+    
+"SEMICOLON" ([ "NEW_LINE" "WHITESPACE"] ? "SEMICOLON" ) * / [ "NEW_LINE" "EOF" ] {
+    // 合并行尾的分号：分号一定不是first token，要么是none,要么是last
+    [buff.[0]]
+    }
+
+[^ "NEW_LINE" "EOF" ] "WHITESPACE" ? / [ "NEW_LINE" "EOF" ] {
+    // 这是last token
+    }
+[^ "NEW_LINE" "EOF" ] / [ "NEW_LINE" "EOF" ] {
+    // 这是none token
+    }
+
+_ { buff }

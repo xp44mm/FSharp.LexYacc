@@ -38,7 +38,7 @@ module FsyaccToken =
         | FsyaccToken.RIGHTASSOC -> "%right"
         | FsyaccToken.NONASSOC -> "%nonassoc"
         | FsyaccToken.PREC -> "%prec"
-    let tagToValue (tag:string) =
+    let tagToIndex (tag:string) =
         match tag with
         | "BRACES" -> 0
         | "PERCENT_TYPE" -> 1

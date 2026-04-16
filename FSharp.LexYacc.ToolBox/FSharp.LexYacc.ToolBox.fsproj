@@ -17,6 +17,8 @@
 
 	<ItemGroup>
 		<Compile Include="DiscriminatedUnions.fs" />
+		<Compile Include="BnfUtils.fs" />
+		<Compile Include="FlatFsyaccFileUtils.fs" />
 	</ItemGroup>
 
 	<ItemGroup>
