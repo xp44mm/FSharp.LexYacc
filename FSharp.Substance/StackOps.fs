@@ -7,6 +7,88 @@ open FSharp.Idioms.Literal
 open System.Diagnostics
 open System
 
+let la_llparen =
+    RightSententialForm.lookaheads
+    |> List.filter(fun (v, la) -> la = "LLPAREN")
+    |> List.map fst
+
+let la_rrparen =
+    RightSententialForm.lookaheads
+    |> List.filter(fun (v, la) -> la = "RRPAREN")
+    |> List.map fst
+
+let la_rhsend =
+    RightSententialForm.lookaheads
+    |> List.filter(fun (v, la) -> la = "RHSEND")
+    |> List.map fst
+
+let top_semicolon =
+    RightSententialForm.tops
+    |> List.filter(fun v ->
+        not v.prefix.IsEmpty
+        && v.prefix.[0] = ";"
+    )
+
+let getSymbols (states: YaccState list) =
+    states
+    |> List.map(fun s -> FSharpYacc.stateSymbols.[s.state])
+
+/// 这个函数是检查一个字符串列表（prefix）是否是另一个YaccState列表（states）的“前缀”。
+let isPrefixOf (states: YaccState list) (symbols: string list) =
+    let rec loop (sts: YaccState list) (syms: string list) =
+        match sts, syms with
+        | _, [] -> true
+        | [], _ -> false
+        | st :: restStates, sym :: restSymbols ->
+            sym = FSharpYacc.stateSymbols.[st.state]
+            && loop restStates restSymbols
+    loop states symbols
+
+let (|LOOKAHEAD_LLPAREN|_|) (states: YaccState list) =
+    la_llparen
+    |> List.map(fun v -> v.prefix)
+    |> List.tryFind(isPrefixOf states)
+
+let (|LOOKAHEAD_RRPAREN|_|) (states: YaccState list) =
+    la_rrparen
+    |> List.map(fun v -> v.prefix)
+    |> List.tryFind(isPrefixOf states)
+
+let (|LOOKAHEAD_RHSEND|_|) (states: YaccState list) =
+    la_rhsend
+    |> List.map(fun v -> v.prefix)
+    |> List.tryFind(isPrefixOf states)
+
+let (|TOP_SEMICOLON|_|) (states: YaccState list) =
+    top_semicolon
+    |> List.map(fun v -> v.prefix)
+    |> List.tryFind(isPrefixOf states)
+
+let (|TOP_LEFT_BOUND|_|) (states: YaccState list) =
+    match states with
+    | [] -> None
+    | s :: _ ->
+        let tag = FSharpYacc.stateSymbols.[s.state]
+        match tag with
+        | "("
+        | "LLPAREN"
+        | "["
+        | "[|" -> Some tag
+        | _ -> None
+
+///栈顶的decl；可能不完整
+let (|DECL_EXPR|_|) (states: YaccState list) =
+    states
+    |> List.tryFindIndex(fun s ->
+        let tag = FSharpYacc.stateSymbols.[s.state]
+        RightSententialForm.precede_declExpr.Contains tag
+    )
+    |> Option.map(fun i ->
+        states
+        |> List.take(i - 1)
+        |> List.map(fun s -> FSharpYacc.stateSymbols.[s.state])
+    )
+
 /// 收尾符号升序排列，优先匹配最短的产生式
 let rrparen_rhsend =
     [
@@ -19,10 +101,6 @@ let rrparen_rhsend =
             |> List.map(fun prod -> prod, RHSEND)
     ]
     |> List.sortBy fst
-
-let getSymbols (states: YaccState list) =
-    states
-    |> List.map(fun s -> FSharpYacc.stateSymbols.[s.state])
 
 let getPosition (state: YaccState) =
     match FSharpYacc.stateSymbols.[state.state] with
@@ -103,7 +181,6 @@ let tryFirstPrefix (states: YaccState list) (prefixes: string list list) =
     let stateSymbols =
         states
         |> List.map(fun s -> FSharpYacc.stateSymbols.[s.state])
-
     prefixes
     |> List.tryFind(fun prefix -> List.isPrefix prefix stateSymbols)
 
@@ -145,7 +222,7 @@ let takeDeclExpr (states: YaccState list) =
     | _ ->
         match List.tryFindIndex punctuations.Contains stateSymbols with
         | Some idx -> Some(List.take (idx + 1) stateSymbols)
-        | None -> 
+        | None ->
             RightSententialForm.llparen
             |> List.tryFind(fun prefix -> List.isPrefix prefix stateSymbols)
 
@@ -168,3 +245,4 @@ let takeLeftBound (states: YaccState list) (rightBound: string) =
     else
         stateSymbols
         |> List.findIndex((=) leftBound)
+

@@ -19,6 +19,7 @@
 		<Compile Include="DiscriminatedUnions.fs" />
 		<Compile Include="BnfUtils.fs" />
 		<Compile Include="FlatFsyaccFileUtils.fs" />
+		<Compile Include="ViablePrefix.fs" />
 	</ItemGroup>
 
 	<ItemGroup>

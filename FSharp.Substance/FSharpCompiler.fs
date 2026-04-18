@@ -9,6 +9,7 @@ open FSharp.Idioms
 open FSharp.Idioms.Literal
 open FSharp.Substance
 open FSharp.Idioms.Json
+open FSharp.Substance.StackOps
 
 let yaccShift = FSharpYacc.parser.shift
 
@@ -146,28 +147,25 @@ let context (states: YaccState list) (space: int option) (la: FSharpToken) =
                 ]
 
 let beforeEOF (states: YaccState list) =
-    let rec loop currentStates =
+    let rec loop (currentStates: YaccState list) =
         [
-            match
-                StackOps.rrparen_rhsend
-                |> StackOps.tryFirstPrefix2 currentStates
-            with
-            | Some(symbols, rightBound) ->
-                yield None, rightBound
-                let nextStates = yaccShift currentStates (Light.tokenRow None rightBound)
+            match currentStates with
+            | LOOKAHEAD_RRPAREN _ ->
+                yield None, RRPAREN
+                let nextStates = yaccShift currentStates (Light.tokenRow None RRPAREN)
                 yield! loop nextStates
-            | None -> ()
+            | LOOKAHEAD_RHSEND _ ->
+                yield None, RHSEND
+                let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
+                yield! loop nextStates
+            | _ -> ()
         ]
     [
-        match YaccStateSegment.takeLatest states with
-        | Semicolon ->
+        match states with
+        | TOP_SEMICOLON _ ->
             yield None, DUMMY
             let dummyStates = yaccShift states (Light.tokenRow None DUMMY)
-
-            yield None, RRPAREN
-            let rrparenStates = yaccShift dummyStates (Light.tokenRow None RRPAREN)
-
-            yield! loop rrparenStates
+            yield! loop dummyStates
         | _ -> yield! loop states
     ]
 
@@ -175,15 +173,12 @@ let beforeSemicolon (states: YaccState list) =
     //补齐rhsend
     let rec loop currentStates =
         [
-            match
-                RightSententialForm.rhsend
-                |> StackOps.tryFirstPrefix currentStates
-            with
-            | Some(symbols) ->
+            match currentStates with
+            | LOOKAHEAD_RHSEND symbols ->
                 yield None, RHSEND
                 let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
                 yield! loop nextStates
-            | None -> ()
+            | _ -> ()
         ]
     loop states
 
@@ -203,56 +198,83 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
         ]
 
     | Some i, (LET | FUN | OPEN | LPAREN | IDENT _ | LITERAL _ | LBRACK | LBRACK_BAR | MINUS) -> // first declExpr
-        match YaccStateSegment.takeLatest states with
-        | LeftBound _ ->
-            //左边界后面，直接first decl是ok的，忽略任何空白
-            [ space, la ]
-        | ModuleHead (seg, pos)
-        | LeftOfllparen(seg, pos) ->
-            Debug.WriteLine($"{i}:=:{pos}不循环")
+        match states with
+        | TOP_SEMICOLON symbols ->
+            Debug.Assert((symbols.[1]="revSequentialExpr"))            
+            match  StackOps.getPosition states.[1] with
+            | None -> failwith "notImpl:非顶格请借用本行行首位置borrow"
+            | Some j ->
+                let rec loop currentStates =
+                    [
+                        //match StackOps.getPosition states.[1] with
+                        //| None -> failwith "notImpl:非顶格请借用本行行首位置borrow"
+                        //| Some j -> 
+                        //    if i < j then 
+                                match currentStates with
+                                | LOOKAHEAD_RRPAREN symbols ->
+                                    // 找到decl头的位置比较
+                                    yield None, RRPAREN
+                                    let nextStates = yaccShift currentStates (Light.tokenRow None RRPAREN)
+                                    yield! loop nextStates
+                                | LOOKAHEAD_RHSEND symbols ->
+                                    // 找到decl头的位置比较
+                                    yield None, RHSEND
+                                    let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
+                                    yield! loop nextStates
+                                | _ -> ()
+                    ]
+
+                if i > j then
+                    failwith "不可能在一个分号后继续缩进"
+                elif i = j then
+                    //对齐无需补充任何符号
+                    [ space, la ]
+                elif i < j then
+                    [
+                        //循环，直到i>=j补充右括号，补充到i缩进。
+                        None, DUMMY                        
+                        let dummyStates = yaccShift states (Light.tokenRow None DUMMY)
+                        yield! loop dummyStates
+                        space, la
+                    ]
+                else
+                    failwith "never"
+
+        | LOOKAHEAD_LLPAREN symbols ->
+            let pos = StackOps.getPosition states.[symbols.Length-1]
+            Debug.WriteLine(List.last symbols)
             [
                 pos, LLPAREN
                 Some i, la
             ]
-        | Semicolon ->
-            match YaccStateSegment.takeLatest states.Tail with
-            | DeclSegment(decl, pos) ->
-                Console.WriteLine(stringify decl)
-                match pos with
-                | None -> failwith "notImpl:decl语句没有新起一行"
-                | Some j ->
-                    if i > j then
-                        failwith "不可能在一个分号后继续缩进"
-                    elif i = j then
-                        //对齐无需补充任何符号
-                        [ space, la ]
-                    elif i < j then
-                        [
-                            None,DUMMY
-                            None,RRPAREN
-                            //循环，直到i>=j补充右括号，补充到i缩进。
-                            yield! []
-                            space,la
-                        ]
-                    else
-                        failwith "never"
-            | _ -> failwith "分号前面一定是完整的Decl"
+
+        | TOP_LEFT_BOUND _ ->
+            //左边界后面，直接first decl是ok的，忽略任何空白
+            //左括号借用行首位置
+            let space = space
+            [ space, la ]
 
         | DeclSegment(seg, pos) ->
             match pos with
-            | None -> failwith "notImpl:前面的decl没有新启一行"
+            | None -> failwith "notImpl:need borrow"
             | Some j ->
                 if i > j then
                     // 只要(i > j)缩进更多，一定是续航
                     [ space, la ]
                 elif i = j then
                     //无分号的对齐decl处理
-                    if RightSententialForm.declExpr |> Seq.exists((=)seg) then     
+                    if
+                        RightSententialForm.declExpr
+                        |> Seq.exists((=) seg)
+                    then
                         [
                             None, SEMICOLON
                             space, la
                         ]
-                    elif RightSententialForm.rhsend  |> Seq.exists((=)seg) then
+                    elif
+                        RightSententialForm.rhsend
+                        |> Seq.exists((=) seg)
+                    then
                         failwith "添加循环补充多个rhsend"
                         [
                             yield! beforeSemicolon []
@@ -264,7 +286,7 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
                 else
                     // i < j 补充右括号，补充到i缩进。
                     []
-        | Rest symbols -> failwith $"decl之前不可能：{stringify symbols}"
+        | _ -> failwith $"不可能"
 
     | _ ->
         // la is not first decl

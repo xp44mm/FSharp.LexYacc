@@ -219,7 +219,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         let bnf: BNF = yacc.bnf
 
         let symbol = "declExpr"
-        let st = bnf.firsts.[symbol]// - bnf.firsts.["atomicExpr"]
+        let st = bnf.firsts.[symbol] // - bnf.firsts.["atomicExpr"]
         for prod in st do
             output.WriteLine(stringify prod)
 
@@ -230,8 +230,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         let yacc = flatFsyacc.getYacc()
         let bnf: BNF = yacc.bnf
 
-        let revAppExpr =
-            BnfUtils.derive bnf [ "revAppExpr" ]
+        let revAppExpr = BnfUtils.derive bnf [ "revAppExpr" ]
 
         // lookahead semicolon
         let declExpr =
@@ -278,12 +277,13 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             [
                 yield!
                     declExpr
-                    |> Seq.map(fun prod -> 
+                    |> Seq.map(fun prod ->
                         if revAppExpr.Contains prod then
                             prod, WHITESPACE // 代替app运算
                         else
                             // 代替declExpr完成
-                            prod, SEMICOLON)
+                            prod, SEMICOLON
+                    )
                 yield!
                     rhsend
                     |> Seq.map(fun prod -> prod, RHSEND)
@@ -296,16 +296,20 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         for item in res do
             output.WriteLine(stringify item)
 
-
     [<Fact>]
-    member _.``reduce Left Of semicolon``() =
+    member _.``viable prefix``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
         let yacc = flatFsyacc.getYacc()
         let bnf: BNF = yacc.bnf
+        let tops = ViablePrefix.top bnf
+        output.WriteLine("let tops = [")
+        for tp in tops do
+            output.WriteLine("  " + stringify tp)
+        output.WriteLine("]")
 
-        let st = BnfUtils.reduceLeftOfSymbol bnf ";"
-        for prod in st do
-            output.WriteLine(stringify prod)
-
-
+        let lookaheads = ViablePrefix.lookahead bnf
+        output.WriteLine("let lookaheads = [")
+        for la in lookaheads do
+            output.WriteLine("  " + stringify la)
+        output.WriteLine("]")
