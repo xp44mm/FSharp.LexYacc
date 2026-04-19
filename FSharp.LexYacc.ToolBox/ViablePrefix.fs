@@ -29,27 +29,27 @@ type ViablePrefix =
     ///返回(ViablePrefix,lookahead)集合
     static member lookahead(bnf: BNF) =
         //返回某个la的(ViablePrefix,lookahead)集合
-        let deriveLeftOf (laTok: string) =
-            bnf.productions
-            |> Seq.choose(fun prod ->
-                match prod with
-                | [] -> None
-                | head :: body ->
-                    match List.tryFindIndex ((=) laTok) body with
-                    | Some idx ->
-                        let leftPart = body |> List.take idx |> List.rev
-                        Some(head, leftPart)
-                    | None -> None
-            )
-            |> Seq.collect(fun (head, leftPart) ->
-                match leftPart with
-                | [] -> Seq.singleton({ prefix = []; head = head }, laTok)
-                | _ ->
-                    BnfUtils.derive bnf leftPart
-                    |> Seq.map(fun ps -> { prefix = ps; head = head }, laTok)
-            )
-            |> Set.ofSeq
+        let rec deriveLeftOf (symbol: string) (visited: Set<string>) =
+            seq {
+                for prod in bnf.productions do
+                    match prod with
+                    | head :: body ->
+                        match List.tryFindIndex ((=) symbol) body with
+                        | Some 0 ->
+                            if not(visited.Contains head) then
+                                yield! deriveLeftOf head (Set.add head visited)
+                        | Some idx ->
+                            let leftPart = body |> List.take idx |> List.rev
+                            let derivations = BnfUtils.derive bnf leftPart
+                            for prefix in derivations do
+                                yield { prefix = prefix; head = head }
+                        | None -> ()
+                    | [] -> ()
+            }
 
         bnf.terminals
-        |> Set.map(fun la -> deriveLeftOf la)
-        |> Set.unionMany
+        |> Seq.collect(fun la ->
+            deriveLeftOf la Set.empty
+            |> Seq.map(fun vp -> vp, la) //记住顶层的la
+        )
+        |> Set.ofSeq

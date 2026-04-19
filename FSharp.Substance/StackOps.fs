@@ -7,6 +7,21 @@ open FSharp.Idioms.Literal
 open System.Diagnostics
 open System
 
+let la_top_llparen =
+    RightSententialForm.lookaheads
+    |> List.filter(fun (v, la) ->
+        match v.prefix with
+        | "RRPAREN" :: _ -> true
+        | _ -> false
+    )
+    |> List.filter(fun (v, la) ->
+        match la with
+        | ";" -> true
+        | _ -> false
+    )
+    |> Set.ofList
+    |> Set.toList
+
 let la_llparen =
     RightSententialForm.lookaheads
     |> List.filter(fun (v, la) -> la = "LLPAREN")
@@ -17,10 +32,24 @@ let la_rrparen =
     |> List.filter(fun (v, la) -> la = "RRPAREN")
     |> List.map fst
 
+let top_rrparen =
+    RightSententialForm.tops
+    |> List.filter(fun v ->
+        not v.prefix.IsEmpty
+        && v.prefix.[0] = "RRPAREN"
+    )
+
 let la_rhsend =
     RightSententialForm.lookaheads
     |> List.filter(fun (v, la) -> la = "RHSEND")
     |> List.map fst
+
+let top_rhsend =
+    RightSententialForm.tops
+    |> List.filter(fun v ->
+        not v.prefix.IsEmpty
+        && v.prefix.[0] = "RHSEND"
+    )
 
 let top_semicolon =
     RightSententialForm.tops
@@ -28,6 +57,11 @@ let top_semicolon =
         not v.prefix.IsEmpty
         && v.prefix.[0] = ";"
     )
+
+let la_semicolon =
+    RightSententialForm.lookaheads
+    |> List.filter(fun (v, la) -> la = ";")
+    |> List.map fst
 
 let getSymbols (states: YaccState list) =
     states
@@ -44,8 +78,9 @@ let isPrefixOf (states: YaccState list) (symbols: string list) =
             && loop restStates restSymbols
     loop states symbols
 
-let (|LOOKAHEAD_LLPAREN|_|) (states: YaccState list) =
-    la_llparen
+
+let (|LOOKAHEAD_SEMICOLON|_|) (states: YaccState list) =
+    la_semicolon
     |> List.map(fun v -> v.prefix)
     |> List.tryFind(isPrefixOf states)
 
@@ -64,6 +99,11 @@ let (|TOP_SEMICOLON|_|) (states: YaccState list) =
     |> List.map(fun v -> v.prefix)
     |> List.tryFind(isPrefixOf states)
 
+let (|TOP_RRPAREN|_|) (states: YaccState list) =
+    top_rrparen
+    |> List.map(fun v -> v.prefix)
+    |> List.tryFind(isPrefixOf states)
+
 let (|TOP_LEFT_BOUND|_|) (states: YaccState list) =
     match states with
     | [] -> None
@@ -75,19 +115,6 @@ let (|TOP_LEFT_BOUND|_|) (states: YaccState list) =
         | "["
         | "[|" -> Some tag
         | _ -> None
-
-///栈顶的decl；可能不完整
-let (|DECL_EXPR|_|) (states: YaccState list) =
-    states
-    |> List.tryFindIndex(fun s ->
-        let tag = FSharpYacc.stateSymbols.[s.state]
-        RightSententialForm.precede_declExpr.Contains tag
-    )
-    |> Option.map(fun i ->
-        states
-        |> List.take(i - 1)
-        |> List.map(fun s -> FSharpYacc.stateSymbols.[s.state])
-    )
 
 /// 收尾符号升序排列，优先匹配最短的产生式
 let rrparen_rhsend =
@@ -146,11 +173,16 @@ let getPosition (state: YaccState) =
         unbox<option<int> * string list> state.lexeme
         |> fst
     | "revAppExpr"
-    | "revSequentialExpr"
     | "revTupleExpr" ->
         unbox<(option<int> * Expr) list> state.lexeme
         |> List.last
         |> fst
+    | "revSequentialExpr" ->
+        //我们通常只关系最后（右）一个表达式的位置
+        unbox<(option<int> * Expr) list> state.lexeme
+        |> List.head
+        |> fst
+
     | "revLongid" ->
         unbox<(option<int> * string) list> state.lexeme
         |> List.last
@@ -164,6 +196,32 @@ let getPosition (state: YaccState) =
     | "RRPAREN"
     | "RHSEND" -> None
     | symbol -> failwith $"没有这个符号:{symbol}"
+
+///栈顶的decl；可能不完整
+let (|DECL_EXPR|_|) (states: YaccState list) =
+    states
+    |> List.tryFindIndex(fun s ->
+        let tag = FSharpYacc.stateSymbols.[s.state]
+        RightSententialForm.precede_declExpr.Contains tag
+    )
+    |> Option.map(fun i ->
+        let states = states |> List.take i //实际上是count
+
+        let pos = getPosition states.[states.Length - 1]
+        let symbols =
+            states
+            |> List.map(fun s -> FSharpYacc.stateSymbols.[s.state])
+        symbols, pos
+    )
+
+let (|LOOKAHEAD_LLPAREN|_|) (states: YaccState list) =
+    la_llparen
+    |> List.map(fun v -> v.prefix)
+    |> List.tryFind(isPrefixOf states)
+    |> Option.map(fun symbols ->
+        let pos = getPosition states.[symbols.Length - 1]
+        symbols, pos
+    )
 
 let tryPrefix (states: YaccState list) (prefix: string list) =
     let stateSymbols =
@@ -245,4 +303,3 @@ let takeLeftBound (states: YaccState list) (rightBound: string) =
     else
         stateSymbols
         |> List.findIndex((=) leftBound)
-

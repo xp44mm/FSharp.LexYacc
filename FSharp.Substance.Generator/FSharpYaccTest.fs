@@ -163,19 +163,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
 
     [<Fact>]
     member _.``符号类型``() =
-        //let rawFsyacc = FsyaccCompiler.compile text
-        //let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        //let decls =
-        //    flatFsyacc.declarations
-        //    |> Seq.groupBy(fun kvp -> kvp.Value)
-        //    |> Seq.map(fun (typename, sq) ->
-        //        let symbols =
-        //            sq
-        //            |> Seq.map(fun kvp -> kvp.Key)
-        //            |> Seq.toList
-        //        symbols,typename
-        //    )
-
         //避免因为书写格式不同多出分组
         let decls =
             RightSententialForm.declarations

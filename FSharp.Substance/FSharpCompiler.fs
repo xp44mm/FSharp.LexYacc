@@ -106,46 +106,6 @@ let old (states: YaccState list) (i: int) (la: FSharpToken) =
             | _ -> yield! loop states
         ]
 
-let context (states: YaccState list) (space: int option) (la: FSharpToken) =
-    if la = EOF then
-        [
-            "忽略i"
-            "past是分号则shift dummy"
-            "rec gap => rrparen || rhsend"
-            "EOF"
-        ]
-    elif la = SEMICOLON then
-        [
-            "忽略i"
-            "past是分号则删除la"
-            "rec gap => rrparen || rhsend"
-            "SEMICOLON"
-        ]
-
-    elif la = RPAREN then
-        [ "找到栈中的对应左括号，在此范围内补全" ]
-    elif la = LPAREN then
-        [ "可以合并进入first atom" ]
-    else
-        match space with
-        | None -> [ "没有换行，也不是重要的标点符号" ]
-        | Some i ->
-            // "有换行，检查栈顶最短的词组"
-            match states with
-            | _ when true -> [ "栈顶是标点符号" ]
-            | b ->
-                [
-                    "说明：前面已经排除la=标点符号,分号，左括号，右括号，结尾"
-                    "states is shortest expr"
-                    "中缀：不添加token"
-                    "计算ij关系"
-                    "如果符合revAppExpr，且i>j继续缩进新行：不添加token"
-                    "i>j,符合declexpr，不符合revAppExpr,"
-                    "如果符合declexpr完整，且对齐，lookahead是declexpr first；"
-                    ""
-
-                ]
-
 let beforeEOF (states: YaccState list) =
     let rec loop (currentStates: YaccState list) =
         [
@@ -178,7 +138,45 @@ let beforeSemicolon (states: YaccState list) =
                 yield None, RHSEND
                 let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
                 yield! loop nextStates
-            | _ -> ()
+            | LOOKAHEAD_SEMICOLON _ -> ()
+            | _ -> failwith "never"
+        ]
+    loop states
+
+///前面的栈内是合法的decl
+let getPosition_of_decl (states: YaccState list) =
+    // 可以在后面加一个分号强制reduce
+    let semicolonStates = yaccShift states (Light.tokenRow None SEMICOLON)
+    //分号前的状态一定是
+    let revSequentialExpr = semicolonStates.[1]
+    getPosition revSequentialExpr
+
+let beforeNewLine indent (states: YaccState list) =
+    let rec loop currentStates =
+        [
+            match currentStates with
+            | LOOKAHEAD_RRPAREN symbols ->
+                yield None, RRPAREN
+                let rrparenStates = yaccShift currentStates (Light.tokenRow None RRPAREN)
+                match getPosition_of_decl rrparenStates with
+                | None -> failwith "notImpl: need borrow"
+                | Some k ->
+                    if k = indent then
+                        ()
+                    else
+                        yield! loop rrparenStates
+            | LOOKAHEAD_RHSEND symbols ->
+                yield None, RHSEND
+                let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
+                match getPosition_of_decl nextStates with
+                | None -> failwith "notImpl: need borrow"
+                | Some k ->
+                    if k = indent then
+                        ()
+                    else
+                        yield! loop nextStates
+            | DECL_EXPR symbols -> ()
+            | _ -> failwith "never"
         ]
     loop states
 
@@ -197,75 +195,52 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
             space, la
         ]
 
-    | Some i, (LET | FUN | OPEN | LPAREN | IDENT _ | LITERAL _ | LBRACK | LBRACK_BAR | MINUS) -> // first declExpr
+    | Some indent, (LET | FUN | OPEN | LPAREN | IDENT _ | LITERAL _ | LBRACK | LBRACK_BAR | MINUS) -> // first declExpr
         match states with
+        | TOP_LEFT_BOUND _ ->
+            // 左边界后面，直接first decl是ok的，忽略任何空白
+            let borrow = space // todo:左括号借用行首位置
+            [ borrow, la ]
+        | LOOKAHEAD_LLPAREN(symbols, pos) ->
+            [
+                pos, LLPAREN
+                Some indent, la
+            ]
         | TOP_SEMICOLON symbols ->
-            Debug.Assert((symbols.[1]="revSequentialExpr"))            
-            match  StackOps.getPosition states.[1] with
-            | None -> failwith "notImpl:非顶格请借用本行行首位置borrow"
+            Debug.Assert((symbols.[1] = "revSequentialExpr"))
+            match StackOps.getPosition states.[1] with
+            | None -> failwith "notImpl: need borrow"
             | Some j ->
-                let rec loop currentStates =
-                    [
-                        //match StackOps.getPosition states.[1] with
-                        //| None -> failwith "notImpl:非顶格请借用本行行首位置borrow"
-                        //| Some j -> 
-                        //    if i < j then 
-                                match currentStates with
-                                | LOOKAHEAD_RRPAREN symbols ->
-                                    // 找到decl头的位置比较
-                                    yield None, RRPAREN
-                                    let nextStates = yaccShift currentStates (Light.tokenRow None RRPAREN)
-                                    yield! loop nextStates
-                                | LOOKAHEAD_RHSEND symbols ->
-                                    // 找到decl头的位置比较
-                                    yield None, RHSEND
-                                    let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
-                                    yield! loop nextStates
-                                | _ -> ()
-                    ]
-
-                if i > j then
+                if indent > j then
                     failwith "不可能在一个分号后继续缩进"
-                elif i = j then
+                elif indent = j then
                     //对齐无需补充任何符号
                     [ space, la ]
-                elif i < j then
+                elif indent < j then
                     [
-                        //循环，直到i>=j补充右括号，补充到i缩进。
-                        None, DUMMY                        
+                        None, DUMMY //栈顶分号已经被用掉了。
                         let dummyStates = yaccShift states (Light.tokenRow None DUMMY)
-                        yield! loop dummyStates
+                        //循环，直到i>=j补充右括号，补充到i缩进。
+                        yield! beforeNewLine indent dummyStates
+                        None, SEMICOLON
                         space, la
                     ]
                 else
                     failwith "never"
 
-        | LOOKAHEAD_LLPAREN symbols ->
-            let pos = StackOps.getPosition states.[symbols.Length-1]
-            Debug.WriteLine(List.last symbols)
-            [
-                pos, LLPAREN
-                Some i, la
-            ]
-
-        | TOP_LEFT_BOUND _ ->
-            //左边界后面，直接first decl是ok的，忽略任何空白
-            //左括号借用行首位置
-            let space = space
-            [ space, la ]
-
-        | DeclSegment(seg, pos) ->
+        | DECL_EXPR(symbols, pos) -> //没有分号的换行，可能要处理decl以下的连接
             match pos with
-            | None -> failwith "notImpl:need borrow"
+            | None -> failwith "notImpl:borrow"
             | Some j ->
-                if i > j then
+                if indent > j then
                     // 只要(i > j)缩进更多，一定是续航
                     [ space, la ]
-                elif i = j then
-                    //无分号的对齐decl处理
+                else
+                    //先排除续航，后面
                     if
-                        RightSententialForm.declExpr
-                        |> Seq.exists((=) seg)
+                        StackOps.la_semicolon
+                        |> List.map(fun v -> v.prefix)
+                        |> List.exists((=) symbols)
                     then
                         [
                             None, SEMICOLON
@@ -273,19 +248,16 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
                         ]
                     elif
                         RightSententialForm.rhsend
-                        |> Seq.exists((=) seg)
+                        |> Seq.exists((=) [])
                     then
-                        failwith "添加循环补充多个rhsend"
                         [
-                            yield! beforeSemicolon []
-                            None, SEMICOLON
+                            yield! beforeNewLine indent states
+                            //None, SEMICOLON
                             space, la
                         ]
                     else //续航
                         [ space, la ]
-                else
-                    // i < j 补充右括号，补充到i缩进。
-                    []
+
         | _ -> failwith $"不可能"
 
     | _ ->
