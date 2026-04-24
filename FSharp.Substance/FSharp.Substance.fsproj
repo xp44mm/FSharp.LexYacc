@@ -16,14 +16,13 @@
     <Compile Include="FSharpToken.fs" />
     <Compile Include="Light.fs" />
     <Compile Include="Expr.fs" />
-    <Compile Include="Structure.fs" />
     <Compile Include="FSharpLexer.fs" />
     <Compile Include="FSharpLexerTailer.fs" />
     <Compile Include="StyleBlock.fs" />
     <Compile Include="FSharpYacc.fs" />
     <Compile Include="RightSententialForm.fs" />
+    <Compile Include="ViablePrefix.fs" />
     <Compile Include="StackOps.fs" />
-    <Compile Include="YaccStateSegment.fs" />
     <Compile Include="FSharpCompiler.fs" />
   </ItemGroup>
 

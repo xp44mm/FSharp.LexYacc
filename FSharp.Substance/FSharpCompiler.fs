@@ -10,101 +10,20 @@ open FSharp.Idioms.Literal
 open FSharp.Substance
 open FSharp.Idioms.Json
 open FSharp.Substance.StackOps
+open FSharpYacc
 
-let yaccShift = FSharpYacc.parser.shift
-
-let old (states: YaccState list) (i: int) (la: FSharpToken) =
-    // 先看最长的匹配，确保不是进一步缩进。再看最短的匹配，确保balance是从内到外。
-    match
-        RightSententialForm.llparen
-        |> StackOps.tryFirstPrefix states
-    with
-    | Some(symbols) ->
-        let lead = states.[symbols.Length - 1]
-        let j = StackOps.getPosition lead
+let beforeSemicolon (states: YaccState list) =
+    let rec loop currentStates =
         [
-            j, LLPAREN
-            Some i, la
+            match currentStates with
+            | LOOKAHEAD_RHSEND symbols ->
+                let rhsendStates = parser.shift currentStates (Light.tokenRow None RHSEND)
+                yield None, RHSEND
+                yield! loop rhsendStates
+            | LOOKAHEAD_SEMICOLON _ -> ()
+            | _ -> failwith "never"
         ]
-    | _ ->
-        // 排除缩进的llparen情况，栈顶是=号或->的情况。
-        // 剩下的情况，新行一定是对齐和缩回。
-        // 对齐和缩回一定是更短的匹配优先。
-
-        // 处理完分号，shift进入dummy后，将不断补充rrparen&rhsend循环balance
-        let rec loop currentStates =
-            [ // 改为TakeFirstDecl
-                match StackOps.tryUnindent currentStates with // 可以改为三种情况的活动模式
-                | Some(symbols, laTok) ->
-                    let lead = List.item (symbols.Length - 1) currentStates
-                    match StackOps.getPosition lead with
-                    | None -> failwith "declexpr没有顶行"
-                    | Some j ->
-                        if laTok = SEMICOLON && j = i then // semicolon是declexpr的指代
-                            yield None, SEMICOLON
-                            yield Some i, la
-                        elif laTok = RHSEND && j = i then
-                            yield None, RHSEND
-                            let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
-                            yield! loop nextStates
-                        elif laTok = RRPAREN && j >= i then
-                            yield None, RRPAREN
-                            let nextStates = yaccShift currentStates (Light.tokenRow None RRPAREN)
-                            yield! loop nextStates
-                        elif laTok = WHITESPACE then
-                            if j = i then
-                                yield None, SEMICOLON
-                                yield Some i, la
-                            elif j < i then
-                                // first atom
-                                Debug.Assert(
-                                    match la with
-                                    | LPAREN
-                                    | IDENT _
-                                    | LITERAL _
-                                    | LBRACK
-                                    | LBRACK_BAR
-                                    | MINUS -> true
-                                    | _ -> false
-                                )
-                                yield Some i, la
-                            else
-                                Console.WriteLine($"j{j},i{i},{laTok}")
-                                failwith "notImpl"
-                        else
-                            Console.WriteLine($"j{j},i{i},{laTok}")
-                            failwith "notImpl"
-
-                | None -> failwith "out of semicolon_rrparen_rhsend"
-            ]
-
-        [
-            match states with
-            | h :: t ->
-                match FSharpYacc.stateSymbols.[h.state] with
-                | "["
-                | "[|"
-                | "("
-                | "," ->
-                    //比分号，无论优先级更高的逗号，还是优先级更低的左括号都直接忽略换行和缩进
-                    yield Some i, la
-
-                | ";" -> // 栈顶是分号
-                    match StackOps.getPosition t.Head with
-                    | None -> failwith "declExpr不顶行"
-                    | Some j ->
-                        if j = i then
-                            //Console.WriteLine("对齐的两个declExpr，不必补充token")
-                            yield Some i, la
-                        elif j > i then
-                            yield None, DUMMY
-                            let dummyStates = yaccShift states (Light.tokenRow None DUMMY)
-                            yield! loop dummyStates
-                        else
-                            failwith "不可能j<i"
-                | _ -> yield! loop states
-            | _ -> yield! loop states
-        ]
+    loop states
 
 let beforeEOF (states: YaccState list) =
     let rec loop (currentStates: YaccState list) =
@@ -112,71 +31,94 @@ let beforeEOF (states: YaccState list) =
             match currentStates with
             | LOOKAHEAD_RRPAREN _ ->
                 yield None, RRPAREN
-                let nextStates = yaccShift currentStates (Light.tokenRow None RRPAREN)
+                let nextStates = parser.shift currentStates (Light.tokenRow None RRPAREN)
                 yield! loop nextStates
             | LOOKAHEAD_RHSEND _ ->
                 yield None, RHSEND
-                let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
+                let nextStates = parser.shift currentStates (Light.tokenRow None RHSEND)
                 yield! loop nextStates
             | _ -> ()
         ]
     [
         match states with
         | TOP_SEMICOLON _ ->
+            let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
             yield None, DUMMY
-            let dummyStates = yaccShift states (Light.tokenRow None DUMMY)
             yield! loop dummyStates
         | _ -> yield! loop states
     ]
 
-let beforeSemicolon (states: YaccState list) =
-    //补齐rhsend
-    let rec loop currentStates =
+let beforeRight (states: YaccState list) (laRight: FSharpToken) =
+    let la = laRight |> FSharpToken.tag
+    let lookaheads = ViablePrefix.lookaheadOf la
+
+    let rec loop (currentStates: YaccState list) =
         [
             match currentStates with
-            | LOOKAHEAD_RHSEND symbols ->
-                yield None, RHSEND
-                let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
+            | LOOKAHEAD_RRPAREN _ ->
+                yield None, RRPAREN
+                let nextStates = parser.shift currentStates (Light.tokenRow None RRPAREN)
                 yield! loop nextStates
-            | LOOKAHEAD_SEMICOLON _ -> ()
-            | _ -> failwith "never"
+
+            | LOOKAHEAD_RHSEND _ ->
+                Console.WriteLine("LOOKAHEAD_RHSEND")
+                yield None, RHSEND
+                let nextStates = parser.shift currentStates (Light.tokenRow None RHSEND)
+                yield! loop nextStates
+            | _ ->
+                if
+                    lookaheads
+                    |> Seq.exists(fun symbols -> isPrefixOf currentStates symbols)
+                then
+                    ()
+                else
+                    failwith $"beforeRight:{la}"
         ]
-    loop states
-
-///前面的栈内是合法的decl
-let getPosition_of_decl (states: YaccState list) =
-    // 可以在后面加一个分号强制reduce
-    let semicolonStates = yaccShift states (Light.tokenRow None SEMICOLON)
-    //分号前的状态一定是
-    let revSequentialExpr = semicolonStates.[1]
-    getPosition revSequentialExpr
-
+    [
+        match states with
+        | TOP_SEMICOLON _ ->
+            let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
+            yield None, DUMMY
+            yield! loop dummyStates
+        | _ -> yield! loop states
+    ]
+///
 let beforeNewLine indent (states: YaccState list) =
     let rec loop currentStates =
         [
             match currentStates with
-            | LOOKAHEAD_RRPAREN symbols ->
-                yield None, RRPAREN
-                let rrparenStates = yaccShift currentStates (Light.tokenRow None RRPAREN)
-                match getPosition_of_decl rrparenStates with
-                | None -> failwith "notImpl: need borrow"
-                | Some k ->
-                    if k = indent then
-                        ()
-                    else
+            | LOOKAHEAD_RRPAREN _ ->
+                let rrparenStates =
+                    parser.shift currentStates (Light.tokenRow None RRPAREN)
+
+                match rrparenStates with
+                | TOP_RRPAREN symbols ->
+                    let pos = getPosition rrparenStates.[1]
+                    match pos with
+                    | Some k when k <= indent -> ()
+                    | _ ->
+                        yield None, RRPAREN
                         yield! loop rrparenStates
-            | LOOKAHEAD_RHSEND symbols ->
-                yield None, RHSEND
-                let nextStates = yaccShift currentStates (Light.tokenRow None RHSEND)
-                match getPosition_of_decl nextStates with
-                | None -> failwith "notImpl: need borrow"
-                | Some k ->
-                    if k = indent then
-                        ()
-                    else
-                        yield! loop nextStates
-            | DECL_EXPR symbols -> ()
-            | _ -> failwith "never"
+
+                | _ -> failwith "never"
+
+            | LOOKAHEAD_RHSEND _ ->
+                let rhsendStates = parser.shift currentStates (Light.tokenRow None RHSEND)
+                match rhsendStates with
+                | TOP_RHSEND symbols ->
+                    let pos = getPosition rhsendStates.[symbols.Length - 1]
+                    match pos with
+                    | Some k when k <= indent -> ()
+                    | _ ->
+                        yield None, RHSEND
+                        yield! loop rhsendStates
+
+                | _ -> failwith "never"
+
+            | LOOKAHEAD_SEMICOLON _ -> ()
+            | _ ->
+                let symbols = StackOps.getSymbols currentStates
+                failwith $"never:{symbols}"
         ]
     loop states
 
@@ -194,21 +136,38 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
             yield! beforeSemicolon states
             space, la
         ]
+    | _, (RPAREN | RBRACE | RBRACK) ->
 
-    | Some indent, (LET | FUN | OPEN | LPAREN | IDENT _ | LITERAL _ | LBRACK | LBRACK_BAR | MINUS) -> // first declExpr
+        [
+            yield! beforeRight states la
+            space, la
+        ]
+
+    | Some _, COMMA -> [ space, la ]
+
+    | Some indent, (OPEN | LET | FUN | LPAREN | IDENT _ | LITERAL _ | LBRACK | LBRACK_BAR | MINUS) -> // first declExpr
         match states with
-        | TOP_LEFT_BOUND _ ->
-            // 左边界后面，直接first decl是ok的，忽略任何空白
-            let borrow = space // todo:左括号借用行首位置
-            [ borrow, la ]
-        | LOOKAHEAD_LLPAREN(symbols, pos) ->
+        | LOOKAHEAD_LLPAREN(symbols) ->
             [
-                pos, LLPAREN
+                None, LLPAREN
                 Some indent, la
             ]
+        | TOP_LEFT_BOUND _ ->
+            // 左边界后面，直接first decl是ok的，忽略任何空白
+            [ space, la ]
+
+        | LOOKAHEAD_RHSEND symbols
+        | LOOKAHEAD_RRPAREN symbols ->
+            [
+                //循环，直到i>=j补充右括号，补充到i缩进。
+                yield! beforeNewLine indent states
+                None, SEMICOLON
+                space, la
+            ]
+
         | TOP_SEMICOLON symbols ->
-            Debug.Assert((symbols.[1] = "revSequentialExpr"))
-            match StackOps.getPosition states.[1] with
+            let revSequentialExpr = states.[1]
+            match StackOps.getPosition revSequentialExpr with
             | None -> failwith "notImpl: need borrow"
             | Some j ->
                 if indent > j then
@@ -218,8 +177,8 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
                     [ space, la ]
                 elif indent < j then
                     [
+                        let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
                         None, DUMMY //栈顶分号已经被用掉了。
-                        let dummyStates = yaccShift states (Light.tokenRow None DUMMY)
                         //循环，直到i>=j补充右括号，补充到i缩进。
                         yield! beforeNewLine indent dummyStates
                         None, SEMICOLON
@@ -228,37 +187,42 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
                 else
                     failwith "never"
 
-        | DECL_EXPR(symbols, pos) -> //没有分号的换行，可能要处理decl以下的连接
+        | OPEN_LONGID(symbols, pos) ->
             match pos with
-            | None -> failwith "notImpl:borrow"
+            | None -> failwith "notImpl"
             | Some j ->
-                if indent > j then
-                    // 只要(i > j)缩进更多，一定是续航
-                    [ space, la ]
+                if indent = j then
+                    [
+                        None, SEMICOLON
+                        space, la
+                    ]
                 else
-                    //先排除续航，后面
-                    if
-                        StackOps.la_semicolon
-                        |> List.map(fun v -> v.prefix)
-                        |> List.exists((=) symbols)
-                    then
+                    failwith "缩进不正确"
+
+        | DECL_EXPR(symbols, pos) ->
+            //top是连接符
+            if symbols.[0] = "," then
+                [ space, la ]
+            else
+                // ident<=j
+                match pos with
+                | None -> failwith "notImpl:borrow"
+                | Some j ->
+                    if indent > j then
+                        // 只要(i > j)缩进更多，一定是续航，并且应该是app，不加semicolon
+                        [ space, la ]
+                    else
                         [
+                            yield! beforeNewLine indent states
                             None, SEMICOLON
                             space, la
                         ]
-                    elif
-                        RightSententialForm.rhsend
-                        |> Seq.exists((=) [])
-                    then
-                        [
-                            yield! beforeNewLine indent states
-                            //None, SEMICOLON
-                            space, la
-                        ]
-                    else //续航
-                        [ space, la ]
-
-        | _ -> failwith $"不可能"
+        | _ ->
+            let symbols = StackOps.getSymbols states |> List.rev
+            Console.WriteLine(stringify symbols)
+            Console.WriteLine(stringify la)
+            Console.WriteLine(stringify space)
+            failwith "notImpl"
 
     | _ ->
         // la is not first decl
@@ -294,7 +258,7 @@ let compile (input: string) =
         //Console.WriteLine(stringify(i, tok))
         Light.tokenRow i tok
     )
-    |> Seq.iter(fun tok -> states <- yaccShift states tok
+    |> Seq.iter(fun tok -> states <- parser.shift states tok
     //Console.WriteLine(stringify(StackOps.getSymbols states |> List.rev))
     )
 

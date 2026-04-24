@@ -41,7 +41,7 @@ type ParseTable =
     }
 
     member this.nextAction (states: YaccState list) (maybeToken: TokenRow<'tok> option) =
-        let sm = states.Head //.state
+        let sm = states.Head
 
         if not(this.actions.ContainsKey sm.state) then
             NoSource sm.state
@@ -63,10 +63,7 @@ type ParseTable =
                     else
                         Rejected ai
                 elif i > 0 then
-                    Shifted(
-                        YaccState.just(i, lexeme)
-                        :: states
-                    )
+                    Shifted(YaccState.just(i, lexeme) :: states)
                 else
                     //产生式符号列表。比如产生式 e-> e + e 的符号列表为 [e;e;+;e]
                     let rule = this.rules.[i]
@@ -96,11 +93,22 @@ type ParseTable =
 
     /// 返回 shift token 行为执行完成后的状态
     member this.shift (states: YaccState list) (token: TokenRow<'tok>) =
+        let maybeTok = Some token
         let rec loop ss =
-            match this.nextAction ss (Some token) with
+            match this.nextAction ss maybeTok with
             | Reduced nss -> loop nss
             | Shifted nss -> nss //最后一步
-            | x -> failwith(stringify x)
+            | x -> failwith("next action:" + stringify x)
+        loop states
+
+    /// 尝试执行 shift token 行为，成功返回 Some 状态，失败返回 None
+    member this.tryShift (states: YaccState list) (token: TokenRow<'tok>) =
+        let maybeTok = Some token
+        let rec loop ss =
+            match this.nextAction ss maybeTok with
+            | Reduced nss -> loop nss
+            | Shifted nss -> Some nss
+            | _ -> None // 其他情况（如 Error 或 Accept 等）视为失败
         loop states
 
     /// Reduce / Shift

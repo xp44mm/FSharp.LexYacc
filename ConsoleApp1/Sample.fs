@@ -1,148 +1,45 @@
 module FSharp.Substance.Sample
 
-open System
+open FSharp.Idioms
+open FSharp.Substance
 
-let x =
-    [
-        [ [ "(" ], "parenExpr" ]
-        [
-            [
-                ")"
-                "("
-            ],
-            "parenExpr"
-            [
-                ")"
-                "sequentialExpr"
-                "("
-            ],
-            "parenExpr"
-        ]
-        [
-            [
-                ","
-                "revTupleExpr"
-            ],
-            "revTupleExpr"
-        ]
-        [ [ "-" ], "unaryExpr" ]
-        [
-            [
-                "->"
-                "IDENT"
-                "FUN"
-            ],
-            "lambdaExpr"
-        ]
-        [
-            [
-                "."
-                "revLongid"
-            ],
-            "revLongid"
-        ]
-        [
-            [
-                ";"
-                "revSequentialExpr"
-            ],
-            "revSequentialExpr"
-        ]
-        [
-            [
-                "="
-                "IDENT"
-                "LET"
-            ],
-            "letBinding"
-        ]
-        [ [ "DUMMY" ], "declExpr" ]
-        [
-            [
-                "EOF"
-                "rhsBlock"
-                "longid"
-                "MODULE"
-            ],
-            "file"
-        ]
-        [ [ "FUN" ], "lambdaExpr" ]
-        [
-            [ "IDENT" ], "revLongid"
-            [
-                "IDENT"
-                "."
-                "revLongid"
-            ],
-            "revLongid"
-            [
-                "IDENT"
-                "FUN"
-            ],
-            "lambdaExpr"
-            [
-                "IDENT"
-                "LET"
-            ],
-            "letBinding"
-        ]
-        [ [ "LET" ], "letBinding" ]
-        [ [ "LITERAL" ], "atomicExpr" ]
-        [ [ "LLPAREN" ], "rhsBlock" ]
-        [ [ "MODULE" ], "file" ]
-        [ [ "OPEN" ], "declExpr" ]
-        [
-            [
-                "RHSEND"
-                "lambdaExpr"
-                "->"
-                "IDENT"
-                "FUN"
-            ],
-            "lambdaExpr"
-            [
-                "RHSEND"
-                "lambdaExpr"
-                "="
-                "IDENT"
-                "LET"
-            ],
-            "letBinding"
-        ]
-        [
-            [
-                "RRPAREN"
-                "sequentialExpr"
-                "LLPAREN"
-            ],
-            "rhsBlock"
-        ]
-        [ [ "[" ], "listExpr" ]
-        [ [ "[|" ], "arrayExpr" ]
-        [
-            [
-                "]"
-                "["
-            ],
-            "listExpr"
-            [
-                "]"
-                "sequentialExpr"
-                "["
-            ],
-            "listExpr"
-        ]
-        [
-            [
-                "|]"
-                "[|"
-            ],
-            "arrayExpr"
-            [
-                "|]"
-                "sequentialExpr"
-                "[|"
-            ],
-            "arrayExpr"
-        ]
+let actions  = Map [
+    1uy, fun buff -> [WHITESPACE]
+    2uy, fun buff -> [DOT]
+    3uy, fun buff -> [COLON]
+    4uy, fun buff -> [SEMICOLON]
+    5uy, fun buff -> [EQUALS]
+    6uy, fun buff -> [COMMA]
+    7uy, fun buff -> [LPAREN]
+    8uy, fun buff -> [RPAREN]
+    9uy, fun buff -> [LBRACE]
+    10uy, fun buff -> [RBRACE]
+    11uy, fun buff -> [LBRACK]
+    12uy, fun buff -> [RBRACK]
+    13uy, fun buff -> [LESS]
+    14uy, fun buff -> [GREATER]
+    15uy, fun buff -> [HASH]
+    16uy, fun buff -> [RARROW]
+    17uy, fun buff -> [MINUS]
+    18uy, fun buff -> [STAR]
+    19uy, fun buff -> [LBRACK_BAR]
+    20uy, fun buff -> [BAR]
+    21uy, fun buff -> [BAR_RBRACK]
+    22uy, fun buff -> [LITERAL(Literal.int8 buff)]
+    23uy, fun buff -> [LITERAL(Literal.int16 buff)]
+    24uy, fun buff -> [LITERAL(Literal.int32 buff)]
+    25uy, fun buff -> [LITERAL(Literal.int64 buff)]
+    26uy, fun buff -> [LITERAL(Literal.uint8 buff)]
+    27uy, fun buff -> [LITERAL(Literal.uint16 buff)]
+    28uy, fun buff -> [LITERAL(Literal.uint32 buff)]
+    29uy, fun buff -> [LITERAL(Literal.uint64 buff)]
+    30uy, fun buff -> [LITERAL(Literal.float buff)]
+    31uy, fun buff -> [LITERAL(Literal.single buff)]
+    32uy, fun buff -> [TYPAR(String.build buff)]
+    33uy, fun buff -> [LITERAL(Literal.char buff)]
+    34uy, fun buff -> [LITERAL(Literal.char buff)]
+    35uy, fun buff -> [LITERAL(Literal.char buff)]
+    36uy, fun buff -> [LITERAL(Literal.char buff)]
+    37uy, fun buff -> [LITERAL(Literal.string buff)]
+    38uy, fun buff -> [IDENT(String.build buff)]
     ]

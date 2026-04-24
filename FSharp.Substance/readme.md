@@ -68,4 +68,17 @@ task {}
 set []
 ```
 
-借代：左边界为None时候，可以借代父结点的左边界。左边界如左括号，fun ->等结构
+不使用最后一块不遵守格式的语法
+```fsharp
+fun x -> printfn "%d" x; x + 1
+会被分号结束fun->块
+(fun x -> printfn "%d" x); x + 1
+
+```
+请使用多行格式，避免歧义
+```fsharp
+fun x ->
+  printfn "%d" x
+  x + 1
+```
+不支持ref cell格式

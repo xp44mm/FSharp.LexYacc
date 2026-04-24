@@ -58,19 +58,3 @@ let getLastSymbols (bnf: BNF) (symbol: string) : Set<string> =
     loop symbol
     st |> Set.ofSeq
 
-///// 终结符所在产生式的左侧规约
-//let reduceLeftOfSymbol (bnf: BNF) (top: string) =
-//    bnf.productions
-//    |> Seq.choose(fun prod ->
-//        match prod with
-//        | head :: body ->
-//            body
-//            |> List.tryFindIndex((=) top)
-//            |> Option.map(fun idx ->
-//                let leftPart = body |> List.take(idx + 1) |> List.rev
-//                leftPart, head
-//            )
-//        | [] -> None
-//    )
-//    |> Set.ofSeq
-

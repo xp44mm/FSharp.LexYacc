@@ -64,29 +64,68 @@ rule : char list -> FSharpToken list =
 '\r' ? '\n' ' ' * { 
     let len = buff |> List.skipWhile ((<>) ' ') |> List.length
     [NEW_LINE len] }
+
 ' ' + { [WHITESPACE]  }
-'.' { [DOT] }
-':' { [COLON] }
-';' { [SEMICOLON] }
-'=' { [EQUALS] }
-',' { [COMMA] }
+'#' { [HASH] }
+'&' { [AMP] }
 '(' { [LPAREN] }
 ')' { [RPAREN] }
-'{' { [LBRACE] }
-'}' { [RBRACE] }
+'*' { [STAR] }
+'+' { [PLUS] }
+',' { [COMMA] }
+'-' { [MINUS] }
+'.' { [DOT] }
+'/' { [DIV] }
+':' { [COLON] }
+';' { [SEMICOLON] }
+'<' { [LESS] }
+'=' { [EQUALS] }
+'>' { [GREATER] }
+'@' { [AT] }
 '[' { [LBRACK] }
 ']' { [RBRACK] }
-'<' { [LESS] }
-'>' { [GREATER] }
-'#' { [HASH] }
+'{' { [LBRACE] }
+'|' { [BAR] }
+'}' { [RBRACE] }
+
+'*' '*' { [STAR_STAR] }
 
 '-' '>' { [RARROW] }
-'-' { [MINUS] }
-'*' { [STAR] }
-
 '[' '|' { [LBRACK_BAR] }
-'|' { [BAR] }
 '|' ']' { [BAR_RBRACK] }
+'&' '&' { [AMP_AMP] }
+'|' '|' { [BAR_BAR] }
+':' '?' '>' { [COLON_QMARK_GREATER] }
+':' '?' { [COLON_QMARK] }
+':' ':' { [COLON_COLON] }
+
+'<' '-' { [LARROW] }
+'|' '>' { [RPIPE] }
+'<' '|' { [LPIPE] }
+'<' '>' { [LESS_GREATER] }
+
+// 元组管道
+'<' '|' '|' { [LESS_BAR_BAR] }      
+'<' '|' '|' '|' { [LESS_BAR_BAR_BAR] }  
+'|' '|' '>' { [BAR_BAR_GREATER] }
+'|' '|' '|' '>' { [BAR_BAR_BAR_GREATER] }
+
+// 位运算（注意与布尔版本区别）
+'&' '&' '&' { [AMP_AMP_AMP] }    
+'|' '|' '|' { [BAR_BAR_BAR] }    
+'^' '^' '^' { [CARET_CARET_CARET] } 
+'~' '~' '~' { [TILDE_TILDE_TILDE] } 
+'<' '<' '<' { [LESS_LESS_LESS] }   
+'>' '>' '>' { [GREATER_GREATER_GREATER] } 
+
+// 函数组合
+'>' '>' { [GREATER_GREATER] }    
+'<' '<' { [LESS_LESS] }          
+
+// 列表操作
+'.' '.' { [DOT_DOT] }        
+'.' '.' '.' { [DOT_DOT_DOT] } 
+
 
 int8 {[LITERAL(Literal.int8 buff)]}
 int16 {[LITERAL(Literal.int16 buff)]}

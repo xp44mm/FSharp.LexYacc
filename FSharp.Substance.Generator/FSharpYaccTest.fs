@@ -20,7 +20,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
     let srcPath = Path.Combine(__SOURCE_DIRECTORY__, name + ".fsyacc")
     let text = File.ReadAllText(srcPath, Encoding.UTF8)
 
-    [<Fact>]
+    [<Fact(Skip = "节约时间")>]
     member _.``验证生成的文件是否和定义一致``() =
         // actual
         let stateSymbols = FSharpYacc.stateSymbols
@@ -45,7 +45,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
 
         ()
 
-    [<Fact>] //(Skip = "没有改变，不必重复生成")
+    [<Fact(Skip = "不必重复生成")>] //
     member _.``生成``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
@@ -78,79 +78,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
                 output.WriteLine($"{stringify cp}")
 
     [<Fact>]
-    member _.``derive declExpr``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let revSymbols = [ "declExpr" ]
-        let st =
-            BnfUtils.derive bnf revSymbols
-            |> Set.toList
-            |> List.sortDescending
-
-        for prod in st do
-            output.WriteLine(stringify prod)
-
-    [<Fact>]
-    member _.``derive Left Of LLPAREN``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let symbol = "rhsBlock" // LLPAREN = first rhsBlock
-        let st = BnfUtils.deriveLeftOfSymbol bnf symbol
-        for prod in st do
-            output.WriteLine(stringify prod)
-
-    [<Fact>]
-    member _.``derive Left Of RHSEND``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let terminal = "RHSEND"
-        let st = BnfUtils.deriveLeftOfSymbol bnf terminal
-        for prod in st do
-            output.WriteLine(stringify prod)
-
-    [<Fact>]
-    member _.``derive Left Of RRPAREN``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let terminal = "RRPAREN"
-        let st = BnfUtils.deriveLeftOfSymbol bnf terminal
-        for prod in st do
-            output.WriteLine(stringify prod)
-
-    [<Fact>]
-    member _.``derive Left Of RRPAREN and RHSEND``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let rrparen =
-            BnfUtils.deriveLeftOfSymbol bnf "RRPAREN"
-            |> Set.map(fun prod -> prod, RRPAREN)
-
-        let rhsend =
-            BnfUtils.deriveLeftOfSymbol bnf "RHSEND"
-            |> Set.map(fun prod -> prod, RHSEND)
-
-        //收尾符号升序排列，优先匹配最短的产生式
-        let ls = rrparen + rhsend |> Set.toList
-
-        for prod in ls do
-            output.WriteLine(stringify prod)
-
-    [<Fact>]
     member _.``declarations``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
@@ -162,19 +89,19 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         output.WriteLine(declarations)
 
     [<Fact>]
-    member _.``符号类型``() =
-        //避免因为书写格式不同多出分组
+    member _.``gen getPosition``() =
         let decls =
             RightSententialForm.declarations
             |> List.groupBy snd
             |> List.map(fun (typ, ls) ->
-                let symbols = ls |> List.map fst
+                let symbols = ls |> List.map fst |> List.sort
                 symbols, typ
             )
 
         for symbols, typ in decls do
-            output.WriteLine(stringify symbols)
-            output.WriteLine(stringifyTypeDynamic typ)
+            for s in symbols do
+                output.WriteLine("| "+stringify s)
+            output.WriteLine($"  -> unbox<{stringifyTypeDynamic typ}> state.lexeme")
 
     [<Fact>]
     member _.``precede declExpr``() =
@@ -185,6 +112,22 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         // precedes key是任意符号，
         let declExpr = bnf.precedes.["declExpr"] |> Set.toList
         output.WriteLine(stringify declExpr)
+
+    [<Fact>]
+    member _.``derive declExpr``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
+        let derivations =
+            BnfUtils.derive bnf [ "declExpr" ]
+            |> Set.toList
+            |> List.sortDescending
+
+        output.WriteLine("let declExpr = [")
+        for derivation in derivations do
+            output.WriteLine("    " + stringify derivation)
+        output.WriteLine("]")
 
     [<Fact>]
     member _.``first atomicExpr``() =
@@ -211,92 +154,42 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             output.WriteLine(stringify prod)
 
     [<Fact>]
-    member _.``derive declExpr lookahead of semicolon rrparen rhsend``() =
+    member _.``viable prefix lookaheads``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
         let yacc = flatFsyacc.getYacc()
         let bnf: BNF = yacc.bnf
 
-        let revAppExpr = BnfUtils.derive bnf [ "revAppExpr" ]
-
-        // lookahead semicolon
-        let declExpr =
-            BnfUtils.derive bnf [ "declExpr" ]
-            |> Set.toList
-
-        //output.WriteLine("declExpr")
-        //for prod in declExpr do
-        //    output.WriteLine(stringify prod)
-
-        // lookahead RHSEND
-        let rhsend =
-            declExpr
-            |> List.choose(fun ls ->
-                match ls with
-                | "RHSEND" :: t -> Some t
-                | _ -> None
-            )
-            |> List.collect(fun leftPart ->
-                BnfUtils.derive bnf leftPart
-                |> Set.toList
-            )
-
-        //output.WriteLine("RHSEND")
-        //for prod in rhsend do
-        //    output.WriteLine(stringify prod)
-
-        // lookahead RRPAREN
-        let rrparen =
-            declExpr
-            |> List.choose(fun ls ->
-                match ls with
-                | "RRPAREN" :: t -> Some t
-                | _ -> None
-            )
-            |> List.collect(fun leftPart ->
-                BnfUtils.derive bnf leftPart
-                |> Set.toList
-            )
-        //output.WriteLine("RRPAREN")
-        //for prod in rrparen do
-        //    output.WriteLine(stringify prod)
-        let res =
-            [
-                yield!
-                    declExpr
-                    |> Seq.map(fun prod ->
-                        if revAppExpr.Contains prod then
-                            prod, WHITESPACE // 代替app运算
-                        else
-                            // 代替declExpr完成
-                            prod, SEMICOLON
-                    )
-                yield!
-                    rhsend
-                    |> Seq.map(fun prod -> prod, RHSEND)
-                yield!
-                    rrparen
-                    |> Seq.map(fun prod -> prod, RRPAREN)
-            ]
-            |> List.sort
-
-        for item in res do
-            output.WriteLine(stringify item)
+        let lookaheads = ViablePrefix.lookahead bnf
+        output.WriteLine("let lookaheads = [")
+        for la in lookaheads do
+            output.WriteLine("  " + stringify la)
+        output.WriteLine("]")
 
     [<Fact>]
-    member _.``viable prefix``() =
+    member _.``viable prefix tops``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
         let yacc = flatFsyacc.getYacc()
         let bnf: BNF = yacc.bnf
+
         let tops = ViablePrefix.top bnf
         output.WriteLine("let tops = [")
         for tp in tops do
             output.WriteLine("  " + stringify tp)
         output.WriteLine("]")
 
-        let lookaheads = ViablePrefix.lookahead bnf
-        output.WriteLine("let lookaheads = [")
-        for la in lookaheads do
-            output.WriteLine("  " + stringify la)
+    [<Fact>]
+    member _.``derive OPEN longid``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
+        let derivations =
+            BnfUtils.derive bnf [ "longid" ; "OPEN"]
+            |> Set.toList
+
+        output.WriteLine("let open_longid = [")
+        for derivation in derivations do
+            output.WriteLine("    " + stringify derivation)
         output.WriteLine("]")

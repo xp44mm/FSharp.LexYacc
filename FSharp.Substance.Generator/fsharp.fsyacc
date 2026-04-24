@@ -37,11 +37,11 @@ declExpr:
         s0, OpenExpr(snd s1)
         }
     | letBinding { s0 }
-    | lambdaExpr { s0 }
+    | lambdaOrTupleExpr { s0 }
     | DUMMY { s0, DummyExpr }
     
 letBinding :
-    | LET IDENT "=" lambdaExpr RHSEND {
+    | LET IDENT "=" lambdaOrTupleExpr RHSEND {
         s0, LetBindingExpr(snd s1, [snd s3])
         }
     | LET IDENT "=" rhsBlock {
@@ -50,15 +50,18 @@ letBinding :
         
 rhsBlock:
     | LLPAREN sequentialExpr RRPAREN { s1 }
+    
+lambdaOrTupleExpr :
+    | lambdaExpr { s0 }
+    | tupleExpr { s0 }
 
 lambdaExpr:
-    | FUN IDENT "->" lambdaExpr RHSEND {
+    | FUN IDENT "->" lambdaOrTupleExpr RHSEND {
         s0, LambdaExpr(snd s1, [snd s3])
         }
     | FUN IDENT "->" rhsBlock {
         s0, LambdaExpr(snd s1, snd s3)
         }
-    | tupleExpr { s0 }
 
 tupleExpr:
     | revTupleExpr  { 
@@ -66,7 +69,11 @@ tupleExpr:
         let e = if ls.Length > 1 then TupleExpr(ls) else ls.[0]
         i.[0], e
     }
-
+    | revTupleExpr "," lambdaExpr { 
+        let ls = s0 |> List.map snd
+        fst s2, TupleExpr(snd s2 :: ls |> List.rev)
+    }
+    
 revTupleExpr:
     | unaryExpr { [s0] }
     | revTupleExpr "," unaryExpr { s2::s0 }
@@ -113,7 +120,7 @@ arrayExpr:
 %type<option<int>*string list> longid
 %type<option<int>*Expr list> sequentialExpr rhsBlock
 %type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr
-%type<option<int>*Expr> declExpr letBinding lambdaExpr tupleExpr unaryExpr appExpr atomicExpr parenExpr arrayExpr listExpr
+%type<option<int>*Expr> declExpr letBinding lambdaOrTupleExpr lambdaExpr tupleExpr unaryExpr appExpr atomicExpr parenExpr arrayExpr listExpr
 %type<option<int>> "MODULE" LET FUN "OPEN" "." ";" "=" "," "[|" "[" "]" "|]" "(" ")" "-" DUMMY
 %type<option<int>*string> "IDENT"
 %type<option<int>*Literal> "LITERAL"

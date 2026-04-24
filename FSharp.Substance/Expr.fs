@@ -6,7 +6,6 @@ type Expr =
     | LetBindingExpr of string * Expr list
     | LambdaExpr of string * Expr list
     | TupleExpr of Expr list
-
     | BinaryExpr of string * Expr * Expr
     | UnaryExpr of string * Expr
     | AppExpr of Expr list
@@ -18,6 +17,4 @@ type Expr =
     | BraceExpr of Expr list
     | BraceBarExpr of Expr list
 
-    //| SequentialExpr of Expr list
-    //| DeclExpr of Expr
 

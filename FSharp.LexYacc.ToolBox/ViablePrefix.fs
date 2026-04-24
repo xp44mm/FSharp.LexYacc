@@ -1,30 +1,30 @@
 namespace FSharp.LexYacc
 
+// 每个 viable prefix 直接对应一个解析器栈的合法状态
 type ViablePrefix =
     {
         prefix: string list
         head: string
     }
 
-    /// shift 一个tok以后，yacc parser 栈顶的viable prefix
+    /// 栈顶形状的各种可能性
     static member top(bnf: BNF) =
-        bnf.terminals
-        |> Set.map(fun topTok ->
-            bnf.productions
-            |> Seq.choose(fun prod ->
-                match prod with
-                | head :: body ->
-                    body
-                    |> List.tryFindIndex((=) topTok)
-                    |> Option.map(fun idx ->
-                        let leftPart = body |> List.take(idx + 1) |> List.rev
-                        { prefix = leftPart; head = head }
-                    )
-                | [] -> None
-            )
-            |> Set.ofSeq
-        )
-        |> Set.unionMany
+        let takeLeftOfBody topSymbol =
+            [
+                for prod in bnf.productions do
+                    match prod with
+                    | head :: body ->
+                        match List.tryFindIndex ((=) topSymbol) body with
+                        | Some idx ->
+                            let leftPart = body |> List.take(idx + 1) |> List.rev
+                            { prefix = leftPart; head = head }
+                        | None -> ()
+                    | [] -> ()
+            ]
+
+        bnf.symbols
+        |> Seq.collect(takeLeftOfBody)
+        |> Set.ofSeq
 
     ///返回(ViablePrefix,lookahead)集合
     static member lookahead(bnf: BNF) =

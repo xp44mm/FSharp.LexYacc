@@ -1,413 +1,5 @@
 module FSharp.Substance.RightSententialForm
 
-let llparen = [
-    ["->";"IDENT";"FUN"]
-    ["=";"IDENT";"LET"]
-    ["IDENT";".";"revLongid";"MODULE"]
-    ["IDENT";"MODULE"]
-]
-
-/// lookahead:分号
-let rhsend = [
-    [")";"(";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    [")";"(";",";"revTupleExpr";"=";"IDENT";"LET"]
-    [")";"(";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    [")";"(";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    [")";"(";"-";"->";"IDENT";"FUN"]
-    [")";"(";"-";"=";"IDENT";"LET"]
-    [")";"(";"->";"IDENT";"FUN"]
-    [")";"(";"=";"IDENT";"LET"]
-    [")";"(";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    [")";"(";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"]
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    [")";"(";"revAppExpr";"-";"->";"IDENT";"FUN"]
-    [")";"(";"revAppExpr";"-";"=";"IDENT";"LET"]
-    [")";"(";"revAppExpr";"->";"IDENT";"FUN"]
-    [")";"(";"revAppExpr";"=";"IDENT";"LET"]
-    [")";"sequentialExpr";"(";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    [")";"sequentialExpr";"(";",";"revTupleExpr";"=";"IDENT";"LET"]
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    [")";"sequentialExpr";"(";"-";"->";"IDENT";"FUN"]
-    [")";"sequentialExpr";"(";"-";"=";"IDENT";"LET"]
-    [")";"sequentialExpr";"(";"->";"IDENT";"FUN"]
-    [")";"sequentialExpr";"(";"=";"IDENT";"LET"]
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-";"->";"IDENT";"FUN"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-";"=";"IDENT";"LET"]
-    [")";"sequentialExpr";"(";"revAppExpr";"->";"IDENT";"FUN"]
-    [")";"sequentialExpr";"(";"revAppExpr";"=";"IDENT";"LET"]
-    ["IDENT";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["IDENT";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["IDENT";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["IDENT";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["IDENT";"-";"->";"IDENT";"FUN"]
-    ["IDENT";"-";"=";"IDENT";"LET"]
-    ["IDENT";"->";"IDENT";"FUN"]
-    ["IDENT";".";"revLongid";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["IDENT";".";"revLongid";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["IDENT";".";"revLongid";"-";"->";"IDENT";"FUN"]
-    ["IDENT";".";"revLongid";"-";"=";"IDENT";"LET"]
-    ["IDENT";".";"revLongid";"->";"IDENT";"FUN"]
-    ["IDENT";".";"revLongid";"=";"IDENT";"LET"]
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-";"->";"IDENT";"FUN"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-";"=";"IDENT";"LET"]
-    ["IDENT";".";"revLongid";"revAppExpr";"->";"IDENT";"FUN"]
-    ["IDENT";".";"revLongid";"revAppExpr";"=";"IDENT";"LET"]
-    ["IDENT";"=";"IDENT";"LET"]
-    ["IDENT";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["IDENT";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["IDENT";"revAppExpr";"-";"->";"IDENT";"FUN"]
-    ["IDENT";"revAppExpr";"-";"=";"IDENT";"LET"]
-    ["IDENT";"revAppExpr";"->";"IDENT";"FUN"]
-    ["IDENT";"revAppExpr";"=";"IDENT";"LET"]
-    ["LITERAL";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["LITERAL";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["LITERAL";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["LITERAL";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["LITERAL";"-";"->";"IDENT";"FUN"]
-    ["LITERAL";"-";"=";"IDENT";"LET"]
-    ["LITERAL";"->";"IDENT";"FUN"]
-    ["LITERAL";"=";"IDENT";"LET"]
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["LITERAL";"revAppExpr";"-";"->";"IDENT";"FUN"]
-    ["LITERAL";"revAppExpr";"-";"=";"IDENT";"LET"]
-    ["LITERAL";"revAppExpr";"->";"IDENT";"FUN"]
-    ["LITERAL";"revAppExpr";"=";"IDENT";"LET"]
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"->";"IDENT";"FUN"]
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"=";"IDENT";"LET"]
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";"->";"IDENT";"FUN"]
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";"=";"IDENT";"LET"]
-    ["]";"[";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["]";"[";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["]";"[";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["]";"[";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["]";"[";"-";"->";"IDENT";"FUN"]
-    ["]";"[";"-";"=";"IDENT";"LET"]
-    ["]";"[";"->";"IDENT";"FUN"]
-    ["]";"[";"=";"IDENT";"LET"]
-    ["]";"[";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["]";"[";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["]";"[";"revAppExpr";"-";"->";"IDENT";"FUN"]
-    ["]";"[";"revAppExpr";"-";"=";"IDENT";"LET"]
-    ["]";"[";"revAppExpr";"->";"IDENT";"FUN"]
-    ["]";"[";"revAppExpr";"=";"IDENT";"LET"]
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["]";"sequentialExpr";"[";"-";"->";"IDENT";"FUN"]
-    ["]";"sequentialExpr";"[";"-";"=";"IDENT";"LET"]
-    ["]";"sequentialExpr";"[";"->";"IDENT";"FUN"]
-    ["]";"sequentialExpr";"[";"=";"IDENT";"LET"]
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";"->";"IDENT";"FUN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";"=";"IDENT";"LET"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"->";"IDENT";"FUN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"=";"IDENT";"LET"]
-    ["|]";"[|";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["|]";"[|";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["|]";"[|";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["|]";"[|";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["|]";"[|";"-";"->";"IDENT";"FUN"]
-    ["|]";"[|";"-";"=";"IDENT";"LET"]
-    ["|]";"[|";"->";"IDENT";"FUN"]
-    ["|]";"[|";"=";"IDENT";"LET"]
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["|]";"[|";"revAppExpr";"-";"->";"IDENT";"FUN"]
-    ["|]";"[|";"revAppExpr";"-";"=";"IDENT";"LET"]
-    ["|]";"[|";"revAppExpr";"->";"IDENT";"FUN"]
-    ["|]";"[|";"revAppExpr";"=";"IDENT";"LET"]
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["|]";"sequentialExpr";"[|";"-";"->";"IDENT";"FUN"]
-    ["|]";"sequentialExpr";"[|";"-";"=";"IDENT";"LET"]
-    ["|]";"sequentialExpr";"[|";"->";"IDENT";"FUN"]
-    ["|]";"sequentialExpr";"[|";"=";"IDENT";"LET"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";"->";"IDENT";"FUN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";"=";"IDENT";"LET"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"->";"IDENT";"FUN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"=";"IDENT";"LET"]
-    
-
-]
-
-let rrparen = [    
-    [")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"(";",";"revTupleExpr";"LLPAREN"]
-    [")";"(";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"(";"-";",";"revTupleExpr";"LLPAREN"]
-    [")";"(";"-";";";"revSequentialExpr";"LLPAREN"]
-    [")";"(";"-";"LLPAREN"]
-    [")";"(";";";"revSequentialExpr";"LLPAREN"]
-    [")";"(";"LLPAREN"]
-    [")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"]
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN"]
-    [")";"(";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN"]
-    [")";"(";"revAppExpr";"-";"LLPAREN"]
-    [")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"(";"revAppExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";",";"revTupleExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"-";";";"revSequentialExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"-";"LLPAREN"]
-    [")";"sequentialExpr";"(";";";"revSequentialExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"LLPAREN"]
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-";"LLPAREN"]
-    [")";"sequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"]
-    [")";"sequentialExpr";"(";"revAppExpr";"LLPAREN"]
-    ["DUMMY";";";"revSequentialExpr";"LLPAREN"]
-    ["DUMMY";"LLPAREN"]
-    ["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";",";"revTupleExpr";"LLPAREN"]
-    ["IDENT";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";"-";",";"revTupleExpr";"LLPAREN"]
-    ["IDENT";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";"-";"LLPAREN"]
-    ["IDENT";".";"revLongid";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";",";"revTupleExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"-";"LLPAREN"]
-    ["IDENT";".";"revLongid";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"LLPAREN"]
-    ["IDENT";".";"revLongid";"OPEN";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"OPEN";"LLPAREN"]
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-";"LLPAREN"]
-    ["IDENT";".";"revLongid";"revAppExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";".";"revLongid";"revAppExpr";"LLPAREN"]
-    ["IDENT";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";"LLPAREN"]
-    ["IDENT";"OPEN";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";"OPEN";"LLPAREN"]
-    ["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN"]
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN"]
-    ["IDENT";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";"revAppExpr";"-";"LLPAREN"]
-    ["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["IDENT";"revAppExpr";"LLPAREN"]
-    ["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["LITERAL";",";"revTupleExpr";"LLPAREN"]
-    ["LITERAL";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["LITERAL";"-";",";"revTupleExpr";"LLPAREN"]
-    ["LITERAL";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["LITERAL";"-";"LLPAREN"]
-    ["LITERAL";";";"revSequentialExpr";"LLPAREN"]
-    ["LITERAL";"LLPAREN"]
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN"]
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN"]
-    ["LITERAL";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["LITERAL";"revAppExpr";"-";"LLPAREN"]
-    ["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["LITERAL";"revAppExpr";"LLPAREN"]
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"LLPAREN"]
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"LLPAREN"]
-    ["RHSEND";"lambdaExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"LLPAREN"]
-    ["RHSEND";"lambdaExpr";"=";"IDENT";"LET";"LLPAREN"]
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";";";"revSequentialExpr";"LLPAREN"]
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";"LLPAREN"]
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"=";"IDENT";"LET";";";"revSequentialExpr";"LLPAREN"]
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"=";"IDENT";"LET";"LLPAREN"]
-    ["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"[";",";"revTupleExpr";"LLPAREN"]
-    ["]";"[";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"[";"-";",";"revTupleExpr";"LLPAREN"]
-    ["]";"[";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"[";"-";"LLPAREN"]
-    ["]";"[";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"[";"LLPAREN"]
-    ["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"]
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN"]
-    ["]";"[";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"[";"revAppExpr";"-";"LLPAREN"]
-    ["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"[";"revAppExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"-";"LLPAREN"]
-    ["]";"sequentialExpr";"[";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"LLPAREN"]
-    ["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"[|";",";"revTupleExpr";"LLPAREN"]
-    ["|]";"[|";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"[|";"-";",";"revTupleExpr";"LLPAREN"]
-    ["|]";"[|";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"[|";"-";"LLPAREN"]
-    ["|]";"[|";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"[|";"LLPAREN"]
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"]
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN"]
-    ["|]";"[|";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"[|";"revAppExpr";"-";"LLPAREN"]
-    ["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"[|";"revAppExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"-";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"LLPAREN"]
-    ]
-
-/// derive declExpr
-let declExpr = [
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"]
-    ["|]";"sequentialExpr";"[|";"revAppExpr"]
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr"]
-    ["|]";"sequentialExpr";"[|";"-"]
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr"]
-    ["|]";"sequentialExpr";"[|"]
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr"]
-    ["|]";"[|";"revAppExpr";"-"]
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr"]
-    ["|]";"[|";"revAppExpr"]
-    ["|]";"[|";"-";",";"revTupleExpr"]
-    ["|]";"[|";"-"]
-    ["|]";"[|";",";"revTupleExpr"]
-    ["|]";"[|"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr"]
-    ["]";"sequentialExpr";"[";"revAppExpr";"-"]
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr"]
-    ["]";"sequentialExpr";"[";"revAppExpr"]
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr"]
-    ["]";"sequentialExpr";"[";"-"]
-    ["]";"sequentialExpr";"[";",";"revTupleExpr"]
-    ["]";"sequentialExpr";"["]
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr"]
-    ["]";"[";"revAppExpr";"-"]
-    ["]";"[";"revAppExpr";",";"revTupleExpr"]
-    ["]";"[";"revAppExpr"]
-    ["]";"[";"-";",";"revTupleExpr"]
-    ["]";"[";"-"]
-    ["]";"[";",";"revTupleExpr"]
-    ["]";"["]
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"=";"IDENT";"LET"]
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN"]
-    ["RHSEND";"lambdaExpr";"=";"IDENT";"LET"]
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN"]
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr"]
-    ["LITERAL";"revAppExpr";"-"]
-    ["LITERAL";"revAppExpr";",";"revTupleExpr"]
-    ["LITERAL";"revAppExpr"]
-    ["LITERAL";"-";",";"revTupleExpr"]
-    ["LITERAL";"-"]
-    ["LITERAL";",";"revTupleExpr"]
-    ["LITERAL"]
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr"]
-    ["IDENT";"revAppExpr";"-"]
-    ["IDENT";"revAppExpr";",";"revTupleExpr"]
-    ["IDENT";"revAppExpr"]
-    ["IDENT";"OPEN"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr"]
-    ["IDENT";".";"revLongid";"revAppExpr";"-"]
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr"]
-    ["IDENT";".";"revLongid";"revAppExpr"]
-    ["IDENT";".";"revLongid";"OPEN"]
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr"]
-    ["IDENT";".";"revLongid";"-"]
-    ["IDENT";".";"revLongid";",";"revTupleExpr"]
-    ["IDENT";".";"revLongid"]
-    ["IDENT";"-";",";"revTupleExpr"]
-    ["IDENT";"-"]
-    ["IDENT";",";"revTupleExpr"]
-    ["IDENT"]
-    ["DUMMY"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr"]
-    [")";"sequentialExpr";"(";"revAppExpr";"-"]
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr"]
-    [")";"sequentialExpr";"(";"revAppExpr"]
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr"]
-    [")";"sequentialExpr";"(";"-"]
-    [")";"sequentialExpr";"(";",";"revTupleExpr"]
-    [")";"sequentialExpr";"("]
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr"]
-    [")";"(";"revAppExpr";"-"]
-    [")";"(";"revAppExpr";",";"revTupleExpr"]
-    [")";"(";"revAppExpr"]
-    [")";"(";"-";",";"revTupleExpr"]
-    [")";"(";"-"]
-    [")";"(";",";"revTupleExpr"]
-    [")";"("]
-
-]
-
-let precede_declExpr = set ["(";";";"LLPAREN";"[";"[|"]
-
 let declarations = [
     "(", typeof<option<int>>
     ")", typeof<option<int>>
@@ -416,6 +8,7 @@ let declarations = [
     ".", typeof<option<int>>
     ";", typeof<option<int>>
     "=", typeof<option<int>>
+    "DUMMY", typeof<option<int>>
     "FUN", typeof<option<int>>
     "IDENT", typeof<option<int>*string>
     "LET", typeof<option<int>>
@@ -431,6 +24,7 @@ let declarations = [
     "declExpr", typeof<option<int>*Expr>
     "file", typeof<string list*Expr list>
     "lambdaExpr", typeof<option<int>*Expr>
+    "lambdaOrTupleExpr", typeof<option<int>*Expr>
     "letBinding", typeof<option<int>*Expr>
     "listExpr", typeof<option<int>*Expr>
     "longid", typeof<option<int>*string list>
@@ -446,553 +40,7 @@ let declarations = [
     "|]", typeof<option<int>>
 ]
 
-/// 用于缩回declExpr,结尾可能需要补充rrparen,rhsend
-let semicolon_rrparen_rhsend = [    
-    [")";"("],WHITESPACE
-    [")";"(";",";"revTupleExpr"],SEMICOLON
-    [")";"(";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"(";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"-"],SEMICOLON
-    [")";"(";"-";",";"revTupleExpr"],SEMICOLON
-    [")";"(";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"(";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"(";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"-";"->";"IDENT";"FUN"],RHSEND
-    [")";"(";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"-";"=";"IDENT";"LET"],RHSEND
-    [")";"(";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"->";"IDENT";"FUN"],RHSEND
-    [")";"(";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"=";"IDENT";"LET"],RHSEND
-    [")";"(";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"revAppExpr"],WHITESPACE
-    [")";"(";"revAppExpr";",";"revTupleExpr"],SEMICOLON
-    [")";"(";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"revAppExpr";"-"],SEMICOLON
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr"],SEMICOLON
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"revAppExpr";"-";"->";"IDENT";"FUN"],RHSEND
-    [")";"(";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"revAppExpr";"-";"=";"IDENT";"LET"],RHSEND
-    [")";"(";"revAppExpr";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"revAppExpr";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"revAppExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"(";"revAppExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"(";"revAppExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"(";"revAppExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"("],WHITESPACE
-    [")";"sequentialExpr";"(";",";"revTupleExpr"],SEMICOLON
-    [")";"sequentialExpr";"(";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"sequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"sequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"-"],SEMICOLON
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr"],SEMICOLON
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"-";"->";"IDENT";"FUN"],RHSEND
-    [")";"sequentialExpr";"(";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"-";"=";"IDENT";"LET"],RHSEND
-    [")";"sequentialExpr";"(";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"->";"IDENT";"FUN"],RHSEND
-    [")";"sequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"=";"IDENT";"LET"],RHSEND
-    [")";"sequentialExpr";"(";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr"],WHITESPACE
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr"],SEMICOLON
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"-"],SEMICOLON
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr"],SEMICOLON
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"-";"->";"IDENT";"FUN"],RHSEND
-    [")";"sequentialExpr";"(";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"-";"=";"IDENT";"LET"],RHSEND
-    [")";"sequentialExpr";"(";"revAppExpr";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"->";"IDENT";"FUN"],RHSEND
-    [")";"sequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"=";"IDENT";"LET"],RHSEND
-    [")";"sequentialExpr";"(";"revAppExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    [")";"sequentialExpr";"(";"revAppExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["DUMMY"],SEMICOLON
-    ["DUMMY";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["DUMMY";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["DUMMY";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["DUMMY";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT"],WHITESPACE
-    ["IDENT";",";"revTupleExpr"],SEMICOLON
-    ["IDENT";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"-"],SEMICOLON
-    ["IDENT";"-";",";"revTupleExpr"],SEMICOLON
-    ["IDENT";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"-";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"-";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";".";"revLongid"],WHITESPACE
-    ["IDENT";".";"revLongid";",";"revTupleExpr"],SEMICOLON
-    ["IDENT";".";"revLongid";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";".";"revLongid";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";".";"revLongid";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"-"],SEMICOLON
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr"],SEMICOLON
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"-";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";".";"revLongid";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"-";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";".";"revLongid";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";".";"revLongid";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";".";"revLongid";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"OPEN"],SEMICOLON
-    ["IDENT";".";"revLongid";"OPEN";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"OPEN";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"OPEN";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"OPEN";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr"],WHITESPACE
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr"],SEMICOLON
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"-"],SEMICOLON
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr"],SEMICOLON
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"-";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";".";"revLongid";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"-";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";".";"revLongid";"revAppExpr";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";".";"revLongid";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";".";"revLongid";"revAppExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";".";"revLongid";"revAppExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"OPEN"],SEMICOLON
-    ["IDENT";"OPEN";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"OPEN";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"OPEN";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"OPEN";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"revAppExpr"],WHITESPACE
-    ["IDENT";"revAppExpr";",";"revTupleExpr"],SEMICOLON
-    ["IDENT";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"revAppExpr";"-"],SEMICOLON
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr"],SEMICOLON
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"revAppExpr";"-";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"revAppExpr";"-";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";"revAppExpr";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"revAppExpr";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"revAppExpr";"->";"IDENT";"FUN"],RHSEND
-    ["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["IDENT";"revAppExpr";"=";"IDENT";"LET"],RHSEND
-    ["IDENT";"revAppExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["IDENT";"revAppExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL"],WHITESPACE
-    ["LITERAL";",";"revTupleExpr"],SEMICOLON
-    ["LITERAL";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["LITERAL";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"-"],SEMICOLON
-    ["LITERAL";"-";",";"revTupleExpr"],SEMICOLON
-    ["LITERAL";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["LITERAL";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["LITERAL";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"-";"->";"IDENT";"FUN"],RHSEND
-    ["LITERAL";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"-";"=";"IDENT";"LET"],RHSEND
-    ["LITERAL";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"->";"IDENT";"FUN"],RHSEND
-    ["LITERAL";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"=";"IDENT";"LET"],RHSEND
-    ["LITERAL";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"revAppExpr"],WHITESPACE
-    ["LITERAL";"revAppExpr";",";"revTupleExpr"],SEMICOLON
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"revAppExpr";"-"],SEMICOLON
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr"],SEMICOLON
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"revAppExpr";"-";"->";"IDENT";"FUN"],RHSEND
-    ["LITERAL";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"revAppExpr";"-";"=";"IDENT";"LET"],RHSEND
-    ["LITERAL";"revAppExpr";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"revAppExpr";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"revAppExpr";"->";"IDENT";"FUN"],RHSEND
-    ["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["LITERAL";"revAppExpr";"=";"IDENT";"LET"],RHSEND
-    ["LITERAL";"revAppExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["LITERAL";"revAppExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN"],SEMICOLON
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"->";"IDENT";"FUN"],RHSEND
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"=";"IDENT";"LET"],RHSEND
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["RHSEND";"lambdaExpr";"=";"IDENT";"LET"],SEMICOLON
-    ["RHSEND";"lambdaExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["RHSEND";"lambdaExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["RHSEND";"lambdaExpr";"=";"IDENT";"LET";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["RHSEND";"lambdaExpr";"=";"IDENT";"LET";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],SEMICOLON
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";"->";"IDENT";"FUN"],RHSEND
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";"=";"IDENT";"LET"],RHSEND
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"=";"IDENT";"LET"],SEMICOLON
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"=";"IDENT";"LET";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"=";"IDENT";"LET";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"=";"IDENT";"LET";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["RRPAREN";"sequentialExpr";"LLPAREN";"=";"IDENT";"LET";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"["],WHITESPACE
-    ["]";"[";",";"revTupleExpr"],SEMICOLON
-    ["]";"[";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"[";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"-"],SEMICOLON
-    ["]";"[";"-";",";"revTupleExpr"],SEMICOLON
-    ["]";"[";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"[";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"[";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"-";"->";"IDENT";"FUN"],RHSEND
-    ["]";"[";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"-";"=";"IDENT";"LET"],RHSEND
-    ["]";"[";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"->";"IDENT";"FUN"],RHSEND
-    ["]";"[";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"=";"IDENT";"LET"],RHSEND
-    ["]";"[";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"revAppExpr"],WHITESPACE
-    ["]";"[";"revAppExpr";",";"revTupleExpr"],SEMICOLON
-    ["]";"[";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"revAppExpr";"-"],SEMICOLON
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr"],SEMICOLON
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"revAppExpr";"-";"->";"IDENT";"FUN"],RHSEND
-    ["]";"[";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"revAppExpr";"-";"=";"IDENT";"LET"],RHSEND
-    ["]";"[";"revAppExpr";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"revAppExpr";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"revAppExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"[";"revAppExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"[";"revAppExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"[";"revAppExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"["],WHITESPACE
-    ["]";"sequentialExpr";"[";",";"revTupleExpr"],SEMICOLON
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"-"],SEMICOLON
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr"],SEMICOLON
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"-";"->";"IDENT";"FUN"],RHSEND
-    ["]";"sequentialExpr";"[";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"-";"=";"IDENT";"LET"],RHSEND
-    ["]";"sequentialExpr";"[";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"->";"IDENT";"FUN"],RHSEND
-    ["]";"sequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"=";"IDENT";"LET"],RHSEND
-    ["]";"sequentialExpr";"[";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr"],WHITESPACE
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr"],SEMICOLON
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"-"],SEMICOLON
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr"],SEMICOLON
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";"->";"IDENT";"FUN"],RHSEND
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";"=";"IDENT";"LET"],RHSEND
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"->";"IDENT";"FUN"],RHSEND
-    ["]";"sequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"=";"IDENT";"LET"],RHSEND
-    ["]";"sequentialExpr";"[";"revAppExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["]";"sequentialExpr";"[";"revAppExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|"],WHITESPACE
-    ["|]";"[|";",";"revTupleExpr"],SEMICOLON
-    ["|]";"[|";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"[|";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"-"],SEMICOLON
-    ["|]";"[|";"-";",";"revTupleExpr"],SEMICOLON
-    ["|]";"[|";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"[|";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"[|";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"-";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"[|";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"-";"=";"IDENT";"LET"],RHSEND
-    ["|]";"[|";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"[|";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"=";"IDENT";"LET"],RHSEND
-    ["|]";"[|";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"revAppExpr"],WHITESPACE
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr"],SEMICOLON
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"revAppExpr";"-"],SEMICOLON
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr"],SEMICOLON
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"revAppExpr";"-";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"[|";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"revAppExpr";"-";"=";"IDENT";"LET"],RHSEND
-    ["|]";"[|";"revAppExpr";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"revAppExpr";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"revAppExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"[|";"revAppExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"[|";"revAppExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"[|";"revAppExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|"],WHITESPACE
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr"],SEMICOLON
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"-"],SEMICOLON
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr"],SEMICOLON
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"-";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"sequentialExpr";"[|";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"-";"=";"IDENT";"LET"],RHSEND
-    ["|]";"sequentialExpr";"[|";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"sequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"=";"IDENT";"LET"],RHSEND
-    ["|]";"sequentialExpr";"[|";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr"],WHITESPACE
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"],SEMICOLON
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-"],SEMICOLON
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr"],SEMICOLON
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";"=";"IDENT";"LET"],RHSEND
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"-";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"->";"IDENT";"FUN"],RHSEND
-    ["|]";"sequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"=";"IDENT";"LET"],RHSEND
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"LLPAREN";"->";"IDENT";"FUN"],RRPAREN
-    ["|]";"sequentialExpr";"[|";"revAppExpr";"LLPAREN";"=";"IDENT";"LET"],RRPAREN
-
-]
+let precede_declExpr = set ["(";";";"LLPAREN";"[";"[|"]
 
 open FSharp.LexYacc
 
@@ -1001,6 +49,7 @@ let tops = [
   {prefix=[")";"("];head="parenExpr"}
   {prefix=[")";"sequentialExpr";"("];head="parenExpr"}
   {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
+  {prefix=[",";"revTupleExpr"];head="tupleExpr"}
   {prefix=["-"];head="unaryExpr"}
   {prefix=["->";"IDENT";"FUN"];head="lambdaExpr"}
   {prefix=[".";"revLongid"];head="revLongid"}
@@ -1018,16 +67,54 @@ let tops = [
   {prefix=["LLPAREN"];head="rhsBlock"}
   {prefix=["MODULE"];head="file"}
   {prefix=["OPEN"];head="declExpr"}
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN"];head="lambdaExpr"}
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET"];head="letBinding"}
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"}
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET"];head="letBinding"}
   {prefix=["RRPAREN";"sequentialExpr";"LLPAREN"];head="rhsBlock"}
   {prefix=["["];head="listExpr"}
   {prefix=["[|"];head="arrayExpr"}
   {prefix=["]";"["];head="listExpr"}
   {prefix=["]";"sequentialExpr";"["];head="listExpr"}
+  {prefix=["appExpr"];head="unaryExpr"}
+  {prefix=["appExpr";"-"];head="unaryExpr"}
+  {prefix=["arrayExpr"];head="atomicExpr"}
+  {prefix=["atomicExpr"];head="revAppExpr"}
+  {prefix=["atomicExpr";"revAppExpr"];head="revAppExpr"}
+  {prefix=["declExpr"];head="revSequentialExpr"}
+  {prefix=["declExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+  {prefix=["file"];head=""}
+  {prefix=["lambdaExpr"];head="lambdaOrTupleExpr"}
+  {prefix=["lambdaExpr";",";"revTupleExpr"];head="tupleExpr"}
+  {prefix=["lambdaOrTupleExpr"];head="declExpr"}
+  {prefix=["lambdaOrTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"}
+  {prefix=["lambdaOrTupleExpr";"=";"IDENT";"LET"];head="letBinding"}
+  {prefix=["letBinding"];head="declExpr"}
+  {prefix=["listExpr"];head="atomicExpr"}
+  {prefix=["longid"];head="atomicExpr"}
+  {prefix=["longid";"MODULE"];head="file"}
+  {prefix=["longid";"OPEN"];head="declExpr"}
+  {prefix=["parenExpr"];head="atomicExpr"}
+  {prefix=["revAppExpr"];head="appExpr"}
+  {prefix=["revAppExpr"];head="revAppExpr"}
+  {prefix=["revLongid"];head="longid"}
+  {prefix=["revLongid"];head="revLongid"}
+  {prefix=["revSequentialExpr"];head="revSequentialExpr"}
+  {prefix=["revSequentialExpr"];head="sequentialExpr"}
+  {prefix=["revTupleExpr"];head="revTupleExpr"}
+  {prefix=["revTupleExpr"];head="tupleExpr"}
+  {prefix=["rhsBlock";"->";"IDENT";"FUN"];head="lambdaExpr"}
+  {prefix=["rhsBlock";"=";"IDENT";"LET"];head="letBinding"}
+  {prefix=["rhsBlock";"longid";"MODULE"];head="file"}
+  {prefix=["sequentialExpr";"("];head="parenExpr"}
+  {prefix=["sequentialExpr";"LLPAREN"];head="rhsBlock"}
+  {prefix=["sequentialExpr";"["];head="listExpr"}
+  {prefix=["sequentialExpr";"[|"];head="arrayExpr"}
+  {prefix=["tupleExpr"];head="lambdaOrTupleExpr"}
+  {prefix=["unaryExpr"];head="revTupleExpr"}
+  {prefix=["unaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
   {prefix=["|]";"[|"];head="arrayExpr"}
   {prefix=["|]";"sequentialExpr";"[|"];head="arrayExpr"}
 ]
+
 let lookaheads = [
   {prefix=["("];head="parenExpr"},"("
   {prefix=["("];head="parenExpr"},")"
@@ -1047,9 +134,11 @@ let lookaheads = [
   {prefix=[")";"("];head="revAppExpr"},"[|"
   {prefix=[")";"("];head="revSequentialExpr"},";"
   {prefix=[")";"("];head="revTupleExpr"},","
+  {prefix=[")";"("];head="tupleExpr"},","
   {prefix=[")";"(";"("];head="parenExpr"},")"
   {prefix=[")";"(";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"(";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=[")";"(";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=[")";"(";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=[")";"(";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1063,9 +152,11 @@ let lookaheads = [
   {prefix=[")";"(";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=[")";"(";"-"];head="revSequentialExpr"},";"
   {prefix=[")";"(";"-"];head="revTupleExpr"},","
+  {prefix=[")";"(";"-"];head="tupleExpr"},","
   {prefix=[")";"(";"-";"("];head="parenExpr"},")"
   {prefix=[")";"(";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"(";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=[")";"(";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=[")";"(";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=[")";"(";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=[")";"(";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1104,9 +195,11 @@ let lookaheads = [
   {prefix=[")";"(";"revAppExpr"];head="revAppExpr"},"[|"
   {prefix=[")";"(";"revAppExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"(";"revAppExpr"];head="revTupleExpr"},","
+  {prefix=[")";"(";"revAppExpr"];head="tupleExpr"},","
   {prefix=[")";"(";"revAppExpr";"("];head="parenExpr"},")"
   {prefix=[")";"(";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"(";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=[")";"(";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1120,9 +213,11 @@ let lookaheads = [
   {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=[")";"(";"revAppExpr";"-"];head="revSequentialExpr"},";"
   {prefix=[")";"(";"revAppExpr";"-"];head="revTupleExpr"},","
+  {prefix=[")";"(";"revAppExpr";"-"];head="tupleExpr"},","
   {prefix=[")";"(";"revAppExpr";"-";"("];head="parenExpr"},")"
   {prefix=[")";"(";"revAppExpr";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"(";"revAppExpr";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=[")";"(";"revAppExpr";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=[")";"(";"revAppExpr";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=[")";"(";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=[")";"(";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1161,9 +256,11 @@ let lookaheads = [
   {prefix=[")";"sequentialExpr";"("];head="revAppExpr"},"[|"
   {prefix=[")";"sequentialExpr";"("];head="revSequentialExpr"},";"
   {prefix=[")";"sequentialExpr";"("];head="revTupleExpr"},","
+  {prefix=[")";"sequentialExpr";"("];head="tupleExpr"},","
   {prefix=[")";"sequentialExpr";"(";"("];head="parenExpr"},")"
   {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1177,9 +274,11 @@ let lookaheads = [
   {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=[")";"sequentialExpr";"(";"-"];head="revSequentialExpr"},";"
   {prefix=[")";"sequentialExpr";"(";"-"];head="revTupleExpr"},","
+  {prefix=[")";"sequentialExpr";"(";"-"];head="tupleExpr"},","
   {prefix=[")";"sequentialExpr";"(";"-";"("];head="parenExpr"},")"
   {prefix=[")";"sequentialExpr";"(";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"sequentialExpr";"(";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=[")";"sequentialExpr";"(";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=[")";"sequentialExpr";"(";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=[")";"sequentialExpr";"(";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=[")";"sequentialExpr";"(";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1218,9 +317,11 @@ let lookaheads = [
   {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revAppExpr"},"[|"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revTupleExpr"},","
+  {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="tupleExpr"},","
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";"("];head="parenExpr"},")"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1234,9 +335,11 @@ let lookaheads = [
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-"];head="revSequentialExpr"},";"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-"];head="revTupleExpr"},","
+  {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-"];head="tupleExpr"},","
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-";"("];head="parenExpr"},")"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=[")";"sequentialExpr";"(";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1274,6 +377,7 @@ let lookaheads = [
   {prefix=[",";"revTupleExpr"];head="revTupleExpr"},"LITERAL"
   {prefix=[",";"revTupleExpr"];head="revTupleExpr"},"["
   {prefix=[",";"revTupleExpr"];head="revTupleExpr"},"[|"
+  {prefix=[",";"revTupleExpr"];head="tupleExpr"},"FUN"
   {prefix=["-"];head="unaryExpr"},"("
   {prefix=["-"];head="unaryExpr"},"IDENT"
   {prefix=["-"];head="unaryExpr"},"LITERAL"
@@ -1325,9 +429,11 @@ let lookaheads = [
   {prefix=["IDENT"];head="revLongid"},"."
   {prefix=["IDENT"];head="revSequentialExpr"},";"
   {prefix=["IDENT"];head="revTupleExpr"},","
+  {prefix=["IDENT"];head="tupleExpr"},","
   {prefix=["IDENT";"("];head="parenExpr"},")"
   {prefix=["IDENT";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["IDENT";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1341,9 +447,11 @@ let lookaheads = [
   {prefix=["IDENT";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["IDENT";"-"];head="revSequentialExpr"},";"
   {prefix=["IDENT";"-"];head="revTupleExpr"},","
+  {prefix=["IDENT";"-"];head="tupleExpr"},","
   {prefix=["IDENT";"-";"("];head="parenExpr"},")"
   {prefix=["IDENT";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["IDENT";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["IDENT";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1374,9 +482,11 @@ let lookaheads = [
   {prefix=["IDENT";".";"revLongid"];head="revLongid"},"."
   {prefix=["IDENT";".";"revLongid"];head="revSequentialExpr"},";"
   {prefix=["IDENT";".";"revLongid"];head="revTupleExpr"},","
+  {prefix=["IDENT";".";"revLongid"];head="tupleExpr"},","
   {prefix=["IDENT";".";"revLongid";"("];head="parenExpr"},")"
   {prefix=["IDENT";".";"revLongid";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";".";"revLongid";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";".";"revLongid";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["IDENT";".";"revLongid";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";".";"revLongid";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["IDENT";".";"revLongid";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1390,9 +500,11 @@ let lookaheads = [
   {prefix=["IDENT";".";"revLongid";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["IDENT";".";"revLongid";"-"];head="revSequentialExpr"},";"
   {prefix=["IDENT";".";"revLongid";"-"];head="revTupleExpr"},","
+  {prefix=["IDENT";".";"revLongid";"-"];head="tupleExpr"},","
   {prefix=["IDENT";".";"revLongid";"-";"("];head="parenExpr"},")"
   {prefix=["IDENT";".";"revLongid";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";".";"revLongid";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";".";"revLongid";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["IDENT";".";"revLongid";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";".";"revLongid";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["IDENT";".";"revLongid";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1442,9 +554,11 @@ let lookaheads = [
   {prefix=["IDENT";".";"revLongid";"revAppExpr"];head="revAppExpr"},"[|"
   {prefix=["IDENT";".";"revLongid";"revAppExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";".";"revLongid";"revAppExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";".";"revLongid";"revAppExpr"];head="tupleExpr"},","
   {prefix=["IDENT";".";"revLongid";"revAppExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1458,9 +572,11 @@ let lookaheads = [
   {prefix=["IDENT";".";"revLongid";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";"-"];head="revSequentialExpr"},";"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";"-"];head="revTupleExpr"},","
+  {prefix=["IDENT";".";"revLongid";"revAppExpr";"-"];head="tupleExpr"},","
   {prefix=["IDENT";".";"revLongid";"revAppExpr";"-";"("];head="parenExpr"},")"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["IDENT";".";"revLongid";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1521,9 +637,11 @@ let lookaheads = [
   {prefix=["IDENT";"revAppExpr"];head="revAppExpr"},"[|"
   {prefix=["IDENT";"revAppExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";"revAppExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";"revAppExpr"];head="tupleExpr"},","
   {prefix=["IDENT";"revAppExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1537,9 +655,11 @@ let lookaheads = [
   {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["IDENT";"revAppExpr";"-"];head="revSequentialExpr"},";"
   {prefix=["IDENT";"revAppExpr";"-"];head="revTupleExpr"},","
+  {prefix=["IDENT";"revAppExpr";"-"];head="tupleExpr"},","
   {prefix=["IDENT";"revAppExpr";"-";"("];head="parenExpr"},")"
   {prefix=["IDENT";"revAppExpr";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["IDENT";"revAppExpr";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["IDENT";"revAppExpr";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["IDENT";"revAppExpr";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["IDENT";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["IDENT";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1579,9 +699,11 @@ let lookaheads = [
   {prefix=["LITERAL"];head="revAppExpr"},"[|"
   {prefix=["LITERAL"];head="revSequentialExpr"},";"
   {prefix=["LITERAL"];head="revTupleExpr"},","
+  {prefix=["LITERAL"];head="tupleExpr"},","
   {prefix=["LITERAL";"("];head="parenExpr"},")"
   {prefix=["LITERAL";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["LITERAL";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["LITERAL";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["LITERAL";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["LITERAL";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1595,9 +717,11 @@ let lookaheads = [
   {prefix=["LITERAL";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["LITERAL";"-"];head="revSequentialExpr"},";"
   {prefix=["LITERAL";"-"];head="revTupleExpr"},","
+  {prefix=["LITERAL";"-"];head="tupleExpr"},","
   {prefix=["LITERAL";"-";"("];head="parenExpr"},")"
   {prefix=["LITERAL";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["LITERAL";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["LITERAL";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["LITERAL";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["LITERAL";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["LITERAL";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1636,9 +760,11 @@ let lookaheads = [
   {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"},"[|"
   {prefix=["LITERAL";"revAppExpr"];head="revSequentialExpr"},";"
   {prefix=["LITERAL";"revAppExpr"];head="revTupleExpr"},","
+  {prefix=["LITERAL";"revAppExpr"];head="tupleExpr"},","
   {prefix=["LITERAL";"revAppExpr";"("];head="parenExpr"},")"
   {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1652,9 +778,11 @@ let lookaheads = [
   {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["LITERAL";"revAppExpr";"-"];head="revSequentialExpr"},";"
   {prefix=["LITERAL";"revAppExpr";"-"];head="revTupleExpr"},","
+  {prefix=["LITERAL";"revAppExpr";"-"];head="tupleExpr"},","
   {prefix=["LITERAL";"revAppExpr";"-";"("];head="parenExpr"},")"
   {prefix=["LITERAL";"revAppExpr";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["LITERAL";"revAppExpr";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["LITERAL";"revAppExpr";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["LITERAL";"revAppExpr";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["LITERAL";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["LITERAL";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1698,30 +826,54 @@ let lookaheads = [
   {prefix=["LLPAREN"];head="rhsBlock"},"[|"
   {prefix=["MODULE"];head="file"},"IDENT"
   {prefix=["OPEN"];head="declExpr"},"IDENT"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN"];head="revSequentialExpr"},";"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"("];head="parenExpr"},")"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";";";"revSequentialExpr"];head="revSequentialExpr"},";"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"("];head="parenExpr"},")"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"},"RRPAREN"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"["];head="listExpr"},"]"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"},"|]"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"=";"IDENT";"LET"];head="letBinding"},"RHSEND"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"LLPAREN"];head="rhsBlock"},"RRPAREN"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"["];head="listExpr"},"]"
-  {prefix=["RHSEND";"lambdaExpr";"->";"IDENT";"FUN";"[|"];head="arrayExpr"},"|]"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET"];head="revSequentialExpr"},";"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET";"("];head="parenExpr"},")"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET";";";"revSequentialExpr"];head="revSequentialExpr"},";"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"("];head="parenExpr"},")"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"},"RRPAREN"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"["];head="listExpr"},"]"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"},"|]"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET";"LLPAREN"];head="rhsBlock"},"RRPAREN"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET";"["];head="listExpr"},"]"
-  {prefix=["RHSEND";"lambdaExpr";"=";"IDENT";"LET";"[|"];head="arrayExpr"},"|]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN"];head="revSequentialExpr"},";"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";"("];head="parenExpr"},")"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr"];head="revSequentialExpr"},";"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";"("];head="parenExpr"},")"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"},")"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"},"RRPAREN"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"},"]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"},"|]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";"=";"IDENT";"LET"];head="letBinding"},"RHSEND"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"},"RRPAREN"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";"["];head="listExpr"},"]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";";";"revSequentialExpr"];head="revSequentialExpr"},";"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"("];head="parenExpr"},")"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"},"RRPAREN"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"["];head="listExpr"},"]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"},"|]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";"=";"IDENT";"LET"];head="letBinding"},"RHSEND"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";"LLPAREN"];head="rhsBlock"},"RRPAREN"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";"["];head="listExpr"},"]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"->";"IDENT";"FUN";"[|"];head="arrayExpr"},"|]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET"];head="revSequentialExpr"},";"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET";"("];head="parenExpr"},")"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET";";";"revSequentialExpr"];head="revSequentialExpr"},";"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"("];head="parenExpr"},")"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"},"RRPAREN"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"["];head="listExpr"},"]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"},"|]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET";"LLPAREN"];head="rhsBlock"},"RRPAREN"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET";"["];head="listExpr"},"]"
+  {prefix=["RHSEND";"lambdaOrTupleExpr";"=";"IDENT";"LET";"[|"];head="arrayExpr"},"|]"
   {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN"];head="revSequentialExpr"},";"
   {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";"("];head="parenExpr"},")"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr"];head="revSequentialExpr"},";"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";"("];head="parenExpr"},")"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"},")"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"},"RRPAREN"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"},"]"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"},"|]"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";"=";"IDENT";"LET"];head="letBinding"},"RHSEND"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"},"RRPAREN"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";"["];head="listExpr"},"]"
+  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";";";"revSequentialExpr"];head="revSequentialExpr"},";"
   {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"IDENT";"FUN";";";"revSequentialExpr";"("];head="parenExpr"},")"
@@ -1772,9 +924,11 @@ let lookaheads = [
   {prefix=["]";"["];head="revAppExpr"},"[|"
   {prefix=["]";"["];head="revSequentialExpr"},";"
   {prefix=["]";"["];head="revTupleExpr"},","
+  {prefix=["]";"["];head="tupleExpr"},","
   {prefix=["]";"[";"("];head="parenExpr"},")"
   {prefix=["]";"[";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"[";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["]";"[";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["]";"[";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["]";"[";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1788,9 +942,11 @@ let lookaheads = [
   {prefix=["]";"[";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["]";"[";"-"];head="revSequentialExpr"},";"
   {prefix=["]";"[";"-"];head="revTupleExpr"},","
+  {prefix=["]";"[";"-"];head="tupleExpr"},","
   {prefix=["]";"[";"-";"("];head="parenExpr"},")"
   {prefix=["]";"[";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"[";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["]";"[";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["]";"[";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["]";"[";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["]";"[";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1829,9 +985,11 @@ let lookaheads = [
   {prefix=["]";"[";"revAppExpr"];head="revAppExpr"},"[|"
   {prefix=["]";"[";"revAppExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"[";"revAppExpr"];head="revTupleExpr"},","
+  {prefix=["]";"[";"revAppExpr"];head="tupleExpr"},","
   {prefix=["]";"[";"revAppExpr";"("];head="parenExpr"},")"
   {prefix=["]";"[";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"[";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["]";"[";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1845,9 +1003,11 @@ let lookaheads = [
   {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["]";"[";"revAppExpr";"-"];head="revSequentialExpr"},";"
   {prefix=["]";"[";"revAppExpr";"-"];head="revTupleExpr"},","
+  {prefix=["]";"[";"revAppExpr";"-"];head="tupleExpr"},","
   {prefix=["]";"[";"revAppExpr";"-";"("];head="parenExpr"},")"
   {prefix=["]";"[";"revAppExpr";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"[";"revAppExpr";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["]";"[";"revAppExpr";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["]";"[";"revAppExpr";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["]";"[";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["]";"[";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1886,9 +1046,11 @@ let lookaheads = [
   {prefix=["]";"sequentialExpr";"["];head="revAppExpr"},"[|"
   {prefix=["]";"sequentialExpr";"["];head="revSequentialExpr"},";"
   {prefix=["]";"sequentialExpr";"["];head="revTupleExpr"},","
+  {prefix=["]";"sequentialExpr";"["];head="tupleExpr"},","
   {prefix=["]";"sequentialExpr";"[";"("];head="parenExpr"},")"
   {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1902,9 +1064,11 @@ let lookaheads = [
   {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["]";"sequentialExpr";"[";"-"];head="revSequentialExpr"},";"
   {prefix=["]";"sequentialExpr";"[";"-"];head="revTupleExpr"},","
+  {prefix=["]";"sequentialExpr";"[";"-"];head="tupleExpr"},","
   {prefix=["]";"sequentialExpr";"[";"-";"("];head="parenExpr"},")"
   {prefix=["]";"sequentialExpr";"[";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"sequentialExpr";"[";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["]";"sequentialExpr";"[";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["]";"sequentialExpr";"[";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["]";"sequentialExpr";"[";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["]";"sequentialExpr";"[";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1943,9 +1107,11 @@ let lookaheads = [
   {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revAppExpr"},"[|"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revTupleExpr"},","
+  {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="tupleExpr"},","
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";"("];head="parenExpr"},")"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -1959,9 +1125,11 @@ let lookaheads = [
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-"];head="revSequentialExpr"},";"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-"];head="revTupleExpr"},","
+  {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-"];head="tupleExpr"},","
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-";"("];head="parenExpr"},")"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["]";"sequentialExpr";"[";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -2000,9 +1168,11 @@ let lookaheads = [
   {prefix=["|]";"[|"];head="revAppExpr"},"[|"
   {prefix=["|]";"[|"];head="revSequentialExpr"},";"
   {prefix=["|]";"[|"];head="revTupleExpr"},","
+  {prefix=["|]";"[|"];head="tupleExpr"},","
   {prefix=["|]";"[|";"("];head="parenExpr"},")"
   {prefix=["|]";"[|";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"[|";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"[|";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["|]";"[|";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"[|";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -2016,9 +1186,11 @@ let lookaheads = [
   {prefix=["|]";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["|]";"[|";"-"];head="revSequentialExpr"},";"
   {prefix=["|]";"[|";"-"];head="revTupleExpr"},","
+  {prefix=["|]";"[|";"-"];head="tupleExpr"},","
   {prefix=["|]";"[|";"-";"("];head="parenExpr"},")"
   {prefix=["|]";"[|";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"[|";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"[|";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["|]";"[|";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"[|";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["|]";"[|";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -2057,9 +1229,11 @@ let lookaheads = [
   {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"},"[|"
   {prefix=["|]";"[|";"revAppExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"[|";"revAppExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"[|";"revAppExpr"];head="tupleExpr"},","
   {prefix=["|]";"[|";"revAppExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -2073,9 +1247,11 @@ let lookaheads = [
   {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["|]";"[|";"revAppExpr";"-"];head="revSequentialExpr"},";"
   {prefix=["|]";"[|";"revAppExpr";"-"];head="revTupleExpr"},","
+  {prefix=["|]";"[|";"revAppExpr";"-"];head="tupleExpr"},","
   {prefix=["|]";"[|";"revAppExpr";"-";"("];head="parenExpr"},")"
   {prefix=["|]";"[|";"revAppExpr";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"[|";"revAppExpr";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"[|";"revAppExpr";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["|]";"[|";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -2114,9 +1290,11 @@ let lookaheads = [
   {prefix=["|]";"sequentialExpr";"[|"];head="revAppExpr"},"[|"
   {prefix=["|]";"sequentialExpr";"[|"];head="revSequentialExpr"},";"
   {prefix=["|]";"sequentialExpr";"[|"];head="revTupleExpr"},","
+  {prefix=["|]";"sequentialExpr";"[|"];head="tupleExpr"},","
   {prefix=["|]";"sequentialExpr";"[|";"("];head="parenExpr"},")"
   {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -2130,9 +1308,11 @@ let lookaheads = [
   {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["|]";"sequentialExpr";"[|";"-"];head="revSequentialExpr"},";"
   {prefix=["|]";"sequentialExpr";"[|";"-"];head="revTupleExpr"},","
+  {prefix=["|]";"sequentialExpr";"[|";"-"];head="tupleExpr"},","
   {prefix=["|]";"sequentialExpr";"[|";"-";"("];head="parenExpr"},")"
   {prefix=["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["|]";"sequentialExpr";"[|";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -2171,9 +1351,11 @@ let lookaheads = [
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revAppExpr"},"[|"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="tupleExpr"},","
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -2187,9 +1369,11 @@ let lookaheads = [
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"},"|]"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-"];head="revSequentialExpr"},";"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-"];head="revTupleExpr"},","
+  {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-"];head="tupleExpr"},","
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-";"("];head="parenExpr"},")"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr"];head="revSequentialExpr"},";"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr"];head="revTupleExpr"},","
+  {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr"];head="tupleExpr"},","
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";"("];head="parenExpr"},")"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";"->";"IDENT";"FUN"];head="lambdaExpr"},"RHSEND"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"-";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"},";"
@@ -2221,4 +1405,9 @@ let lookaheads = [
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"LLPAREN"];head="rhsBlock"},"RRPAREN"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"["];head="listExpr"},"]"
   {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"[|"];head="arrayExpr"},"|]"
+]
+
+let open_longid = [
+    ["IDENT";".";"revLongid";"OPEN"]
+    ["IDENT";"OPEN"]
 ]
