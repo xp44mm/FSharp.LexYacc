@@ -2,7 +2,7 @@
 
 type GrammarRow =
     {    
-    productions: Set<list<string>> /// augmented Productions
+    productions: Set<list<string>> // augmented Productions
     
     symbols: Set<string>
     nonterminals: Set<string>

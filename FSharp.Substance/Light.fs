@@ -21,9 +21,40 @@ let transform (tokens: FSharpToken seq) =
 
     loop(NEW_LINE 0)
 
-/// 带缩进信息的Lexeme
 let offsideLexeme (spaces:int option) (tok:FSharpToken) =
     match tok with
+    | FSharpToken.EXCLAM -> box spaces
+    | FSharpToken.PERCENT -> box spaces
+    | FSharpToken.AMP -> box spaces
+    | FSharpToken.PLUS -> box spaces
+    | FSharpToken.DIV -> box spaces
+    | FSharpToken.AT -> box spaces
+    | FSharpToken.STAR_STAR -> box spaces
+    | FSharpToken.AMP_AMP -> box spaces
+    | FSharpToken.BAR_BAR -> box spaces
+    | FSharpToken.LESS_GREATER -> box spaces
+    | FSharpToken.COLON_QMARK_GREATER -> box spaces
+    | FSharpToken.COLON_QMARK -> box spaces
+    | FSharpToken.COLON_COLON -> box spaces
+    | FSharpToken.LARROW -> box spaces
+    | FSharpToken.RPIPE -> box spaces
+    | FSharpToken.LPIPE -> box spaces
+    | FSharpToken.BAR_RPAREN -> box spaces
+    | FSharpToken.LPAREN_BAR -> box spaces
+    | FSharpToken.LESS_BAR_BAR -> box spaces
+    | FSharpToken.LESS_BAR_BAR_BAR -> box spaces
+    | FSharpToken.BAR_BAR_GREATER -> box spaces
+    | FSharpToken.BAR_BAR_BAR_GREATER -> box spaces
+    | FSharpToken.AMP_AMP_AMP -> box spaces
+    | FSharpToken.BAR_BAR_BAR -> box spaces
+    | FSharpToken.CARET_CARET_CARET -> box spaces
+    | FSharpToken.TILDE_TILDE_TILDE -> box spaces
+    | FSharpToken.LESS_LESS_LESS -> box spaces
+    | FSharpToken.GREATER_GREATER_GREATER -> box spaces
+    | FSharpToken.GREATER_GREATER -> box spaces
+    | FSharpToken.LESS_LESS -> box spaces
+    | FSharpToken.DOT_DOT -> box spaces
+    | FSharpToken.DOT_DOT_DOT -> box spaces
     | FSharpToken.LLPAREN -> box spaces
     | FSharpToken.RRPAREN -> box spaces
     | FSharpToken.RHSEND -> box spaces
@@ -33,6 +64,7 @@ let offsideLexeme (spaces:int option) (tok:FSharpToken) =
     | FSharpToken.EOF -> box spaces
     | FSharpToken.SEMICOLON -> box spaces
     | FSharpToken.BAR -> box spaces
+    | FSharpToken.DO -> box spaces
     | FSharpToken.EQUALS -> box spaces
     | FSharpToken.RARROW -> box spaces
     | FSharpToken.BAR_RBRACE -> box spaces
@@ -62,6 +94,7 @@ let offsideLexeme (spaces:int option) (tok:FSharpToken) =
     | FSharpToken.STAR -> box spaces
     | FSharpToken.TYPAR x -> box(spaces, x)
     | FSharpToken.WITH -> box spaces
+
 
 let tokenRow indent tok : TokenRow<int option * FSharpToken> =
     {

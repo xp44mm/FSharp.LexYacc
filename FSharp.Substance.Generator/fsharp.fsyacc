@@ -64,7 +64,7 @@ lambdaExpr:
         }
 
 tupleExpr:
-    | revTupleExpr  { 
+    | revTupleExpr { 
         let i,ls = s0 |> List.rev |> List.unzip
         let e = if ls.Length > 1 then TupleExpr(ls) else ls.[0]
         i.[0], e
@@ -75,11 +75,26 @@ tupleExpr:
     }
     
 revTupleExpr:
-    | unaryExpr { [s0] }
-    | revTupleExpr "," unaryExpr { s2::s0 }
+    | binaryExpr { [s0] }
+    | revTupleExpr "," binaryExpr { s2::s0 }
+
+binaryExpr:
+    | revBinaryExpr {
+        let ops, ls = s0 |> List.rev |> List.unzip
+        let i,ls = ls |> List.unzip
+        let e = if ls.Length > 1 then BinaryExpr(ls.[0], List.zip ops.Tail ls.Tail) else ls.[0]
+        i.[0], e
+    }
+
+revBinaryExpr:
+    | unaryExpr { ["",s0] }
+    | revBinaryExpr infix unaryExpr { (s1,s2)::s0 }
 
 unaryExpr:
-    | "-" appExpr  { s0, snd s1 }
+    | prifix appExpr { 
+        let indent, op = s0
+        indent, UnaryExpr(op, snd s1)
+        }
     | appExpr {s0}
 
 appExpr:
@@ -114,13 +129,51 @@ listExpr:
 arrayExpr:
     | "[|" "|]" { s0, ArrayExpr [] }
     | "[|" sequentialExpr "|]" { s0, ArrayExpr(snd s1) }
+    
+prifix:
+    | "+" {s0, "+" }
+    | "-" {s0, "-" }
+    | "!" {s0, "!" }
+    
+infix:
+    | "%" {s0, "%"} 
+    | "&" { s0, "&"}
+    | "&&"    { s0, "&&"   }
+    | "&&&"   { s0, "&&&"  }
+    | ".."    { s0, ".."   }
+    | "..."   { s0, "..."  }
+    | "/"     { s0, "/"    }
+    | "::"    { s0, "::"   }
+    | ":?"    { s0, ":?"   }
+    | ":?>"   { s0, ":?>"  }
+    | "<<"    { s0, "<<"   }
+    | "<<<"   { s0, "<<<"  }
+    | "<>"    { s0, "<>"   }
+    | "<|"    { s0, "<|"   }
+    | "<||"   { s0, "<||"  }
+    | "<|||"  { s0, "<|||" }
+    | ">>"    { s0, ">>"   }
+    | ">>>"   { s0, ">>>"  }
+    | "@"     { s0, "@"    }
+    | "="     { s0, "="    }
+    | "^^^"   { s0, "^^^"  }
+    | "|>"    { s0, "|>"   }
+    | "||"    { s0, "||"   }
+    | "||>"   { s0, "||>"  }
+    | "|||"   { s0, "|||"  }
+    | "|||>"  { s0, "|||>" }
 
 %type<string list*Expr list> file
 %type<(option<int>*string) list> revLongid
 %type<option<int>*string list> longid
 %type<option<int>*Expr list> sequentialExpr rhsBlock
 %type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr
-%type<option<int>*Expr> declExpr letBinding lambdaOrTupleExpr lambdaExpr tupleExpr unaryExpr appExpr atomicExpr parenExpr arrayExpr listExpr
-%type<option<int>> "MODULE" LET FUN "OPEN" "." ";" "=" "," "[|" "[" "]" "|]" "(" ")" "-" DUMMY
-%type<option<int>*string> "IDENT"
-%type<option<int>*Literal> "LITERAL"
+%type<option<int>*Expr> declExpr letBinding lambdaOrTupleExpr lambdaExpr tupleExpr binaryExpr unaryExpr appExpr atomicExpr parenExpr arrayExpr listExpr
+%type<option<int>*string> prifix infix
+%type<(string*(option<int>*Expr)) list> revBinaryExpr
+%type<option<int>*string> IDENT
+%type<option<int>*Literal> LITERAL
+%type<option<int>> DO DUMMY EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WHITESPACE WITH
+"!" "#" "%" "&" "&&" "&&&" "(" "(|" ")" "*" "**" "+" "," "-" "->" "." ".." "..." "/" ":" "::" ":?" ":?>" ";" "<" "<-" "<<" "<<<" "<>" "<|" "<||" "<|||" "=" ">" ">>" ">>>" "@" "[" "[|" "]" "^^^" "{" "{|" "|" "|)" "|>" "|]" "||" "||>" "|||" "|||>" "|}" "}" "~~~"
+
+

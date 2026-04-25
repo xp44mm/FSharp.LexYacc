@@ -31,6 +31,7 @@ whitespace+ {[]}
 ':' { [FsyaccToken.COLON] }
 '|' { [FsyaccToken.BAR] }
 '/' '/' dot* {[]}
+// 这个dot*需要修改
 '%' 't' 'y' 'p' 'e' '<' dot* '>' { [FsyaccToken.PERCENT_TYPE(String.build buff)] }
 '%' 'l' 'e' 'f' 't'  { [FsyaccToken.LEFTASSOC] }
 '%' 'r' 'i' 'g' 'h' 't' { [FsyaccToken.RIGHTASSOC] }

@@ -6,24 +6,35 @@ open System
 open System.Text.RegularExpressions
 
 open FSharp.Idioms
-open FSharp.Idioms.Line
+open FSharp.Idioms.Literal
+
+//let renderSymbol (sym: string) =
+//    if Regex.IsMatch(sym, @"^\w+$") then
+//        sym
+//    else
+//        sym |> Literal.stringify
 
 let renderSymbol (sym: string) =
-    if Regex.IsMatch(sym, @"^\w+$") then
-        sym
+    if System.String.IsNullOrEmpty sym then
+        "\"\""
+    elif
+        Regex.IsMatch(sym, @"^_+$")
+        || Regex.IsMatch(sym, @"\W")
+    then
+        stringify sym
     else
-        sym |> Literal.stringify
+        sym
 
 let renderSymbols (symbols: string list) =
-        symbols
-        |> List.map renderSymbol
-        |> String.concat " "
+    symbols
+    |> List.map renderSymbol
+    |> String.concat " "
 
-let renderAssociativity (assoc:Associativity) =
+let renderAssociativity (assoc: Associativity) =
     match assoc with
-    | LeftAssoc  -> "%left"
+    | LeftAssoc -> "%left"
     | RightAssoc -> "%right"
-    | NonAssoc   -> "%nonassoc"
+    | NonAssoc -> "%nonassoc"
 
 let renderPrecedenceStatement (stmt: PrecedenceStatement) =
     $"%%{renderAssociativity stmt.assoc} {renderSymbols stmt.ids}"
@@ -55,11 +66,11 @@ let renderRuleGroup this =
         renderSymbol this.lhs + " :"
         this.bodies
         |> List.map(fun bd -> renderRuleBody bd)
-        |> Line.indentAll (4*4)
+        |> Line.indentAll(4 * 4)
     ]
     |> String.concat "\r\n"
 
-let render(fsyacc:RawFsyaccFile) =
+let render (fsyacc: RawFsyaccFile) =
     let h = fsyacc.header
 
     let r =
@@ -92,4 +103,8 @@ let render(fsyacc:RawFsyaccFile) =
         ]
         |> String.concat "\r\n%%\r\n"
 
-    [ h; rpd ] |> String.concat "\r\n"
+    [
+        h
+        rpd
+    ]
+    |> String.concat "\r\n"

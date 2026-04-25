@@ -16,6 +16,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="RawFsyaccFilePrinter.fs" />
+		<Compile Include="DummyToken.fs" />
+		<Compile Include="SLR.fs" />
+		<Compile Include="Declaration.fs" />
+		<Compile Include="OperatorsLine.fs" />
+		<Compile Include="ConflictedProduction.fs" />
+		<Compile Include="Symbol.fs" />
 		<Compile Include="DiscriminatedUnions.fs" />
 		<Compile Include="BnfUtils.fs" />
 		<Compile Include="FlatFsyaccFileUtils.fs" />

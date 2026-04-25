@@ -61,12 +61,14 @@ let type_param_start = [ '_' letter ]
 let type_param_char = [type_param_start digit ]
 
 rule : char list -> FSharpToken list =
-'\r' ? '\n' ' ' * { 
+'\r' ? '\n' ' ' * {
     let len = buff |> List.skipWhile ((<>) ' ') |> List.length
     [NEW_LINE len] }
 
-' ' + { [WHITESPACE]  }
+' ' + { [WHITESPACE] }
+'!' { [EXCLAM] }
 '#' { [HASH] }
+'%' { [PERCENT] }
 '&' { [AMP] }
 '(' { [LPAREN] }
 ')' { [RPAREN] }
@@ -90,41 +92,44 @@ rule : char list -> FSharpToken list =
 
 '*' '*' { [STAR_STAR] }
 
-'-' '>' { [RARROW] }
 '[' '|' { [LBRACK_BAR] }
 '|' ']' { [BAR_RBRACK] }
+
 '&' '&' { [AMP_AMP] }
 '|' '|' { [BAR_BAR] }
+'<' '>' { [LESS_GREATER] }
 ':' '?' '>' { [COLON_QMARK_GREATER] }
 ':' '?' { [COLON_QMARK] }
 ':' ':' { [COLON_COLON] }
 
+'-' '>' { [RARROW] }
 '<' '-' { [LARROW] }
 '|' '>' { [RPIPE] }
 '<' '|' { [LPIPE] }
-'<' '>' { [LESS_GREATER] }
+'|' ')' { [BAR_RPAREN] }
+'(' '|' { [LPAREN_BAR] }
 
 // 元组管道
-'<' '|' '|' { [LESS_BAR_BAR] }      
-'<' '|' '|' '|' { [LESS_BAR_BAR_BAR] }  
+'<' '|' '|' { [LESS_BAR_BAR] }
+'<' '|' '|' '|' { [LESS_BAR_BAR_BAR] }
 '|' '|' '>' { [BAR_BAR_GREATER] }
 '|' '|' '|' '>' { [BAR_BAR_BAR_GREATER] }
 
-// 位运算（注意与布尔版本区别）
-'&' '&' '&' { [AMP_AMP_AMP] }    
-'|' '|' '|' { [BAR_BAR_BAR] }    
-'^' '^' '^' { [CARET_CARET_CARET] } 
-'~' '~' '~' { [TILDE_TILDE_TILDE] } 
-'<' '<' '<' { [LESS_LESS_LESS] }   
-'>' '>' '>' { [GREATER_GREATER_GREATER] } 
+// 位运算
+'&' '&' '&' { [AMP_AMP_AMP] }
+'|' '|' '|' { [BAR_BAR_BAR] }
+'^' '^' '^' { [CARET_CARET_CARET] }
+'~' '~' '~' { [TILDE_TILDE_TILDE] }
+'<' '<' '<' { [LESS_LESS_LESS] }
+'>' '>' '>' { [GREATER_GREATER_GREATER] }
 
 // 函数组合
-'>' '>' { [GREATER_GREATER] }    
-'<' '<' { [LESS_LESS] }          
+'>' '>' { [GREATER_GREATER] }
+'<' '<' { [LESS_LESS] }
 
 // 列表操作
-'.' '.' { [DOT_DOT] }        
-'.' '.' '.' { [DOT_DOT_DOT] } 
+'.' '.' { [DOT_DOT] }
+'.' '.' '.' { [DOT_DOT_DOT] }
 
 
 int8 {[LITERAL(Literal.int8 buff)]}
@@ -147,7 +152,7 @@ single {[LITERAL(Literal.single buff)]}
 '"' ([^ '\\' '"' ] | '\\' _ ) * '"' { [LITERAL(Literal.string buff)] }
 '`' '`' ([^'`' '\n' '\r'] | '`' [^'`' '\n' '\r'] )+ '`' '`' { [IDENT(String.build buff)] }
 
-ident_start_char ident_char* { 
+ident_start_char ident_char* {
     let tok =
         match String.build buff with
         | "module" -> MODULE
@@ -156,6 +161,7 @@ ident_start_char ident_char* {
         | "fun" -> FUN
         | "match" -> MATCH
         | "with" -> WITH
+        | "do" -> DO
         | "true" -> LITERAL(Literal.TRUE)
         | "false" -> LITERAL(Literal.FALSE)
         | "null" -> LITERAL(Literal.NULL)

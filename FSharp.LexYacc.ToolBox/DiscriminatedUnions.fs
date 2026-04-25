@@ -8,6 +8,7 @@ open FSharp.Reflection
 
 open FSharp.Idioms
 open FSharp.Idioms.Literal
+open System.Text.RegularExpressions
 
 /// 工具函数，获取可区分联合的案例信息
 let getUnionCases (unionType: Type) =
@@ -55,17 +56,18 @@ let module_index<'u> =
     let unionType = typeof<'u>
     let cases = getUnionCases unionType
 
-    let rhs = [
-        "match tok with"
-        yield!
-            cases
-            |> Array.map(fun (i, name, fields) ->
-                if fields.Length = 0 then
-                    $"| {unionType.Name}.{name} -> {i}"
-                else
-                    $"| {unionType.Name}.{name} _ -> {i}"
-            )
-    ]
+    let rhs =
+        [
+            "match tok with"
+            yield!
+                cases
+                |> Array.map(fun (i, name, fields) ->
+                    if fields.Length = 0 then
+                        $"| {unionType.Name}.{name} -> {i}"
+                    else
+                        $"| {unionType.Name}.{name} _ -> {i}"
+                )
+        ]
 
     [
         $"let index (tok:{unionType.Name}) ="
@@ -75,17 +77,18 @@ let module_index<'u> =
 let module_tag<'u> (symbols: ('u * string) list) =
     let unionType = typeof<'u>
     let cases = tagedUnionCases symbols
-    let rhs = [
-        "match tok with"
-        yield!
-            cases
-            |> Array.map(fun (i, name, tag, fields) ->
-                if fields.Length = 0 then
-                    $"| {unionType.Name}.{name} -> {stringify tag}"
-                else
-                    $"| {unionType.Name}.{name} _ -> {stringify tag}"
-            )
-    ]
+    let rhs =
+        [
+            "match tok with"
+            yield!
+                cases
+                |> Array.map(fun (i, name, tag, fields) ->
+                    if fields.Length = 0 then
+                        $"| {unionType.Name}.{name} -> {stringify tag}"
+                    else
+                        $"| {unionType.Name}.{name} _ -> {stringify tag}"
+                )
+        ]
 
     [
         $"let tag (tok:{unionType.Name}) ="
@@ -95,13 +98,14 @@ let module_tag<'u> (symbols: ('u * string) list) =
 let module_tagToIndex<'u> (symbols: ('u * string) list) =
     let unionType = typeof<'u>
     let cases = tagedUnionCases symbols
-    let rhs = [
-        "match tag with"
-        yield!
-            cases
-            |> Array.map(fun (i, name, tag, fields) -> $"| {stringify tag} -> {i}")
-        "| _ -> failwithf \"unexpected tag:%s\" tag"
-    ]
+    let rhs =
+        [
+            "match tag with"
+            yield!
+                cases
+                |> Array.map(fun (i, name, tag, fields) -> $"| {stringify tag} -> {i}")
+            "| _ -> failwithf \"unexpected tag:%s\" tag"
+        ]
 
     [
         "let tagToIndex (tag:string) ="
@@ -112,22 +116,23 @@ let module_tagToIndex<'u> (symbols: ('u * string) list) =
 let module_lexeme<'u> =
     let unionType = typeof<'u>
     let cases = getUnionCases unionType
-    let rhs = [
-        "match tok with"
-        yield!
-            cases
-            |> Array.map(fun (i, name, fields) ->
-                match fields.Length with
-                | 0 -> $"| {unionType.Name}.{name} -> null"
-                | 1 -> $"| {unionType.Name}.{name} x -> box x"
-                | len ->
-                    let ps =
-                        [ 0 .. len - 1 ]
-                        |> List.map(fun i -> string(char(int 'a' + i)))
-                        |> String.concat ","
-                    $"| {unionType.Name}.{name}({ps}) -> box({ps})"
-            )
-    ]
+    let rhs =
+        [
+            "match tok with"
+            yield!
+                cases
+                |> Array.map(fun (i, name, fields) ->
+                    match fields.Length with
+                    | 0 -> $"| {unionType.Name}.{name} -> null"
+                    | 1 -> $"| {unionType.Name}.{name} x -> box x"
+                    | len ->
+                        let ps =
+                            [ 0 .. len - 1 ]
+                            |> List.map(fun i -> string(char(int 'a' + i)))
+                            |> String.concat ","
+                        $"| {unionType.Name}.{name}({ps}) -> box({ps})"
+                )
+        ]
 
     [
         $"let lexeme (tok:{unionType.Name}) ="
@@ -173,28 +178,30 @@ let percent_type<'u> (symbols: ('u * string) list) =
 let lexeme_offside<'u> =
     let unionType = typeof<'u>
     let cases = getUnionCases unionType
-    let rhs = [
-        "match tok with"
-        yield!
-            cases
-            |> Array.map(fun (i, name, fields) ->
-                match fields.Length with
-                | 0 -> $"| {unionType.Name}.{name} -> box spaces"
-                | 1 -> $"| {unionType.Name}.{name} x -> box(spaces, x)"
-                | len ->
-                    let ps =
-                        [ 0 .. len - 1 ]
-                        |> List.map(fun i -> string(char(int 'a' + i)))
-                        |> String.concat ", "
-                    $"| {unionType.Name}.{name}({ps}) -> box(spaces, {ps})"
-            )
-    ]
+    let rhs =
+        [
+            "match tok with"
+            yield!
+                cases
+                |> Array.map(fun (i, name, fields) ->
+                    match fields.Length with
+                    | 0 -> $"| {unionType.Name}.{name} -> box spaces"
+                    | 1 -> $"| {unionType.Name}.{name} x -> box(spaces, x)"
+                    | len ->
+                        let ps =
+                            [ 0 .. len - 1 ]
+                            |> List.map(fun i -> string(char(int 'a' + i)))
+                            |> String.concat ", "
+                        $"| {unionType.Name}.{name}({ps}) -> box(spaces, {ps})"
+                )
+        ]
 
     [
         $"let offsideLexeme (spaces:int option) (tok:{unionType.Name}) ="
         yield! rhs |> List.map(Line.indent 4)
     ]
     |> String.concat "\r\n"
+
 
 ///定义yacc中的token类型，带缩进信息
 let percent_type_offside<'u> (symbols: ('u * string) list) =
@@ -204,12 +211,44 @@ let percent_type_offside<'u> (symbols: ('u * string) list) =
         let typ =
             match fields.Length with
             | 0 -> typeof<int option>
-            | _ -> FSharpType.MakeTupleType [| typeof<int option>; yield! fields |]
+            | _ ->
+                FSharpType.MakeTupleType
+                    [|
+                        typeof<int option>
+                        yield! fields
+                    |]
 
         "%type<"
         + stringifyTypeDynamic typ
         + "> "
-        + stringify tag
+        + RawFsyaccFilePrinter.renderSymbol tag
     )
     |> String.concat "\r\n"
 
+///定义yacc中的token类型，带缩进信息
+let percent_type_offside_group<'u> (symbols: ('u * string) list) =
+    let cases = tagedUnionCases symbols
+    cases
+    |> Array.groupBy(fun (i, name, tag, fields) ->
+        match fields.Length with
+        | 0 -> typeof<int option>
+        | _ ->
+            FSharpType.MakeTupleType
+                [|
+                    typeof<int option>
+                    yield! fields
+                |]
+    )
+    |> Array.map(fun (typ, group) ->
+        let tags =
+            group
+            |> Array.map(fun (_, _, tag, _) -> tag)
+            |> Array.sort
+            |> Array.map RawFsyaccFilePrinter.renderSymbol
+            |> String.concat " "
+        "%type<"
+        + stringifyTypeDynamic typ
+        + "> "
+        + tags
+    )
+    |> String.concat "\r\n"
