@@ -31,8 +31,6 @@ let la_rhsend = lookaheadOf "RHSEND"
 
 let la_semicolon = lookaheadOf ";"
 
-
-
 let declarations = [
     "!", typeof<option<int>>
     "#", typeof<option<int>>
@@ -91,27 +89,34 @@ let declarations = [
     "arrayExpr", typeof<option<int>*Expr>
     "atomType", typeof<option<int>*TypeArgument>
     "atomicExpr", typeof<option<int>*Expr>
+    "atomicPattern", typeof<option<int>*Pattern>
     "binaryExpr", typeof<option<int>*Expr>
+    "bindingPattern", typeof<option<int>*Pattern>
     "declExpr", typeof<option<int>*Expr>
     "file", typeof<string list*Expr list>
     "funType", typeof<(option<int>*TypeArgument) list>
+    "identExpr", typeof<option<int>*Expr>
     "infix", typeof<option<int>*string>
     "lambdaExpr", typeof<option<int>*Expr>
     "letBinding", typeof<option<int>*Expr>
     "listExpr", typeof<option<int>*Expr>
     "longid", typeof<option<int>*string list>
+    "parameterPattern", typeof<option<int>*Pattern>
     "parenExpr", typeof<option<int>*Expr>
-    "pattern", typeof<option<int>*string*TypeArgument>
     "prifix", typeof<option<int>*string>
+    "qualificationExpr", typeof<option<int>*Expr>
+    "qualificationSuffix", typeof<option<int>*Expr>
     "revAppExpr", typeof<(option<int>*Expr) list>
     "revBinaryExpr", typeof<((option<int>*string)*(option<int>*Expr)) list>
     "revLongid", typeof<(option<int>*string) list>
+    "revQualificationExpr", typeof<(option<int>*Expr) list>
     "revSequentialExpr", typeof<(option<int>*Expr) list>
     "revTupleExpr", typeof<(option<int>*Expr) list>
     "rhsBlock", typeof<option<int>*Expr list>
     "sequentialExpr", typeof<option<int>*Expr list>
     "suffixType", typeof<option<int>*SuffixType>
     "tupleExpr", typeof<option<int>*Expr>
+    "tuplePattern", typeof<(option<int>*Pattern)list>
     "tupleType", typeof<(option<int>*TypeArgument) list>
     "typeArgument", typeof<option<int>*TypeArgument>
     "typeArguments", typeof<(option<int>*TypeArgument) list>

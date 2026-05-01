@@ -99,22 +99,22 @@ atomicExpr:
         let i,v = s0
         i,LiteralExpr v
         }
-    | IDENT { fst s0, IdentExpr(snd s0) }
-    | IDENT  "<" typeArguments ">"  { 
-        let targs = s2 |> List.map snd |> List.rev
-        fst s0, TypeApplicationExpr(snd s0,targs) 
-        }
+    | identExpr { s0 }
     | "(" ")" { s0, LiteralExpr Literal.UNIT }
     | "(" infix ")" { s0, OperatorSectionExpr(snd s1) }
     | parenExpr { s0 }
     | listExpr { s0 }
     | arrayExpr { s0 }
     
+identExpr:
+    | IDENT { fst s0, IdentExpr(snd s0) }
+    | IDENT  "<" typeArguments ">"  { 
+        let targs = s2 |> List.map snd |> List.rev
+        fst s0, TypeApplicationExpr(snd s0,targs) 
+        }
+    
 qualificationSuffix:
-    | "." IDENT { s0, IdentExpr(snd s1) }
-    | "." IDENT  "<" typeArguments ">" { 
-        let targs = s3 |> List.map snd |> List.rev
-        s0, TypeApplicationExpr(snd s1,targs) }
+    | "." identExpr { s1 }
     | "." "[" tupleExpr "]" { s2 }
       
 parenExpr:
@@ -221,7 +221,7 @@ typeArguments:
 %type<option<int>*string list> longid
 %type<option<int>*Expr list> sequentialExpr rhsBlock
 %type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr
-%type<option<int>*Expr> declExpr letBinding valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr appExpr qualificationExpr atomicExpr qualificationSuffix parenExpr arrayExpr listExpr
+%type<option<int>*Expr> declExpr letBinding valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr
 %type<option<int>*string> prifix infix
 %type<((option<int>*string)*(option<int>*Expr)) list> revBinaryExpr
 %type<option<int>*string> IDENT

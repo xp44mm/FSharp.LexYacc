@@ -5,27 +5,25 @@ open System.Text
 
 open Xunit
 
-
 open FSharp.xUnit
 open FSharp.Idioms.Literal
 open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
 
 type FslexLexerTest(output: ITestOutputHelper) as this =
-    let name = 
+    let name =
         let x = this.GetType().Name
         x.Substring(0, x.Length - 4)
-    let srcPath =
-        Path.Combine(__SOURCE_DIRECTORY__, "fslex.fslex")
+    let srcPath = Path.Combine(__SOURCE_DIRECTORY__, "fslex.fslex")
     let text = File.ReadAllText(srcPath, Encoding.UTF8)
 
-    [<Fact(Skip="没有改变，不必重复生成")>] // 
+    [<Fact(Skip = "没有改变，不必重复生成")>] //
     member _.``生成``() =
         let printer = FslexFilePrinter.forChar text
         let src = printer.print()
         output.WriteLine(src)
 
-        let path = Path.Combine(Dir.bootstrap, name+".fs")
+        let path = Path.Combine(Dir.bootstrap, name + ".fs")
         File.WriteAllText(path, src, Encoding.UTF8)
         output.WriteLine($"output:\r\n{path}")
 
@@ -51,9 +49,3 @@ type FslexLexerTest(output: ITestOutputHelper) as this =
         // todo: actions 比较
 
         ()
-
-
-
-
-
-

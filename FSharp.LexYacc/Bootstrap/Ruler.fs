@@ -5,11 +5,12 @@ open FSharp.Idioms.Literal
 open FSharp.LexYacc
 open FSharp.Idioms
 
-type LexicalRule<'a> = {
-    head: ParsedRgx<'a>
-    tail: ParsedRgx<'a> option
-    action: string
-} with
+type LexicalRule<'a> =
+    {
+        head: ParsedRgx<'a>
+        tail: ParsedRgx<'a> option
+        action: string
+    }
 
     //遇到最外层的Class开始转化为CharClass
     member rule.replaceId(definitions: Map<string, ParsedRgx<'a>>) =
@@ -21,50 +22,55 @@ type LexicalRule<'a> = {
         }
 
 module LexicalRule =
-    let just (head: ParsedRgx<'a>, tail: ParsedRgx<'a> option, action: string) = {
-        head = head
-        tail = tail
-        action = action
-    }
+    let just (head: ParsedRgx<'a>, tail: ParsedRgx<'a> option, action: string) =
+        {
+            head = head
+            tail = tail
+            action = action
+        }
 
-type Ruler<'a> = {
-    parameters: string list
-    funType: string
-    rules: LexicalRule<'a> list
-}
+type Ruler<'a> =
+    {
+        parameters: string list
+        funType: string
+        rules: LexicalRule<'a> list
+    }
 
 module Ruler =
-    let just (parameters, funType, rules) = {
-        parameters = parameters
-        funType = funType
-        rules = rules
+    let just (parameters, funType, rules) =
+        {
+            parameters = parameters
+            funType = funType
+            rules = rules
+        }
+
+type RulerPrinter =
+    {
+        parameters: string list
+        funType: string
+        actions: (byte * string) list
     }
 
-type RulerPrinter = {
-    parameters: string list
-    funType: string
-    actions: (byte * string) list
-} with
-    static member from(ruler: Ruler<_>) = {
-        parameters = ruler.parameters
-        funType = ruler.funType
-        actions =
-            ruler.rules
-            |> List.mapi(fun i rule -> byte i, rule.action)
-    }
+    static member from(ruler: Ruler<_>) =
+        {
+            parameters = ruler.parameters
+            funType = ruler.funType
+            actions =
+                ruler.rules
+                |> List.mapi(fun i rule -> byte i, rule.action)
+        }
 
     member this.print() =
         let parameters = String.concat " " this.parameters
         [
             $"let actions {parameters}: Map<byte, {this.funType}> = Map ["
             for i, act in this.actions do
-                let headLine =
-                    Line.indent 4 $"{stringify i}, fun buff -> "
+                let headLine = Line.indent 4 $"{stringify i}, (fun buff -> "
                 match act with
-                | Braces.SingleLine ln -> headLine + ln
+                | Braces.SingleLine ln -> headLine + ln + ")"
                 | Braces.MultiLine ls ->
                     let act = Line.indentAll 8 ls
-                    headLine + "\r\n" + act
+                    headLine + "\r\n" + act + ")"
                 | Braces.Empty -> headLine + "failwith String.empty"
             Line.indent 4 "]"
         ]

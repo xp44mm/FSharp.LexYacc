@@ -67,7 +67,7 @@ type FsyaccFilePrinter =
     member this.printYaccModule(header: string) =
         let reducers =
             this.rules
-            |> List.map(fun (prod, reducer) -> $"{stringify prod}, {reducer}")
+            |> List.map(fun (prod, reducer) -> $"{stringify prod}, ({reducer})")
 
         [
             Braces.sliceContent header

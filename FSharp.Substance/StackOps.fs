@@ -72,73 +72,70 @@ let getPosition (state: YaccState) =
     | "|||"
     | "|||>"
     | "|}"
-    | "}" -> unbox<option<int>> state.lexeme
+    | "}"
+      -> unbox<option<int>> state.lexeme
     | "IDENT"
     | "TYPAR"
     | "infix"
-    | "prifix" ->
-        unbox<option<int> * string> state.lexeme
-        |> fst
-    | "LITERAL" ->
-        unbox<option<int> * Literal> state.lexeme
-        |> fst
+    | "prifix"
+      -> unbox<option<int>*string> state.lexeme |> fst
+    | "LITERAL"
+      -> unbox<option<int>*Literal> state.lexeme |> fst
     | "appExpr"
     | "arrayExpr"
     | "atomicExpr"
     | "binaryExpr"
     | "declExpr"
+    | "identExpr"
     | "lambdaExpr"
     | "letBinding"
     | "listExpr"
     | "parenExpr"
+    | "qualificationExpr"
+    | "qualificationSuffix"
     | "tupleExpr"
     | "unaryExpr"
-    | "valueExpr" ->
-        unbox<option<int> * Expr> state.lexeme
-        |> fst
-    | "appType" ->
-        unbox<(option<int> * TypeArgument) * list<option<int> * SuffixType>> state.lexeme
-        |> fst
-        |> fst
+    | "valueExpr"
+      -> unbox<option<int>*Expr> state.lexeme|> fst
+    | "appType"
+      -> unbox<(option<int>*TypeArgument)*list<option<int>*SuffixType>> state.lexeme |> fst |> fst
     | "atomType"
-    | "typeArgument" ->
-        unbox<option<int> * TypeArgument> state.lexeme
-        |> fst
-    | "file" -> None // unbox<list<string>*list<Expr>> state.lexeme
+    | "typeArgument"
+      -> unbox<option<int>*TypeArgument> state.lexeme|> fst
+    | "atomicPattern"
+    | "bindingPattern"
+    | "parameterPattern"
+      -> unbox<option<int>*Pattern> state.lexeme|> fst
+    | "file"
+      -> None // unbox<list<string>*list<Expr>> state.lexeme
     | "funType"
     | "tupleType"
-    | "typeArguments" ->
-        unbox<list<option<int> * TypeArgument>> state.lexeme
-        |> List.head
-        |> fst
-    | "longid" ->
-        unbox<option<int> * list<string>> state.lexeme
-        |> fst
-    | "pattern" ->
-        unbox<option<int> * string * TypeArgument> state.lexeme
-        |> Triple.first
+    | "typeArguments"
+      -> unbox<list<option<int>*TypeArgument>> state.lexeme |> List.head |> fst
+    | "longid"
+      -> unbox<option<int>*list<string>> state.lexeme |> fst
     | "revAppExpr"
+    | "revQualificationExpr"
     | "revSequentialExpr"
-    | "revTupleExpr" ->
-        unbox<list<option<int> * Expr>> state.lexeme
-        |> List.head
-        |> fst
-    | "revBinaryExpr" ->
-        unbox<list<(option<int> * string) * (option<int> * Expr)>> state.lexeme
-        |> List.head
-        |> snd
-        |> fst
-    | "revLongid" ->
-        unbox<list<option<int> * string>> state.lexeme
-        |> List.head
-        |> fst
+    | "revTupleExpr"
+      -> unbox<list<option<int>*Expr>> state.lexeme |> List.head |> fst
+    | "revBinaryExpr"
+      -> unbox<list<(option<int>*string)*(option<int>*Expr)>> state.lexeme
+            |> List.head
+            |> snd
+            |> fst
+
+    | "revLongid"
+      -> unbox<list<option<int>*string>> state.lexeme |> List.head |> fst
     | "rhsBlock"
-    | "sequentialExpr" ->
-        unbox<option<int> * list<Expr>> state.lexeme
-        |> fst
-    | "suffixType" ->
-        unbox<option<int> * SuffixType> state.lexeme
-        |> fst
+    | "sequentialExpr"
+      -> unbox<option<int>*list<Expr>> state.lexeme |> fst
+    | "suffixType"
+      -> unbox<option<int>*SuffixType> state.lexeme |> fst
+    | "tuplePattern"
+      -> unbox<list<option<int>*Pattern>> state.lexeme |> List.head |> fst
+
+
     | symbol -> failwith $"没有这个符号:{symbol}"
 
 let getSymbols (states: YaccState list) =
@@ -163,7 +160,6 @@ let (|OPEN_LONGID|_|) (states: YaccState list) =
         let lead = states.[symbols.Length - 1]
         symbols, getPosition lead
     )
-
 
 ///栈顶
 let (|STACK_TOP|) (states: YaccState list) =
