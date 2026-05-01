@@ -45,16 +45,9 @@ let offsideLexeme (spaces:int option) (tok:FSharpToken) =
     | FSharpToken.LESS_BAR_BAR_BAR -> box spaces
     | FSharpToken.BAR_BAR_GREATER -> box spaces
     | FSharpToken.BAR_BAR_BAR_GREATER -> box spaces
-    | FSharpToken.AMP_AMP_AMP -> box spaces
-    | FSharpToken.BAR_BAR_BAR -> box spaces
-    | FSharpToken.CARET_CARET_CARET -> box spaces
-    | FSharpToken.TILDE_TILDE_TILDE -> box spaces
-    | FSharpToken.LESS_LESS_LESS -> box spaces
-    | FSharpToken.GREATER_GREATER_GREATER -> box spaces
     | FSharpToken.GREATER_GREATER -> box spaces
     | FSharpToken.LESS_LESS -> box spaces
     | FSharpToken.DOT_DOT -> box spaces
-    | FSharpToken.DOT_DOT_DOT -> box spaces
     | FSharpToken.LLPAREN -> box spaces
     | FSharpToken.RRPAREN -> box spaces
     | FSharpToken.RHSEND -> box spaces
@@ -92,9 +85,8 @@ let offsideLexeme (spaces:int option) (tok:FSharpToken) =
     | FSharpToken.RBRACK -> box spaces
     | FSharpToken.RPAREN -> box spaces
     | FSharpToken.STAR -> box spaces
-    | FSharpToken.TYPAR x -> box(spaces, x)
     | FSharpToken.WITH -> box spaces
-
+    | FSharpToken.TYPAR x -> box(spaces, x)
 
 let tokenRow indent tok : TokenRow<int option * FSharpToken> =
     {
@@ -102,3 +94,9 @@ let tokenRow indent tok : TokenRow<int option * FSharpToken> =
         tag = FSharpToken.tag tok
         lexeme = offsideLexeme indent tok
     }
+
+/// 用于lookahead判断
+let semicolon_may_follow (tok:FSharpToken) =
+    tok
+    |> FSharpToken.tag 
+    |> RightSententialForm.follow_semicolon.Contains

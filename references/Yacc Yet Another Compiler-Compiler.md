@@ -497,7 +497,7 @@ or as
 
 (The first is called left association, the second right  association).
 
-​     Yacc detects such ambiguities when it is attempting to build the  parser.  It is instructive to consider the problem that confronts the parser when it is given an input such as
+Yacc detects such ambiguities when it is attempting to build the  parser.  It is instructive to consider the problem that confronts the parser when it is given an input such as
 
 ```
         expr  -  expr  -  expr

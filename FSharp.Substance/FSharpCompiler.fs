@@ -82,6 +82,7 @@ let beforeRight (states: YaccState list) (laRight: FSharpToken) =
             yield! loop dummyStates
         | _ -> yield! loop states
     ]
+
 ///
 let beforeNewLine indent (states: YaccState list) =
     let rec loop currentStates =
@@ -108,13 +109,11 @@ let beforeNewLine indent (states: YaccState list) =
                 | TOP_RHSEND symbols ->
                     let pos = getPosition rhsendStates.[symbols.Length - 1]
                     match pos with
-                    | Some k when k <= indent -> ()
+                    | Some k when k < indent -> ()
                     | _ ->
                         yield None, RHSEND
                         yield! loop rhsendStates
-
                 | _ -> failwith "never"
-
             | LOOKAHEAD_SEMICOLON _ -> ()
             | _ ->
                 let symbols = StackOps.getSymbols currentStates
@@ -122,7 +121,7 @@ let beforeNewLine indent (states: YaccState list) =
         ]
     loop states
 
-/// top lead gap la (lookahead)
+/// 依次的命名为：lead top gap la
 let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
     match space, la with
     | _, EOF ->
@@ -130,103 +129,157 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
             yield! beforeEOF states
             space, la
         ]
-
     | _, SEMICOLON ->
         [
             yield! beforeSemicolon states
             space, la
         ]
-    | _, (RPAREN | RBRACE | RBRACK) ->
 
+    | _, RPAREN ->
+        let vp =
+            RightSententialForm.lookaheads
+            |> List.filter(fun (v, look_ahead) ->
+                look_ahead = ")"
+                && StackOps.isPrefixOf states v.prefix
+            )
+            |> List.map fst
+
+        if not vp.IsEmpty && vp.[0].head = "atomicPattern" then
+            [ space, la ]
+        else
+            [
+                yield! beforeRight states la
+                space, la
+            ]
+
+    | _, RBRACK ->
+        let vp =
+            RightSententialForm.lookaheads
+            |> List.filter(fun (v, look_ahead) ->
+                look_ahead = "]"
+                && StackOps.isPrefixOf states v.prefix
+            )
+            |> List.map fst
+
+        if not vp.IsEmpty && vp.[0].head = "qualificationSuffix" then
+            [ space, la ]
+        else
+            [
+                yield! beforeRight states la
+                space, la
+            ]
+
+    | _, (RBRACE | BAR_RBRACK) ->
         [
             yield! beforeRight states la
             space, la
         ]
 
-    | Some _, COMMA -> [ space, la ]
-
-    | Some indent, (OPEN | LET | FUN | LPAREN | IDENT _ | LITERAL _ | LBRACK | LBRACK_BAR | MINUS) -> // first declExpr
-        match states with
-        | LOOKAHEAD_LLPAREN(symbols) ->
-            [
-                None, LLPAREN
-                Some indent, la
-            ]
-        | TOP_LEFT_BOUND _ ->
-            // 左边界后面，直接first decl是ok的，忽略任何空白
+    | Some indent, _ ->
+        if Light.semicolon_may_follow la |> not then
             [ space, la ]
-
-        | LOOKAHEAD_RHSEND symbols
-        | LOOKAHEAD_RRPAREN symbols ->
-            [
-                //循环，直到i>=j补充右括号，补充到i缩进。
-                yield! beforeNewLine indent states
-                None, SEMICOLON
-                space, la
-            ]
-
-        | TOP_SEMICOLON symbols ->
-            let revSequentialExpr = states.[1]
-            match StackOps.getPosition revSequentialExpr with
-            | None -> failwith "notImpl: need borrow"
-            | Some j ->
-                if indent > j then
-                    failwith "不可能在一个分号后继续缩进"
-                elif indent = j then
-                    //对齐无需补充任何符号
-                    [ space, la ]
-                elif indent < j then
-                    [
-                        let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
-                        None, DUMMY //栈顶分号已经被用掉了。
-                        //循环，直到i>=j补充右括号，补充到i缩进。
-                        yield! beforeNewLine indent dummyStates
-                        None, SEMICOLON
-                        space, la
-                    ]
-                else
-                    failwith "never"
-
-        | OPEN_LONGID(symbols, pos) ->
-            match pos with
-            | None -> failwith "notImpl"
-            | Some j ->
-                if indent = j then
-                    [
-                        None, SEMICOLON
-                        space, la
-                    ]
-                else
-                    failwith "缩进不正确"
-
-        | DECL_EXPR(symbols, pos) ->
-            //top是连接符
-            if symbols.[0] = "," then
+        else
+            let top = stateSymbols.[states.[0].state]
+            if RightSententialForm.lBounds.Contains top then
                 [ space, la ]
             else
-                // ident<=j
-                match pos with
-                | None -> failwith "notImpl:borrow"
-                | Some j ->
+                match states with
+                | OPEN_LONGID(symbols, pos) ->
+                    match pos with
+                    | None -> failwith "notImpl"
+                    | Some j ->
+                        if indent = j then
+                            [
+                                None, SEMICOLON
+                                space, la
+                            ]
+                        else
+                            failwith "缩进不正确"
+                | LOOKAHEAD_LLPAREN(symbols) ->
+                    [
+                        None, LLPAREN
+                        Some indent, la
+                    ]
+                | LOOKAHEAD_RHSEND symbols
+                | LOOKAHEAD_RRPAREN symbols ->
+                    [
+                        yield! beforeNewLine indent states
+                        None, SEMICOLON
+                        space, la
+                    ]
+
+                | TOP_SEMICOLON symbols ->
+                    let revSequentialExpr = states.[1]
+                    match StackOps.getPosition revSequentialExpr with
+                    | None -> failwith "notImpl"
+                    | Some j ->
+                        if indent > j then
+                            failwith "不可能在一个分号后继续缩进"
+                        elif indent = j then
+                            //对齐无需补充任何符号
+                            [ space, la ]
+                        elif indent < j then
+                            [
+                                let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
+                                None, DUMMY //栈顶分号已经被用掉了。
+                                //循环，直到i>=j补充右括号，补充到i缩进。
+                                yield! beforeNewLine indent dummyStates
+                                None, SEMICOLON
+                                space, la
+                            ]
+                        else
+                            failwith "never"
+
+                | LOOKAHEAD_SEMICOLON prefixes ->
+                    // 上一行的缩进
+                    let j =
+                        prefixes
+                        |> Seq.map(fun p -> p.Length - 1)
+                        |> Seq.map(fun i ->
+                            let lead = states.[i]
+                            getPosition lead
+                        )
+                        |> Seq.pick id
+
                     if indent > j then
-                        // 只要(i > j)缩进更多，一定是续航，并且应该是app，不加semicolon
+                        //表示是app续行
                         [ space, la ]
+                    elif indent = j then
+                        //对齐序列
+                        [
+                            None, SEMICOLON
+                            space, la
+                        ]
                     else
+                        //缩回块
                         [
                             yield! beforeNewLine indent states
                             None, SEMICOLON
                             space, la
                         ]
-        | _ ->
-            let symbols = StackOps.getSymbols states |> List.rev
-            Console.WriteLine(stringify symbols)
-            Console.WriteLine(stringify la)
-            Console.WriteLine(stringify space)
-            failwith "notImpl"
 
-    | _ ->
-        // la is not first decl
-        [ space, la ]
+                | STACK_TOP vps ->
+                    Console.WriteLine("STACK_TOP")
+                    let prefixes =
+                        vps
+                        |> List.map(fun vp -> vp.prefix)
+                        |> Set.ofList
+                        |> Set.toList
+
+                    Debug.Assert((prefixes.Length = 1))
+                    Console.WriteLine(stringify prefixes.[0])
+
+                    // 此步就是为了排除续行
+                    if not vps.[0].isHandle then
+                        [ space, la ]
+                    else
+                        let symbols = StackOps.getSymbols states |> List.rev
+                        Console.WriteLine("stack:" + stringify symbols)
+                        Console.WriteLine("alts:" + stringify vps)
+                        Console.WriteLine("lookahead:" + stringify(space, la))
+                        failwith "notImpl"
+
+    | _ -> [ space, la ]
 
 /// 解析文本为结构化数据
 let compile (input: string) =

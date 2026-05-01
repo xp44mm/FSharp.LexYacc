@@ -14,13 +14,14 @@
     <Compile Include="Lookup.fs" />
     <Compile Include="Literal.fs" />
     <Compile Include="FSharpToken.fs" />
+    <Compile Include="RightSententialForm.fs" />
     <Compile Include="Light.fs" />
+    <Compile Include="TypeArgument.fs" />
+    <Compile Include="Pattern.fs" />
     <Compile Include="Expr.fs" />
     <Compile Include="FSharpLexer.fs" />
     <Compile Include="FSharpLexerTailer.fs" />
-    <Compile Include="StyleBlock.fs" />
     <Compile Include="FSharpYacc.fs" />
-    <Compile Include="RightSententialForm.fs" />
     <Compile Include="ViablePrefix.fs" />
     <Compile Include="StackOps.fs" />
     <Compile Include="FSharpCompiler.fs" />

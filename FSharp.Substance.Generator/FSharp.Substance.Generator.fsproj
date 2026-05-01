@@ -12,7 +12,8 @@
         <Compile Include="FSharpLexerTest.fs" />
         <None Include="fsharp.fsyacc" />
         <Compile Include="FSharpYaccTest.fs" />
-        <None Include="denoise.fslex" />
+        <None Include="typeArgument.fsyacc" />
+        <Compile Include="TypeArgumentYaccTest.fs" />
         <Compile Include="TokenGenerationTest.fs" />
         <Compile Include="SpliterTestTest.fs" />
         <Compile Include="FSharpLexerTailerTest.fs" />

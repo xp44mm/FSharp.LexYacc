@@ -23,16 +23,16 @@ type FSharpToken =
     | LESS_BAR_BAR_BAR
     | BAR_BAR_GREATER
     | BAR_BAR_BAR_GREATER
-    | AMP_AMP_AMP
-    | BAR_BAR_BAR
-    | CARET_CARET_CARET
-    | TILDE_TILDE_TILDE
-    | LESS_LESS_LESS
-    | GREATER_GREATER_GREATER
+    //| AMP_AMP_AMP
+    //| BAR_BAR_BAR
+    //| CARET_CARET_CARET
+    //| TILDE_TILDE_TILDE
+    //| LESS_LESS_LESS
+    //| GREATER_GREATER_GREATER
     | GREATER_GREATER
     | LESS_LESS
     | DOT_DOT
-    | DOT_DOT_DOT
+    //| DOT_DOT_DOT
 
     | LLPAREN
     | RRPAREN
@@ -75,8 +75,10 @@ type FSharpToken =
     | RBRACK
     | RPAREN
     | STAR
-    | TYPAR of string
     | WITH
+
+    | TYPAR of string
+
 
 module FSharpToken =
     let index (tok:FSharpToken) =
@@ -103,55 +105,48 @@ module FSharpToken =
         | FSharpToken.LESS_BAR_BAR_BAR -> 19
         | FSharpToken.BAR_BAR_GREATER -> 20
         | FSharpToken.BAR_BAR_BAR_GREATER -> 21
-        | FSharpToken.AMP_AMP_AMP -> 22
-        | FSharpToken.BAR_BAR_BAR -> 23
-        | FSharpToken.CARET_CARET_CARET -> 24
-        | FSharpToken.TILDE_TILDE_TILDE -> 25
-        | FSharpToken.LESS_LESS_LESS -> 26
-        | FSharpToken.GREATER_GREATER_GREATER -> 27
-        | FSharpToken.GREATER_GREATER -> 28
-        | FSharpToken.LESS_LESS -> 29
-        | FSharpToken.DOT_DOT -> 30
-        | FSharpToken.DOT_DOT_DOT -> 31
-        | FSharpToken.LLPAREN -> 32
-        | FSharpToken.RRPAREN -> 33
-        | FSharpToken.RHSEND -> 34
-        | FSharpToken.DUMMY -> 35
-        | FSharpToken.NEW_LINE _ -> 36
-        | FSharpToken.WHITESPACE -> 37
-        | FSharpToken.EOF -> 38
-        | FSharpToken.SEMICOLON -> 39
-        | FSharpToken.BAR -> 40
-        | FSharpToken.DO -> 41
-        | FSharpToken.EQUALS -> 42
-        | FSharpToken.RARROW -> 43
-        | FSharpToken.BAR_RBRACE -> 44
-        | FSharpToken.BAR_RBRACK -> 45
-        | FSharpToken.COLON -> 46
-        | FSharpToken.COMMA -> 47
-        | FSharpToken.DOT -> 48
-        | FSharpToken.FUN -> 49
-        | FSharpToken.GREATER -> 50
-        | FSharpToken.HASH -> 51
-        | FSharpToken.IDENT _ -> 52
-        | FSharpToken.LBRACE -> 53
-        | FSharpToken.LBRACE_BAR -> 54
-        | FSharpToken.LBRACK -> 55
-        | FSharpToken.LBRACK_BAR -> 56
-        | FSharpToken.LESS -> 57
-        | FSharpToken.LET -> 58
-        | FSharpToken.LITERAL _ -> 59
-        | FSharpToken.LPAREN -> 60
-        | FSharpToken.MATCH -> 61
-        | FSharpToken.MINUS -> 62
-        | FSharpToken.MODULE -> 63
-        | FSharpToken.OPEN -> 64
-        | FSharpToken.RBRACE -> 65
-        | FSharpToken.RBRACK -> 66
-        | FSharpToken.RPAREN -> 67
-        | FSharpToken.STAR -> 68
-        | FSharpToken.TYPAR _ -> 69
-        | FSharpToken.WITH -> 70
+        | FSharpToken.GREATER_GREATER -> 22
+        | FSharpToken.LESS_LESS -> 23
+        | FSharpToken.DOT_DOT -> 24
+        | FSharpToken.LLPAREN -> 25
+        | FSharpToken.RRPAREN -> 26
+        | FSharpToken.RHSEND -> 27
+        | FSharpToken.DUMMY -> 28
+        | FSharpToken.NEW_LINE _ -> 29
+        | FSharpToken.WHITESPACE -> 30
+        | FSharpToken.EOF -> 31
+        | FSharpToken.SEMICOLON -> 32
+        | FSharpToken.BAR -> 33
+        | FSharpToken.DO -> 34
+        | FSharpToken.EQUALS -> 35
+        | FSharpToken.RARROW -> 36
+        | FSharpToken.BAR_RBRACE -> 37
+        | FSharpToken.BAR_RBRACK -> 38
+        | FSharpToken.COLON -> 39
+        | FSharpToken.COMMA -> 40
+        | FSharpToken.DOT -> 41
+        | FSharpToken.FUN -> 42
+        | FSharpToken.GREATER -> 43
+        | FSharpToken.HASH -> 44
+        | FSharpToken.IDENT _ -> 45
+        | FSharpToken.LBRACE -> 46
+        | FSharpToken.LBRACE_BAR -> 47
+        | FSharpToken.LBRACK -> 48
+        | FSharpToken.LBRACK_BAR -> 49
+        | FSharpToken.LESS -> 50
+        | FSharpToken.LET -> 51
+        | FSharpToken.LITERAL _ -> 52
+        | FSharpToken.LPAREN -> 53
+        | FSharpToken.MATCH -> 54
+        | FSharpToken.MINUS -> 55
+        | FSharpToken.MODULE -> 56
+        | FSharpToken.OPEN -> 57
+        | FSharpToken.RBRACE -> 58
+        | FSharpToken.RBRACK -> 59
+        | FSharpToken.RPAREN -> 60
+        | FSharpToken.STAR -> 61
+        | FSharpToken.WITH -> 62
+        | FSharpToken.TYPAR _ -> 63
     let tag (tok:FSharpToken) =
         match tok with
         | FSharpToken.EXCLAM -> "!"
@@ -176,16 +171,9 @@ module FSharpToken =
         | FSharpToken.LESS_BAR_BAR_BAR -> "<|||"
         | FSharpToken.BAR_BAR_GREATER -> "||>"
         | FSharpToken.BAR_BAR_BAR_GREATER -> "|||>"
-        | FSharpToken.AMP_AMP_AMP -> "&&&"
-        | FSharpToken.BAR_BAR_BAR -> "|||"
-        | FSharpToken.CARET_CARET_CARET -> "^^^"
-        | FSharpToken.TILDE_TILDE_TILDE -> "~~~"
-        | FSharpToken.LESS_LESS_LESS -> "<<<"
-        | FSharpToken.GREATER_GREATER_GREATER -> ">>>"
         | FSharpToken.GREATER_GREATER -> ">>"
         | FSharpToken.LESS_LESS -> "<<"
         | FSharpToken.DOT_DOT -> ".."
-        | FSharpToken.DOT_DOT_DOT -> "..."
         | FSharpToken.LLPAREN -> "LLPAREN"
         | FSharpToken.RRPAREN -> "RRPAREN"
         | FSharpToken.RHSEND -> "RHSEND"
@@ -223,8 +211,8 @@ module FSharpToken =
         | FSharpToken.RBRACK -> "]"
         | FSharpToken.RPAREN -> ")"
         | FSharpToken.STAR -> "*"
-        | FSharpToken.TYPAR _ -> "TYPAR"
         | FSharpToken.WITH -> "WITH"
+        | FSharpToken.TYPAR _ -> "TYPAR"
     let tagToIndex (tag:string) =
         match tag with
         | "!" -> 0
@@ -249,55 +237,48 @@ module FSharpToken =
         | "<|||" -> 19
         | "||>" -> 20
         | "|||>" -> 21
-        | "&&&" -> 22
-        | "|||" -> 23
-        | "^^^" -> 24
-        | "~~~" -> 25
-        | "<<<" -> 26
-        | ">>>" -> 27
-        | ">>" -> 28
-        | "<<" -> 29
-        | ".." -> 30
-        | "..." -> 31
-        | "LLPAREN" -> 32
-        | "RRPAREN" -> 33
-        | "RHSEND" -> 34
-        | "DUMMY" -> 35
-        | "NEW_LINE" -> 36
-        | "WHITESPACE" -> 37
-        | "EOF" -> 38
-        | ";" -> 39
-        | "|" -> 40
-        | "DO" -> 41
-        | "=" -> 42
-        | "->" -> 43
-        | "|}" -> 44
-        | "|]" -> 45
-        | ":" -> 46
-        | "," -> 47
-        | "." -> 48
-        | "FUN" -> 49
-        | ">" -> 50
-        | "#" -> 51
-        | "IDENT" -> 52
-        | "{" -> 53
-        | "{|" -> 54
-        | "[" -> 55
-        | "[|" -> 56
-        | "<" -> 57
-        | "LET" -> 58
-        | "LITERAL" -> 59
-        | "(" -> 60
-        | "MATCH" -> 61
-        | "-" -> 62
-        | "MODULE" -> 63
-        | "OPEN" -> 64
-        | "}" -> 65
-        | "]" -> 66
-        | ")" -> 67
-        | "*" -> 68
-        | "TYPAR" -> 69
-        | "WITH" -> 70
+        | ">>" -> 22
+        | "<<" -> 23
+        | ".." -> 24
+        | "LLPAREN" -> 25
+        | "RRPAREN" -> 26
+        | "RHSEND" -> 27
+        | "DUMMY" -> 28
+        | "NEW_LINE" -> 29
+        | "WHITESPACE" -> 30
+        | "EOF" -> 31
+        | ";" -> 32
+        | "|" -> 33
+        | "DO" -> 34
+        | "=" -> 35
+        | "->" -> 36
+        | "|}" -> 37
+        | "|]" -> 38
+        | ":" -> 39
+        | "," -> 40
+        | "." -> 41
+        | "FUN" -> 42
+        | ">" -> 43
+        | "#" -> 44
+        | "IDENT" -> 45
+        | "{" -> 46
+        | "{|" -> 47
+        | "[" -> 48
+        | "[|" -> 49
+        | "<" -> 50
+        | "LET" -> 51
+        | "LITERAL" -> 52
+        | "(" -> 53
+        | "MATCH" -> 54
+        | "-" -> 55
+        | "MODULE" -> 56
+        | "OPEN" -> 57
+        | "}" -> 58
+        | "]" -> 59
+        | ")" -> 60
+        | "*" -> 61
+        | "WITH" -> 62
+        | "TYPAR" -> 63
         | _ -> failwithf "unexpected tag:%s" tag
     let lexeme (tok:FSharpToken) =
         match tok with
@@ -323,16 +304,9 @@ module FSharpToken =
         | FSharpToken.LESS_BAR_BAR_BAR -> null
         | FSharpToken.BAR_BAR_GREATER -> null
         | FSharpToken.BAR_BAR_BAR_GREATER -> null
-        | FSharpToken.AMP_AMP_AMP -> null
-        | FSharpToken.BAR_BAR_BAR -> null
-        | FSharpToken.CARET_CARET_CARET -> null
-        | FSharpToken.TILDE_TILDE_TILDE -> null
-        | FSharpToken.LESS_LESS_LESS -> null
-        | FSharpToken.GREATER_GREATER_GREATER -> null
         | FSharpToken.GREATER_GREATER -> null
         | FSharpToken.LESS_LESS -> null
         | FSharpToken.DOT_DOT -> null
-        | FSharpToken.DOT_DOT_DOT -> null
         | FSharpToken.LLPAREN -> null
         | FSharpToken.RRPAREN -> null
         | FSharpToken.RHSEND -> null
@@ -370,5 +344,5 @@ module FSharpToken =
         | FSharpToken.RBRACK -> null
         | FSharpToken.RPAREN -> null
         | FSharpToken.STAR -> null
-        | FSharpToken.TYPAR x -> box x
         | FSharpToken.WITH -> null
+        | FSharpToken.TYPAR x -> box x

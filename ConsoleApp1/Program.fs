@@ -7,20 +7,15 @@ open FSharp.Idioms.Literal
 open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
 
+let path = Path.Combine(__SOURCE_DIRECTORY__, "Sample.fs")
+let text = File.ReadAllText(path, Encoding.UTF8)
 
-let srcPath = @"D:\Application Data\GitHub\xp44mm\FSharp.LexYacc\FSharp.Substance.Generator\fsharp.fsyacc"
+let nodes = FSharpCompiler.compile text
+Console.WriteLine(stringify nodes)
 
-let text = File.ReadAllText(srcPath, Encoding.UTF8)
-
-let rawFsyacc = FsyaccCompiler.compile text
-
-Console.WriteLine(stringify rawFsyacc)
-
-//let path = Path.Combine(__SOURCE_DIRECTORY__, "Sample.fs")
-//let text = File.ReadAllText(path, Encoding.UTF8)
-
-//let nodes = FSharpCompiler.compile text
-//Console.WriteLine(stringify nodes)
-
-//for p in ViablePrefix.topOf "IDENT" do
+//for p in
+//    RightSententialForm.lookaheads
+//    |> List.filter(fun (v, look_ahead) -> look_ahead = "]")
+//    |> List.map fst 
+//    do
 //    Console.WriteLine(stringify p)

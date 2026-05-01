@@ -12,23 +12,71 @@ open System.Diagnostics
 
 let getPosition (state: YaccState) =
     match stateSymbols.[state.state] with
+    | "!"
+    | "#"
+    | "%"
+    | "&"
+    | "&&"
     | "("
+    | "(|"
     | ")"
+    | "*"
+    | "**"
+    | "+"
     | ","
     | "-"
+    | "->"
     | "."
+    | ".."
+    | "/"
+    | ":"
+    | "::"
+    | ":?"
+    | ":?>"
     | ";"
+    | "<"
+    | "<-"
+    | "<<"
+    | "<>"
+    | "<|"
+    | "<||"
+    | "<|||"
     | "="
+    | ">"
+    | ">>"
+    | "@"
+    | "DO"
     | "DUMMY"
+    | "EOF"
     | "FUN"
     | "LET"
+    | "LLPAREN"
+    | "MATCH"
     | "MODULE"
     | "OPEN"
+    | "RHSEND"
+    | "RRPAREN"
+    | "WHITESPACE"
+    | "WITH"
     | "["
     | "[|"
     | "]"
-    | "|]" -> unbox<option<int>> state.lexeme
-    | "IDENT" ->
+    | "{"
+    | "{|"
+    | "|"
+    | "|)"
+    | "|>"
+    | "|]"
+    | "||"
+    | "||>"
+    | "|||"
+    | "|||>"
+    | "|}"
+    | "}" -> unbox<option<int>> state.lexeme
+    | "IDENT"
+    | "TYPAR"
+    | "infix"
+    | "prifix" ->
         unbox<option<int> * string> state.lexeme
         |> fst
     | "LITERAL" ->
@@ -37,28 +85,48 @@ let getPosition (state: YaccState) =
     | "appExpr"
     | "arrayExpr"
     | "atomicExpr"
+    | "binaryExpr"
     | "declExpr"
     | "lambdaExpr"
-    | "lambdaOrTupleExpr"
     | "letBinding"
     | "listExpr"
     | "parenExpr"
     | "tupleExpr"
-    | "unaryExpr" ->
+    | "unaryExpr"
+    | "valueExpr" ->
         unbox<option<int> * Expr> state.lexeme
         |> fst
-    | "file" ->
-        unbox<list<string> * list<Expr>> state.lexeme
-        |> ignore
-        None
+    | "appType" ->
+        unbox<(option<int> * TypeArgument) * list<option<int> * SuffixType>> state.lexeme
+        |> fst
+        |> fst
+    | "atomType"
+    | "typeArgument" ->
+        unbox<option<int> * TypeArgument> state.lexeme
+        |> fst
+    | "file" -> None // unbox<list<string>*list<Expr>> state.lexeme
+    | "funType"
+    | "tupleType"
+    | "typeArguments" ->
+        unbox<list<option<int> * TypeArgument>> state.lexeme
+        |> List.head
+        |> fst
     | "longid" ->
         unbox<option<int> * list<string>> state.lexeme
         |> fst
+    | "pattern" ->
+        unbox<option<int> * string * TypeArgument> state.lexeme
+        |> Triple.first
     | "revAppExpr"
     | "revSequentialExpr"
     | "revTupleExpr" ->
         unbox<list<option<int> * Expr>> state.lexeme
         |> List.head
+        |> fst
+    | "revBinaryExpr" ->
+        unbox<list<(option<int> * string) * (option<int> * Expr)>> state.lexeme
+        |> List.head
+        |> snd
         |> fst
     | "revLongid" ->
         unbox<list<option<int> * string>> state.lexeme
@@ -68,71 +136,10 @@ let getPosition (state: YaccState) =
     | "sequentialExpr" ->
         unbox<option<int> * list<Expr>> state.lexeme
         |> fst
+    | "suffixType" ->
+        unbox<option<int> * SuffixType> state.lexeme
+        |> fst
     | symbol -> failwith $"没有这个符号:{symbol}"
-
-//| "" -> Some 0
-//| "("
-//| ")"
-//| ","
-//| "-"
-//| "."
-//| ";"
-//| "="
-//| "FUN"
-//| "LET"
-//| "MODULE"
-//| "OPEN"
-//| "["
-//| "[|"
-//| "]"
-//| "|]" -> unbox<option<int>> state.lexeme
-//| "IDENT" ->
-//    unbox<option<int> * string> state.lexeme
-//    |> fst
-//| "LITERAL" ->
-//    unbox<option<int> * Literal> state.lexeme
-//    |> fst
-//| "appExpr"
-//| "arrayExpr"
-//| "atomicExpr"
-//| "declExpr"
-//| "lambdaExpr"
-//| "letBinding"
-//| "listExpr"
-//| "parenExpr"
-//| "tupleExpr"
-//| "unaryExpr" ->
-//    unbox<option<int> * Expr> state.lexeme
-//    |> fst
-//| "file" ->
-//    unbox<string list * Expr list> state.lexeme
-//    |> ignore
-//    Some 0
-//| "longid" ->
-//    unbox<option<int> * string list> state.lexeme
-//    |> fst
-//| "revAppExpr"
-//| "revTupleExpr" ->
-//    unbox<(option<int> * Expr) list> state.lexeme
-//    |> List.last
-//    |> fst
-//| "revSequentialExpr" ->
-//    unbox<(option<int> * Expr) list> state.lexeme
-//    |> List.head
-//    |> fst
-
-//| "revLongid" ->
-//    unbox<(option<int> * string) list> state.lexeme
-//    |> List.last
-//    |> fst
-
-//| "rhsBlock"
-//| "sequentialExpr" ->
-//    unbox<option<int> * Expr list> state.lexeme
-//    |> fst
-//| "LLPAREN" -> failwith "请使用LLPAREN内部第一个语句的位置"
-//| "RRPAREN"
-//| "RHSEND" -> None
 
 let getSymbols (states: YaccState list) =
     states
@@ -149,17 +156,36 @@ let isPrefixOf (states: YaccState list) (symbols: string list) =
             && loop restStates restSymbols
     loop states symbols
 
-let (|TOP_LEFT_BOUND|_|) (states: YaccState list) =
-    match states with
-    | s :: _ ->
-        let tag = stateSymbols.[s.state]
-        match tag with
-        | "("
-        | "LLPAREN"
-        | "["
-        | "[|" -> Some tag
-        | _ -> None
-    | [] -> None
+let (|OPEN_LONGID|_|) (states: YaccState list) =
+    RightSententialForm.open_longid
+    |> Seq.tryFind(isPrefixOf states)
+    |> Option.map(fun symbols ->
+        let lead = states.[symbols.Length - 1]
+        symbols, getPosition lead
+    )
+
+
+///栈顶
+let (|STACK_TOP|) (states: YaccState list) =
+    let top = stateSymbols.[states.[0].state]
+    let ls =
+        RightSententialForm.tops
+        |> List.filter(fun v ->
+            not v.prefix.IsEmpty
+            && v.prefix.[0] = top
+            && v.prefix |> isPrefixOf states
+        )
+
+    if ls.IsEmpty then
+        Console.WriteLine("// 栈顶形状不匹配")
+        Console.WriteLine("let 可能的栈顶 = " + stringify ls)
+        Console.WriteLine(
+            "let 此栈的形状 = "
+            + stringify(getSymbols states)
+        )
+        failwith "notImpl"
+    else
+        ls
 
 let (|TOP_RRPAREN|_|) (states: YaccState list) =
     ViablePrefix.top_rrparen
@@ -186,30 +212,30 @@ let (|LOOKAHEAD_RHSEND|_|) (states: YaccState list) =
     |> Seq.tryFind(isPrefixOf states)
 
 let (|LOOKAHEAD_SEMICOLON|_|) (states: YaccState list) =
-    ViablePrefix.la_semicolon
-    |> Seq.tryFind(isPrefixOf states)
+    let m =
+        //RightSententialForm.lookaheads
+        //|> Set.ofList
+        //|> Set.filter(fun (v, look_ahead) -> look_ahead = ";")
+        //|> Set.map fst
+        //|> Set.filter(fun vp -> vp.prefix |> isPrefixOf states)
 
-let (|OPEN_LONGID|_|) (states: YaccState list) =
-    RightSententialForm.open_longid
-    |> Seq.tryFind(isPrefixOf states)
-    |> Option.map(fun symbols ->
-        let lead = states.[symbols.Length - 1]
-        symbols, getPosition lead
-    )
+        ViablePrefix.la_semicolon
+        |> Set.filter(fun prefix -> prefix |> isPrefixOf states)
+        |> Set.toList
 
-///栈顶的decl；可能不完整
-let (|DECL_EXPR|_|) (states: YaccState list) =
-    stateSymbols.[states.[0].state]
-    |> ViablePrefix.topOf
-    |> Seq.tryFind(fun symbols ->
-        Console.WriteLine($"DECL_EXPR:{stringify symbols}")
-        isPrefixOf states symbols
-        && RightSententialForm.precede_declExpr.Contains
-            stateSymbols.[states.[symbols.Length].state]
-    )
-    |> Option.map(fun symbols ->
-        let lead = states.[symbols.Length - 1]
-        symbols, getPosition lead
-    )
+    if m.IsEmpty then None else Some m
 
-//let tryHeadProd (states: YaccState list) =
+let longestMatch (states: string list) =
+    // 过滤
+    let la_semicolon =
+        ViablePrefix.la_semicolon
+        |> Set.filter(fun item -> List.isPrefix item states)
+
+    la_semicolon
+    |> Seq.findBack(fun prefix ->
+        prefix
+        |> List.forall(
+            RightSententialForm.precede_declExpr.Contains
+            >> not
+        )
+    )

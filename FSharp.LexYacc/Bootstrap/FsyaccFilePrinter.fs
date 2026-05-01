@@ -11,13 +11,17 @@ type FsyaccFilePrinter =
         startType: string
         stateSymbols: string[]
     }
+
     static member from(flatFsyacc: FlatFsyaccFile) =
         let yacc = flatFsyacc.getYacc()
         let bnf = yacc.bnf
         let encoder = ParseTableEncoder.from(bnf.productions, bnf.kernels)
 
         ///状态号就是数组的索引号
-        let stateSymbols = bnf.kernelSymbols |> Map.toArray |> Array.map snd
+        let stateSymbols =
+            bnf.kernelSymbols
+            |> Map.toArray
+            |> Array.map snd
 
         let actions = encoder.encodeActions yacc.actions
         let declarations =
@@ -35,17 +39,20 @@ type FsyaccFilePrinter =
                         let reducer =
                             rule.reducer
                             |> Braces.sliceContent
-                            |> ReducerRender.decorateReducer
-                                declarations
-                                rule.production
+                            |> ReducerRender.decorateReducer declarations rule.production
                         rule.production, reducer
                     )
                 augmentRule :: rules
+
         let startSymbol =
             match fst rules.Head with
             | [ ""; startSymbol ] -> startSymbol
             | _ -> failwith "never"
-        let startType = declarations.[startSymbol]
+
+        let startType =
+            declarations
+            |> Map.tryFind startSymbol
+            |> Option.defaultValue "_"
 
         {
             rules = rules

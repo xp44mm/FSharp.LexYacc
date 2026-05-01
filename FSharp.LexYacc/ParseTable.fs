@@ -104,8 +104,8 @@ type ParseTable =
     /// 尝试执行 shift token 行为，成功返回 Some 状态，失败返回 None
     member this.tryShift (states: YaccState list) (token: TokenRow<'tok>) =
         let maybeTok = Some token
-        let rec loop ss =
-            match this.nextAction ss maybeTok with
+        let rec loop currentStates =
+            match this.nextAction currentStates maybeTok with
             | Reduced nss -> loop nss
             | Shifted nss -> Some nss
             | _ -> None // 其他情况（如 Error 或 Accept 等）视为失败
@@ -114,10 +114,10 @@ type ParseTable =
     /// Reduce / Shift
     member this.tryReduceBeforeShift (states: YaccState list) (token: TokenRow<'tok>) =
         // times用于记录Reduced次数
-        let rec loop times ss =
-            match this.nextAction ss (Some token) with
+        let rec loop times currentStates =
+            match this.nextAction currentStates (Some token) with
             | Reduced nss -> loop (times + 1) nss
-            | Shifted _ -> if times > 0 then Some ss else None
+            | Shifted _ -> if times > 0 then Some currentStates else None
             | x -> failwith(stringify x)
         loop 0 states
 
