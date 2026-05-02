@@ -3,6 +3,7 @@ module FSharp.Substance.Light
 open FSharp.Idioms
 open FSharp.LexYacc
 
+///合并缩进到行首的token
 let transform (tokens: FSharpToken seq) =
     let iterator = Iterator tokens
     let rec loop (prevToken: FSharpToken) =
@@ -21,7 +22,7 @@ let transform (tokens: FSharpToken seq) =
 
     loop(NEW_LINE 0)
 
-let offsideLexeme (spaces:int option) (tok:FSharpToken) =
+let offsideLexeme (spaces: int option) (tok: FSharpToken) =
     match tok with
     | FSharpToken.EXCLAM -> box spaces
     | FSharpToken.PERCENT -> box spaces
@@ -96,7 +97,7 @@ let tokenRow indent tok : TokenRow<int option * FSharpToken> =
     }
 
 /// 用于lookahead判断
-let semicolon_may_follow (tok:FSharpToken) =
+let semicolon_may_follow (tok: FSharpToken) =
     tok
-    |> FSharpToken.tag 
+    |> FSharpToken.tag
     |> RightSententialForm.follow_semicolon.Contains

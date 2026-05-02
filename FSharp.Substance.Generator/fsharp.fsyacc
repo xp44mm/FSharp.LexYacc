@@ -72,7 +72,7 @@ revBinaryExpr:
     | revBinaryExpr infix unaryExpr { (s1,s2)::s0 }
 
 unaryExpr:
-    | prifix appExpr {
+    | prefix appExpr {
         let indent, op = s0
         indent, UnaryExpr(op, snd s1)
     }
@@ -128,7 +128,7 @@ arrayExpr:
     | "[|" "|]" { s0, ArrayExpr [] }
     | "[|" sequentialExpr "|]" { s0, ArrayExpr(snd s1) }
 
-prifix:
+prefix:
     | "!" {s0, "!" }
     | "+" {s0, "+" }
     | "-" {s0, "-" }
@@ -222,7 +222,7 @@ typeArguments:
 %type<option<int>*Expr list> sequentialExpr rhsBlock
 %type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr
 %type<option<int>*Expr> declExpr letBinding valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr
-%type<option<int>*string> prifix infix
+%type<option<int>*string> prefix infix
 %type<((option<int>*string)*(option<int>*Expr)) list> revBinaryExpr
 %type<option<int>*string> IDENT
 %type<option<int>*Literal> LITERAL

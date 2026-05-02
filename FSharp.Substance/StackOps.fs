@@ -196,40 +196,33 @@ let (|TOP_SEMICOLON|_|) (states: YaccState list) =
     |> Seq.tryFind(isPrefixOf states)
 
 let (|LOOKAHEAD_LLPAREN|_|) (states: YaccState list) =
-    ViablePrefix.la_llparen
-    |> Seq.tryFind(isPrefixOf states)
+    RightSententialForm.lookaheads.["LLPAREN"] //ViablePrefix.la_llparen
+    |> Seq.tryFind(fun vp -> vp.prefix|> isPrefixOf states)
 
 let (|LOOKAHEAD_RRPAREN|_|) (states: YaccState list) =
-    ViablePrefix.la_rrparen
-    |> Seq.tryFind(isPrefixOf states)
+    RightSententialForm.lookaheads.["RRPAREN"] //ViablePrefix.la_rrparen
+    |> Seq.tryFind(fun vp -> vp.prefix|> isPrefixOf states)
 
 let (|LOOKAHEAD_RHSEND|_|) (states: YaccState list) =
-    ViablePrefix.la_rhsend
-    |> Seq.tryFind(isPrefixOf states)
+    RightSententialForm.lookaheads.["RHSEND"] //ViablePrefix.la_rhsend
+    |> Seq.tryFind(fun vp -> vp.prefix|> isPrefixOf states)
 
 let (|LOOKAHEAD_SEMICOLON|_|) (states: YaccState list) =
     let m =
-        //RightSententialForm.lookaheads
-        //|> Set.ofList
-        //|> Set.filter(fun (v, look_ahead) -> look_ahead = ";")
-        //|> Set.map fst
-        //|> Set.filter(fun vp -> vp.prefix |> isPrefixOf states)
-
-        ViablePrefix.la_semicolon
-        |> Set.filter(fun prefix -> prefix |> isPrefixOf states)
-        |> Set.toList
+        RightSententialForm.lookaheads.[";"] //ViablePrefix.la_semicolon
+        |> List.filter(fun vp -> vp.prefix |> isPrefixOf states)
 
     if m.IsEmpty then None else Some m
 
 let longestMatch (states: string list) =
     // 过滤
     let la_semicolon =
-        ViablePrefix.la_semicolon
-        |> Set.filter(fun item -> List.isPrefix item states)
+        RightSententialForm.lookaheads.[";"] //ViablePrefix.la_semicolon
+        |> List.filter(fun item -> List.isPrefix item.prefix states)
 
     la_semicolon
-    |> Seq.findBack(fun prefix ->
-        prefix
+    |> List.findBack(fun vp ->
+        vp.prefix
         |> List.forall(
             RightSententialForm.precede_declExpr.Contains
             >> not

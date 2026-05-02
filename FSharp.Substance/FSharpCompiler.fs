@@ -50,7 +50,7 @@ let beforeEOF (states: YaccState list) =
 
 let beforeRight (states: YaccState list) (laRight: FSharpToken) =
     let la = laRight |> FSharpToken.tag
-    let lookaheads = ViablePrefix.lookaheadOf la
+    let lookaheads = RightSententialForm.lookaheads.[ la]
 
     let rec loop (currentStates: YaccState list) =
         [
@@ -68,7 +68,7 @@ let beforeRight (states: YaccState list) (laRight: FSharpToken) =
             | _ ->
                 if
                     lookaheads
-                    |> Seq.exists(fun symbols -> isPrefixOf currentStates symbols)
+                    |> Seq.exists(fun vp -> isPrefixOf currentStates vp.prefix)
                 then
                     ()
                 else
@@ -137,12 +137,10 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
 
     | _, RPAREN ->
         let vp =
-            RightSententialForm.lookaheads
-            |> List.filter(fun (v, look_ahead) ->
-                look_ahead = ")"
-                && StackOps.isPrefixOf states v.prefix
+            RightSententialForm.lookaheads.[")"]
+            |> List.filter(fun vp ->
+                StackOps.isPrefixOf states vp.prefix
             )
-            |> List.map fst
 
         if not vp.IsEmpty && vp.[0].head = "atomicPattern" then
             [ space, la ]
@@ -154,12 +152,10 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
 
     | _, RBRACK ->
         let vp =
-            RightSententialForm.lookaheads
-            |> List.filter(fun (v, look_ahead) ->
-                look_ahead = "]"
-                && StackOps.isPrefixOf states v.prefix
+            RightSententialForm.lookaheads.["]"]
+            |> List.filter(fun (v) ->
+                StackOps.isPrefixOf states v.prefix
             )
-            |> List.map fst
 
         if not vp.IsEmpty && vp.[0].head = "qualificationSuffix" then
             [ space, la ]
@@ -234,7 +230,7 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
                     // 上一行的缩进
                     let j =
                         prefixes
-                        |> Seq.map(fun p -> p.Length - 1)
+                        |> Seq.map(fun p -> p.prefix.Length - 1)
                         |> Seq.map(fun i ->
                             let lead = states.[i]
                             getPosition lead
@@ -270,7 +266,7 @@ let complement (states: YaccState list) (space: int option) (la: FSharpToken) =
                     Console.WriteLine(stringify prefixes.[0])
 
                     // 此步就是为了排除续行
-                    if not vps.[0].isHandle then
+                    if not vps.[0].prefix.IsEmpty then
                         [ space, la ]
                     else
                         let symbols = StackOps.getSymbols states |> List.rev

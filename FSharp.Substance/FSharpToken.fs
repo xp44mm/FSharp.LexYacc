@@ -45,6 +45,8 @@ type FSharpToken =
 
     | SEMICOLON
     | BAR
+    //| MUST_BE_INFIX of string
+    //| MUST_BE_PREFIX of string
 
     | DO
     | EQUALS

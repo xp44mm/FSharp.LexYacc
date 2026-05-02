@@ -113,26 +113,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         let declExpr = bnf.precedes.["declExpr"] |> Set.toList
         output.WriteLine(stringify declExpr)
 
-
-    [<Fact>]
-    member _.``viable prefix``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let tops = ViablePrefix.top bnf
-        output.WriteLine("let tops: ViablePrefix list = [")
-        for tp in tops do
-            output.WriteLine("  " + stringify tp)
-        output.WriteLine("]")
-
-        let lookaheads = ViablePrefix.lookahead bnf
-        output.WriteLine("let lookaheads: (ViablePrefix * string) list = [")
-        for la in lookaheads do
-            output.WriteLine("  " + stringify la)
-        output.WriteLine("]")
-
     [<Fact>]
     member _.``derive OPEN longid``() =
         let rawFsyacc = FsyaccCompiler.compile text
@@ -161,10 +141,40 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         let bnf: BNF = yacc.bnf
 
         // precedes key可以是终结符号，也可以是非终结符号
-        let p = bnf.precedes.[";"].Remove "DUMMY"
-        let f = bnf.follows.[";"]
-        output.WriteLine("let precede_semicolon =")
-        output.WriteLine("  " + stringify p)
-
         output.WriteLine("let follow_semicolon =")
-        output.WriteLine("  " + stringify f)
+        let st = bnf.follows.[";"]
+        output.WriteLine("  " + stringify st)
+
+    [<Fact>]
+    member _.``viable prefix``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
+
+        let tops = ViablePrefix.top bnf
+        output.WriteLine("let tops: ViablePrefix list = [")
+        for tp in tops do
+            output.WriteLine("  " + stringify tp)
+        output.WriteLine("]")
+
+        let lookaheads: Map<string, ViablePrefix list> =
+            ViablePrefix.lookahead bnf
+            |> Seq.groupBy snd
+            |> Seq.map(fun (tok, sq) ->
+                let ls =
+                    sq
+                    |> Seq.map fst
+                    |> Set.ofSeq
+                    |> Set.toList
+                tok, ls
+            )
+            |> Map.ofSeq
+
+        output.WriteLine("let lookaheads: Map<string, ViablePrefix list> = [")
+        for KeyValue(tok,ls) in lookaheads do
+            output.WriteLine(Line.indent 2 $"{stringify tok},[" )
+            for vp in ls do
+                output.WriteLine(Line.indent 4 (stringify vp))            
+            output.WriteLine(Line.indent 2 "]")
+        output.WriteLine("]")
