@@ -1,182 +1,93 @@
 module FSharp.Substance.ParseContext
 
 open FSharp.Substance.FSharpYacc
+open FSharp.Substance.RightSententialForm
 
 open FSharp.Idioms
 open FSharp.Idioms.Literal
+
+// 上下文从状态栈到token队列依次的命名为：lead top gap la
 
 open FSharp.LexYacc
 
 open System
 open System.Diagnostics
-
-/// 依次的命名为：lead top gap la
-/// 简单语句的结束方法
-let (|OPEN_LONGID|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
-    if newline.IsSome && la = LET || la = OPEN then
-        RightSententialForm.open_longid
-        |> Seq.tryFind(StackOps.isPrefixOf states)
-        |> Option.map(fun symbols ->
-            let lead = states.[symbols.Length - 1]
-            let pos = StackOps.getPosition lead
-
-            match newline.Value, pos with
-            | i, Some j when i = j ->
-                [
-                    None, SEMICOLON
-                    newline, la
-                ]
-            | _ -> failwith "notImpl"
-        )
-    else
-        None
-
-/// 右括号之前
-let (|PEEK_RPAREN|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
-    if la = RPAREN then
-        let vp =
-            RightSententialForm.lookaheads.[")"]
-            |> List.filter(fun (v) ->
-                StackOps.isPrefixOf states v.prefix
-            )
-
-        if
-            not vp.IsEmpty
-            && vp.[0].head = "atomicPattern"
-        then
-            [ newline, la ]
-        else
-            [
-                //yield! beforeRight states la
-                newline, la
-            ]
-        |> Some
-    else
-        None
-
-/// 右中括号之前
-let (|PEEK_RBRACK|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
-    if la = RBRACK then
-        let vp =
-            RightSententialForm.lookaheads.["]"]
-            |> List.filter(fun (v) ->
-                StackOps.isPrefixOf states v.prefix
-            )
-
-        if
-            not vp.IsEmpty
-            && vp.[0].head = "qualificationSuffix"
-        then
-            [ newline, la ]
-        else
-            [
-                //yield! beforeRight states la
-                newline, la
-            ]
-        |> Some
-    else
-        None
-
-///当看见换行时，首先看是否简单续行
-let (|PEEK_NEWLINE_FIRST|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
-    match newline with
-    | None -> None
-    | Some _ ->
-        let noSemicolon =
-            if
-                // 当向前看不能跟在分号后面不加分号
-                la
-                |> FSharpToken.tag
-                |> RightSententialForm.follow_semicolon.Contains
-                |> not
-            then
-                true
-            elif
-                // 当栈顶不能在分号前面不加分号
-                ViablePrefix.la_semicolon
-                |> Seq.exists(fun vp -> vp.prefix |> StackOps.isPrefixOf states)
-                |> not
-            then
-                true
-            else
-                false
-
-        if noSemicolon then
-            Some [ newline, la ]
-        else
-            None
-
-///当看见换行时，截取栈顶越位线之上的状态
-let (|PEEK_NEWLINE_OFFSIDE|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
-    match newline with
-    | None -> None
-    | Some i ->
-        let stateRows =
-            states
-            |> List.map(fun st ->
-                let sym = stateSymbols.[st.state]
-                let pos = StackOps.getPosition st
-                pos, sym, st
-            )
-            |> List.advanceWhile(fun (pos, _, _) ->
-                match pos with
-                | None -> true
-                | Some j -> j <= i
-            )
-        let tk, rest = stateRows
-
-        //返回和越位对齐的栈顶
-        Some(List.rev(rest.Head :: tk))
-
-///当看见换行，并且添加LLPAREN
-let (|PEEK_NEWLINE_LLPAREN|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
-    match newline with
-    | None -> None
-    | Some i ->
-        if
-            ViablePrefix.la_llparen
-            |> Seq.exists(fun vp -> vp.prefix |> StackOps.isPrefixOf states)
-        then
-            Some
-                [
-                    None, LLPAREN
-                    newline, la
-                ]
-        else
-            None
-
 open StackOps
 
-///当看见EOF
+/// 无条件补齐所有省略的虚拟结束token
+let offside_rrparen_or_rhsend (states: YaccState list) =
+    let rec loop (currentStates: YaccState list) =
+        [
+            match currentStates with
+            | LOOKAHEAD_RRPAREN _ ->
+                yield None, RRPAREN
+                let nextStates = parser.shift currentStates (Light.tokenRow None RRPAREN)
+                yield! loop nextStates
+            | LOOKAHEAD_RHSEND _ ->
+                yield None, RHSEND
+                let nextStates = parser.shift currentStates (Light.tokenRow None RHSEND)
+                yield! loop nextStates
+            | _ -> ()
+        ]
+    [
+        match states with
+        | TOP_SEMICOLON _ ->
+            let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
+            yield None, DUMMY
+            yield! loop dummyStates
+        | _ -> yield! loop states
+    ]
+
+/// 当看见EOF
 let (|PEEK_EOF|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
     if la <> EOF then
         None
     else
-        let rec loop (currentStates: YaccState list) =
-            [
-                match currentStates with
-                | LOOKAHEAD_RRPAREN _ ->
-                    yield None, RRPAREN
-                    let nextStates = parser.shift currentStates (Light.tokenRow None RRPAREN)
-                    yield! loop nextStates
-                | LOOKAHEAD_RHSEND _ ->
-                    yield None, RHSEND
-                    let nextStates = parser.shift currentStates (Light.tokenRow None RHSEND)
-                    yield! loop nextStates
-                | _ -> ()
-            ]
         Some
             [
-                match states with
-                | TOP_SEMICOLON _ ->
-                    let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
-                    yield None, DUMMY
-                    yield! loop dummyStates
-                | _ -> yield! loop states
+                yield! offside_rrparen_or_rhsend states
                 yield Some 0, la
             ]
 
-///当看见SEMICOLON
+/// 右圆括号之前
+let (|PEEK_RPAREN|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
+    if la = RPAREN then
+        if
+            RightSententialForm.lookaheads.[")"]
+            |> Set.exists(fun v -> StackOps.isPrefixOf states v.prefix)
+        then
+            Some [ newline, la ]
+        else
+            let i = StackOps.balanceLeft "(" ")" states
+            let inner = List.take i states
+            Some
+                [
+                    yield! offside_rrparen_or_rhsend inner
+                    yield newline, la
+                ]
+    else
+        None
+
+/// 右方括号之前
+let (|PEEK_RBRACK|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
+    if la = RBRACK then
+        if
+            RightSententialForm.lookaheads.["]"]
+            |> Set.exists(fun v -> StackOps.isPrefixOf states v.prefix)
+        then
+            Some [ newline, la ]
+        else
+            let i = StackOps.balanceLeft "[" "]" states
+            let inner = List.take i states
+            Some
+                [
+                    yield! offside_rrparen_or_rhsend inner
+                    yield newline, la
+                ]
+    else
+        None
+
+/// 当看见SEMICOLON
 let (|PEEK_SEMICOLON|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
     if la <> SEMICOLON then
         None
@@ -206,14 +117,14 @@ let (|PEEK_SEMICOLON|_|) (states: YaccState list, newline: int option, la: FShar
                 yield None, la
             ]
 
-///当栈顶是semicolon && 后面跟着newline
+///当栈顶是SEMICOLON && 后面跟着NEWLINE
 let (|SEMICOLON_PEEK_NEWLINE|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
     match newline with
     | None -> None
     | Some i ->
         let st =
-            ViablePrefix.top_semicolon
-            |> Set.filter(StackOps.isPrefixOf states)
+            tops.[";"]
+            |> Set.filter(fun v -> v.prefix |> StackOps.isPrefixOf states)
         if st.IsEmpty then
             None
         else
@@ -221,7 +132,7 @@ let (|SEMICOLON_PEEK_NEWLINE|_|) (states: YaccState list, newline: int option, l
 
             //检查是否对齐，offside，但不能新建块
             let st = states.[1]
-            Debug.Assert(( stateSymbols.[st.state]="revSequentialExpr"))
+            Debug.Assert((stateSymbols.[st.state] = "revSequentialExpr"))
             match StackOps.getPosition st with
             | None -> failwith "前一条语句应该单独一行"
             | Some j ->
@@ -237,29 +148,109 @@ let (|SEMICOLON_PEEK_NEWLINE|_|) (states: YaccState list, newline: int option, l
                             match currentStates with
                             | LOOKAHEAD_RRPAREN symbols -> //"rhsBlock"
                                 yield None, RRPAREN
-                                let nextStates = parser.shift currentStates (Light.tokenRow None RRPAREN)
+                                let nextStates =
+                                    parser.shift currentStates (Light.tokenRow None RRPAREN)
+                                //看block所属的头位置
                                 let llparen = nextStates.[2..]
                                 let vp =
-                                    RightSententialForm.tops
-                                    |> List.filter(fun v -> v.prefix.[0] = "LLPAREN")
-                                    |> List.filter(fun v -> StackOps.isPrefixOf llparen v.prefix)
-
-
+                                    RightSententialForm.tops.["LLPAREN"]
+                                    |> Set.filter(fun v -> StackOps.isPrefixOf llparen v.prefix)
+                                    |> Seq.exactlyOne
+                                let seenOffside =
+                                    let pos = getPosition llparen.[vp.prefix.Length - 1]
+                                    match pos with
+                                    | None ->
+                                        //stateSymbols.[llparen.[vp.prefix.Length].state]
+                                        //|> precede_declExpr.Contains
+                                        match vp.head with
+                                        | "letBinding"
+                                        | "file" -> failwith "必须新启一行"
+                                        | "lambdaExpr" ->
+                                            //let a = fun b -> fun c ->
+                                            //    top;
+                                            //lookahead()
+                                            //没有越位，继续rhsend
+                                            false
+                                        | _ -> failwith $"SEMICOLON_PEEK_NEWLINE:{vp.head}"
+                                    | Some jj -> jj >= i
 
                                 yield! loop seenOffside nextStates
                             | LOOKAHEAD_RHSEND _ ->
                                 yield None, RHSEND
-                                let nextStates = parser.shift currentStates (Light.tokenRow None RHSEND)
+                                let nextStates =
+                                    parser.shift currentStates (Light.tokenRow None RHSEND)
+
                                 yield! loop seenOffside nextStates
                             | _ -> ()
                         ]
                     Some
                         [
-                            match states with
-                            | TOP_SEMICOLON _ ->
-                                let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
-                                yield None, DUMMY
-                                yield! loop false dummyStates
-                            | _ -> yield! loop false states
+                            yield None, DUMMY
+                            let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
+                            yield! loop false dummyStates
                             yield Some 0, la
                         ]
+
+///看见换行时，看是否是续行
+let (|PEEK_NEWLINE_APP|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
+    match newline with
+    | None -> None
+    | Some i ->
+        let la_tag = FSharpToken.tag la
+        //不加分号
+        let noSemicolon =
+            if
+                la_tag
+                |> follow_semicolon.Contains
+                |> not
+            then
+                // 当向前看不能跟在分号后面
+                true
+            else
+                //原理：appExpr每次应用后面都可以跟随分号
+                match
+                    ViablePrefix.la_semicolon
+                    |> Seq.tryFind(fun vp -> vp.prefix |> StackOps.isPrefixOf states)
+                with
+                | None ->
+                    // 原理：即使缺少rrparen, rhsend的栈顶也是可以跟随分号
+                    // 不能跟随分号，意味着末尾是逗号，infix等未完成的decl
+                    true
+                | Some vp ->
+                    // 此时栈顶符合APP的前缀
+                    let rec loop (vp: ViablePrefix) (suffix_states: YaccState list) =
+                        let lead = suffix_states.[vp.prefix.Length - 1]
+                        match StackOps.getPosition lead with
+                        | Some j ->
+                            // 当新行继续缩进的时候，表示是APP续行
+                            j < i
+                        | None ->
+                            let topVp =
+                                tops.[stateSymbols.[lead.state]]
+                                |> Seq.find(fun vp ->
+                                    vp.prefix
+                                    |> StackOps.isPrefixOf suffix_states
+                                )
+                            let suffix_states = suffix_states.[vp.prefix.Length - 1 ..]
+                            loop topVp suffix_states
+
+                    //首先看la是否是valueExpr这是app的条件；再看缩进是否符合APP
+                    first_valueExpr.Contains la_tag
+                    && loop vp states
+
+        if noSemicolon then
+            Some [ newline, la ]
+        else
+            None
+
+/// 补齐rrparen,rhsend,semicolon => offside
+let (|PEEK_NEWLINE_OFFSIDE|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
+    match newline with
+    | None -> None
+    | Some i ->
+        //此时已经排除了la<>decl first，已经排除了stack top follow semicolon
+        let tops = 
+            top_prefixes
+            |> Map.filter(fun prefix heads -> prefix |> StackOps.isPrefixOf states)
+
+        Some tops

@@ -1,190 +1,684 @@
 module FSharp.Substance.RightSententialForm
-
-let lBounds =
-    set
-        [
-            "{"
-            "("
-            "LLPAREN"
-            "["
-            "[|"
-        ]
-
-let precede_declExpr = set ["(";";";"LLPAREN";"[";"[|"]
-
-/// 1. +-是一元操作符号 2. 记录literal还没有实现
-let follow_semicolon =
-  set ["!";"(";"+";"-";"DUMMY";"FUN";"IDENT";"LET";"LITERAL";"OPEN";"[";"[|"]
-
 open FSharp.LexYacc
 
-let open_longid = [
-    ["IDENT";".";"revLongid";"OPEN"]
-    ["IDENT";"OPEN"]
+
+let follow_semicolon: string Set =
+  set ["!";"(";"+";"-";"FUN";"IDENT";"LET";"LITERAL";"OPEN";"[";"[|"]
+let precede_declExpr: string Set = set ["(";";";"LLPAREN";"[";"[|"]
+let first_declExpr: string Set = set ["!";"(";"+";"-";"FUN";"IDENT";"LET";"LITERAL";"OPEN";"[";"[|"]
+let first_valueExpr: string Set = set ["!";"(";"+";"-";"FUN";"IDENT";"LITERAL";"[";"[|"]
+
+
+let tops: Map<string, ViablePrefix Set> = Map [
+  "!",set [
+    {prefix=["!";"("];head="parenExpr"}
+    {prefix=["!";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["!";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["!";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["!";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["!";"LLPAREN"];head="rhsBlock"}
+    {prefix=["!";"["];head="listExpr"}
+    {prefix=["!";"[";"."];head="qualificationSuffix"}
+    {prefix=["!";"[|"];head="arrayExpr"}
+    {prefix=["!";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "%",set [
+    {prefix=["%";"("];head="atomicExpr"}
+    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "&",set [
+    {prefix=["&";"("];head="atomicExpr"}
+    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "&&",set [
+    {prefix=["&&";"("];head="atomicExpr"}
+    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "(",set [
+    {prefix=["(";"("];head="atomType"}
+    {prefix=["(";"("];head="parameterPattern"}
+    {prefix=["(";"("];head="parenExpr"}
+    {prefix=["(";"*";"tupleType"];head="tupleType"}
+    {prefix=["(";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["(";",";"tuplePattern"];head="tuplePattern"}
+    {prefix=["(";",";"typeArguments"];head="typeArguments"}
+    {prefix=["(";"->";"funType"];head="funType"}
+    {prefix=["(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["(";":";"IDENT"];head="atomicPattern"}
+    {prefix=["(";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["(";"<";"IDENT"];head="identExpr"}
+    {prefix=["(";"<";"longid"];head="atomType"}
+    {prefix=["(";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["(";"FUN"];head="lambdaExpr"}
+    {prefix=["(";"LET"];head="letBinding"}
+    {prefix=["(";"LLPAREN"];head="rhsBlock"}
+    {prefix=["(";"["];head="listExpr"}
+    {prefix=["(";"[";"."];head="qualificationSuffix"}
+    {prefix=["(";"[|"];head="arrayExpr"}
+    {prefix=["(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["(";"prefix"];head="unaryExpr"}
+    {prefix=["(";"revAppExpr"];head="revAppExpr"}
+  ]
+  ")",set [
+    {prefix=[")";"("];head="atomicExpr"}
+    {prefix=[")";"bindingPattern";"("];head="parameterPattern"}
+    {prefix=[")";"infix";"("];head="atomicExpr"}
+    {prefix=[")";"sequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"typeArgument";"("];head="atomType"}
+  ]
+  "*",set [
+    {prefix=["*";"tupleType"];head="tupleType"}
+  ]
+  "+",set [
+    {prefix=["+";"("];head="atomicExpr"}
+    {prefix=["+";"("];head="parenExpr"}
+    {prefix=["+";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["+";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["+";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["+";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["+";"LLPAREN"];head="rhsBlock"}
+    {prefix=["+";"["];head="listExpr"}
+    {prefix=["+";"[";"."];head="qualificationSuffix"}
+    {prefix=["+";"[|"];head="arrayExpr"}
+    {prefix=["+";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  ",",set [
+    {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=[",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=[",";"tuplePattern"];head="tuplePattern"}
+    {prefix=[",";"typeArguments"];head="typeArguments"}
+  ]
+  "-",set [
+    {prefix=["-";"("];head="atomicExpr"}
+    {prefix=["-";"("];head="parenExpr"}
+    {prefix=["-";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["-";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["-";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["-";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["-";"LLPAREN"];head="rhsBlock"}
+    {prefix=["-";"["];head="listExpr"}
+    {prefix=["-";"[";"."];head="qualificationSuffix"}
+    {prefix=["-";"[|"];head="arrayExpr"}
+    {prefix=["-";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "->",set [
+    {prefix=["->";"funType"];head="funType"}
+    {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+  ]
+  ".",set [
+    {prefix=[".";"revLongid"];head="revLongid"}
+    {prefix=[".";"revQualificationExpr"];head="revQualificationExpr"}
+  ]
+  "..",set [
+    {prefix=["..";"("];head="atomicExpr"}
+    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "/",set [
+    {prefix=["/";"("];head="atomicExpr"}
+    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  ":",set [
+    {prefix=[":";"IDENT"];head="atomicPattern"}
+  ]
+  "::",set [
+    {prefix=["::";"("];head="atomicExpr"}
+    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  ":?",set [
+    {prefix=[":?";"("];head="atomicExpr"}
+    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  ":?>",set [
+    {prefix=[":?>";"("];head="atomicExpr"}
+    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  ";",set [
+    {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+  ]
+  "<",set [
+    {prefix=["<";"IDENT"];head="identExpr"}
+    {prefix=["<";"longid"];head="atomType"}
+  ]
+  "<<",set [
+    {prefix=["<<";"("];head="atomicExpr"}
+    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "<>",set [
+    {prefix=["<>";"("];head="atomicExpr"}
+    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "<|",set [
+    {prefix=["<|";"("];head="atomicExpr"}
+    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "<||",set [
+    {prefix=["<||";"("];head="atomicExpr"}
+    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "<|||",set [
+    {prefix=["<|||";"("];head="atomicExpr"}
+    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "=",set [
+    {prefix=["=";"("];head="atomicExpr"}
+    {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  ">",set [
+    {prefix=[">";"typeArguments";"<";"IDENT"];head="identExpr"}
+    {prefix=[">";"typeArguments";"<";"longid"];head="atomType"}
+  ]
+  ">>",set [
+    {prefix=[">>";"("];head="atomicExpr"}
+    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "@",set [
+    {prefix=["@";"("];head="atomicExpr"}
+    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "DUMMY",set [
+    {prefix=["DUMMY";"("];head="parenExpr"}
+    {prefix=["DUMMY";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["DUMMY";"LLPAREN"];head="rhsBlock"}
+    {prefix=["DUMMY";"["];head="listExpr"}
+    {prefix=["DUMMY";"[|"];head="arrayExpr"}
+  ]
+  "EOF",set [
+    {prefix=["EOF";"rhsBlock";"longid";"MODULE"];head="file"}
+  ]
+  "FUN",set [
+    {prefix=["FUN";"("];head="parenExpr"}
+    {prefix=["FUN";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["FUN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["FUN";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["FUN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["FUN";"LLPAREN"];head="rhsBlock"}
+    {prefix=["FUN";"["];head="listExpr"}
+    {prefix=["FUN";"[|"];head="arrayExpr"}
+  ]
+  "IDENT",set [
+    {prefix=["IDENT";"("];head="atomType"}
+    {prefix=["IDENT";"("];head="parameterPattern"}
+    {prefix=["IDENT";"("];head="parenExpr"}
+    {prefix=["IDENT";"*";"tupleType"];head="tupleType"}
+    {prefix=["IDENT";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["IDENT";",";"tuplePattern"];head="tuplePattern"}
+    {prefix=["IDENT";",";"typeArguments"];head="typeArguments"}
+    {prefix=["IDENT";"->";"funType"];head="funType"}
+    {prefix=["IDENT";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"."];head="qualificationSuffix"}
+    {prefix=["IDENT";".";"revLongid"];head="revLongid"}
+    {prefix=["IDENT";":";"IDENT"];head="atomicPattern"}
+    {prefix=["IDENT";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"<";"IDENT"];head="identExpr"}
+    {prefix=["IDENT";"<";"longid"];head="atomType"}
+    {prefix=["IDENT";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"LET"];head="letBinding"}
+    {prefix=["IDENT";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"MODULE"];head="file"}
+    {prefix=["IDENT";"OPEN"];head="declExpr"}
+    {prefix=["IDENT";"["];head="listExpr"}
+    {prefix=["IDENT";"[";"."];head="qualificationSuffix"}
+    {prefix=["IDENT";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"appType"];head="appType"}
+    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";"prefix"];head="unaryExpr"}
+    {prefix=["IDENT";"revAppExpr"];head="revAppExpr"}
+  ]
+  "LET",set [
+    {prefix=["LET";"("];head="parenExpr"}
+    {prefix=["LET";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LET";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LET";"["];head="listExpr"}
+    {prefix=["LET";"[|"];head="arrayExpr"}
+  ]
+  "LITERAL",set [
+    {prefix=["LITERAL";"("];head="parenExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["LITERAL";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"["];head="listExpr"}
+    {prefix=["LITERAL";"[";"."];head="qualificationSuffix"}
+    {prefix=["LITERAL";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["LITERAL";"prefix"];head="unaryExpr"}
+    {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
+  ]
+  "LLPAREN",set [
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LLPAREN";"longid";"MODULE"];head="file"}
+  ]
+  "OPEN",set [
+    {prefix=["OPEN";"("];head="parenExpr"}
+    {prefix=["OPEN";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["OPEN";"LLPAREN"];head="rhsBlock"}
+    {prefix=["OPEN";"["];head="listExpr"}
+    {prefix=["OPEN";"[|"];head="arrayExpr"}
+  ]
+  "RHSEND",set [
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+  ]
+  "RRPAREN",set [
+    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN"];head="rhsBlock"}
+  ]
+  "TYPAR",set [
+    {prefix=["TYPAR";"("];head="atomType"}
+    {prefix=["TYPAR";"*";"tupleType"];head="tupleType"}
+    {prefix=["TYPAR";",";"typeArguments"];head="typeArguments"}
+    {prefix=["TYPAR";"->";"funType"];head="funType"}
+    {prefix=["TYPAR";":";"IDENT"];head="atomicPattern"}
+    {prefix=["TYPAR";"<";"IDENT"];head="identExpr"}
+    {prefix=["TYPAR";"<";"longid"];head="atomType"}
+  ]
+  "[",set [
+    {prefix=["[";"("];head="parenExpr"}
+    {prefix=["[";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["[";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["[";"."];head="qualificationSuffix"}
+    {prefix=["[";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["[";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["[";"LLPAREN"];head="rhsBlock"}
+    {prefix=["[";"["];head="listExpr"}
+    {prefix=["[";"[";"."];head="qualificationSuffix"}
+    {prefix=["[";"[|"];head="arrayExpr"}
+    {prefix=["[";"appType"];head="appType"}
+    {prefix=["[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["[";"prefix"];head="unaryExpr"}
+    {prefix=["[";"revAppExpr"];head="revAppExpr"}
+  ]
+  "[|",set [
+    {prefix=["[|";"("];head="parenExpr"}
+    {prefix=["[|";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["[|";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["[|";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["[|";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["[|";"LLPAREN"];head="rhsBlock"}
+    {prefix=["[|";"["];head="listExpr"}
+    {prefix=["[|";"[";"."];head="qualificationSuffix"}
+    {prefix=["[|";"[|"];head="arrayExpr"}
+    {prefix=["[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["[|";"prefix"];head="unaryExpr"}
+    {prefix=["[|";"revAppExpr"];head="revAppExpr"}
+  ]
+  "]",set [
+    {prefix=["]";"["];head="listExpr"}
+    {prefix=["]";"["];head="suffixType"}
+    {prefix=["]";"sequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";"."];head="qualificationSuffix"}
+  ]
+  "appExpr",set [
+    {prefix=["appExpr";"("];head="parenExpr"}
+    {prefix=["appExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["appExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["appExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["appExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["appExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["appExpr";"["];head="listExpr"}
+    {prefix=["appExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["appExpr";"[|"];head="arrayExpr"}
+    {prefix=["appExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["appExpr";"prefix"];head="unaryExpr"}
+  ]
+  "appType",set [
+    {prefix=["appType";"("];head="atomType"}
+    {prefix=["appType";"*";"tupleType"];head="tupleType"}
+    {prefix=["appType";",";"typeArguments"];head="typeArguments"}
+    {prefix=["appType";"->";"funType"];head="funType"}
+    {prefix=["appType";":";"IDENT"];head="atomicPattern"}
+    {prefix=["appType";"<";"IDENT"];head="identExpr"}
+    {prefix=["appType";"<";"longid"];head="atomType"}
+  ]
+  "arrayExpr",set [
+    {prefix=["arrayExpr";"("];head="parenExpr"}
+    {prefix=["arrayExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["arrayExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["arrayExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["arrayExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["arrayExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["arrayExpr";"["];head="listExpr"}
+    {prefix=["arrayExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["arrayExpr";"[|"];head="arrayExpr"}
+    {prefix=["arrayExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["arrayExpr";"prefix"];head="unaryExpr"}
+    {prefix=["arrayExpr";"revAppExpr"];head="revAppExpr"}
+  ]
+  "atomType",set [
+    {prefix=["atomType";"("];head="atomType"}
+    {prefix=["atomType";"*";"tupleType"];head="tupleType"}
+    {prefix=["atomType";",";"typeArguments"];head="typeArguments"}
+    {prefix=["atomType";"->";"funType"];head="funType"}
+    {prefix=["atomType";":";"IDENT"];head="atomicPattern"}
+    {prefix=["atomType";"<";"IDENT"];head="identExpr"}
+    {prefix=["atomType";"<";"longid"];head="atomType"}
+  ]
+  "atomicExpr",set [
+    {prefix=["atomicExpr";"("];head="parenExpr"}
+    {prefix=["atomicExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["atomicExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["atomicExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["atomicExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["atomicExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["atomicExpr";"["];head="listExpr"}
+    {prefix=["atomicExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["atomicExpr";"[|"];head="arrayExpr"}
+    {prefix=["atomicExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["atomicExpr";"prefix"];head="unaryExpr"}
+    {prefix=["atomicExpr";"revAppExpr"];head="revAppExpr"}
+  ]
+  "atomicPattern",set [
+    {prefix=["atomicPattern";"("];head="parameterPattern"}
+    {prefix=["atomicPattern";",";"tuplePattern"];head="tuplePattern"}
+    {prefix=["atomicPattern";"LET"];head="letBinding"}
+  ]
+  "binaryExpr",set [
+    {prefix=["binaryExpr";"("];head="parenExpr"}
+    {prefix=["binaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["binaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["binaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["binaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["binaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["binaryExpr";"["];head="listExpr"}
+    {prefix=["binaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["binaryExpr";"[|"];head="arrayExpr"}
+  ]
+  "bindingPattern",set [
+    {prefix=["bindingPattern";"("];head="parameterPattern"}
+    {prefix=["bindingPattern";"LET"];head="letBinding"}
+  ]
+  "declExpr",set [
+    {prefix=["declExpr";"("];head="parenExpr"}
+    {prefix=["declExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["declExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["declExpr";"["];head="listExpr"}
+    {prefix=["declExpr";"[|"];head="arrayExpr"}
+  ]
+  "funType",set [
+    {prefix=["funType";"("];head="atomType"}
+    {prefix=["funType";",";"typeArguments"];head="typeArguments"}
+    {prefix=["funType";":";"IDENT"];head="atomicPattern"}
+    {prefix=["funType";"<";"IDENT"];head="identExpr"}
+    {prefix=["funType";"<";"longid"];head="atomType"}
+  ]
+  "identExpr",set [
+    {prefix=["identExpr";"("];head="parenExpr"}
+    {prefix=["identExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["identExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["identExpr";"."];head="qualificationSuffix"}
+    {prefix=["identExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["identExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["identExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["identExpr";"["];head="listExpr"}
+    {prefix=["identExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["identExpr";"[|"];head="arrayExpr"}
+    {prefix=["identExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["identExpr";"prefix"];head="unaryExpr"}
+    {prefix=["identExpr";"revAppExpr"];head="revAppExpr"}
+  ]
+  "infix",set [
+    {prefix=["infix";"("];head="atomicExpr"}
+    {prefix=["infix";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "lambdaExpr",set [
+    {prefix=["lambdaExpr";"("];head="parenExpr"}
+    {prefix=["lambdaExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["lambdaExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["lambdaExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["lambdaExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["lambdaExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["lambdaExpr";"["];head="listExpr"}
+    {prefix=["lambdaExpr";"[|"];head="arrayExpr"}
+  ]
+  "letBinding",set [
+    {prefix=["letBinding";"("];head="parenExpr"}
+    {prefix=["letBinding";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["letBinding";"LLPAREN"];head="rhsBlock"}
+    {prefix=["letBinding";"["];head="listExpr"}
+    {prefix=["letBinding";"[|"];head="arrayExpr"}
+  ]
+  "listExpr",set [
+    {prefix=["listExpr";"("];head="parenExpr"}
+    {prefix=["listExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["listExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["listExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["listExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["listExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["listExpr";"["];head="listExpr"}
+    {prefix=["listExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["listExpr";"[|"];head="arrayExpr"}
+    {prefix=["listExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["listExpr";"prefix"];head="unaryExpr"}
+    {prefix=["listExpr";"revAppExpr"];head="revAppExpr"}
+  ]
+  "longid",set [
+    {prefix=["longid";"("];head="atomType"}
+    {prefix=["longid";"*";"tupleType"];head="tupleType"}
+    {prefix=["longid";",";"typeArguments"];head="typeArguments"}
+    {prefix=["longid";"->";"funType"];head="funType"}
+    {prefix=["longid";":";"IDENT"];head="atomicPattern"}
+    {prefix=["longid";"<";"IDENT"];head="identExpr"}
+    {prefix=["longid";"<";"longid"];head="atomType"}
+    {prefix=["longid";"MODULE"];head="file"}
+    {prefix=["longid";"OPEN"];head="declExpr"}
+    {prefix=["longid";"appType"];head="appType"}
+  ]
+  "parameterPattern",set [
+    {prefix=["parameterPattern";"("];head="parameterPattern"}
+    {prefix=["parameterPattern";",";"tuplePattern"];head="tuplePattern"}
+    {prefix=["parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["parameterPattern";"LET"];head="letBinding"}
+  ]
+  "parenExpr",set [
+    {prefix=["parenExpr";"("];head="parenExpr"}
+    {prefix=["parenExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["parenExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["parenExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["parenExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["parenExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["parenExpr";"["];head="listExpr"}
+    {prefix=["parenExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["parenExpr";"[|"];head="arrayExpr"}
+    {prefix=["parenExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["parenExpr";"prefix"];head="unaryExpr"}
+    {prefix=["parenExpr";"revAppExpr"];head="revAppExpr"}
+  ]
+  "prefix",set [
+    {prefix=["prefix";"("];head="parenExpr"}
+    {prefix=["prefix";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["prefix";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["prefix";"["];head="listExpr"}
+    {prefix=["prefix";"[";"."];head="qualificationSuffix"}
+    {prefix=["prefix";"[|"];head="arrayExpr"}
+    {prefix=["prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "qualificationExpr",set [
+    {prefix=["qualificationExpr";"("];head="parenExpr"}
+    {prefix=["qualificationExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["qualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["qualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["qualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["qualificationExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["qualificationExpr";"["];head="listExpr"}
+    {prefix=["qualificationExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["qualificationExpr";"[|"];head="arrayExpr"}
+    {prefix=["qualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["qualificationExpr";"prefix"];head="unaryExpr"}
+    {prefix=["qualificationExpr";"revAppExpr"];head="revAppExpr"}
+  ]
+  "qualificationSuffix",set [
+    {prefix=["qualificationSuffix";"revQualificationExpr"];head="revQualificationExpr"}
+  ]
+  "revAppExpr",set [
+    {prefix=["revAppExpr";"("];head="parenExpr"}
+    {prefix=["revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["revAppExpr";"["];head="listExpr"}
+    {prefix=["revAppExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["revAppExpr";"[|"];head="arrayExpr"}
+    {prefix=["revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["revAppExpr";"prefix"];head="unaryExpr"}
+  ]
+  "revBinaryExpr",set [
+    {prefix=["revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["revBinaryExpr";"["];head="listExpr"}
+    {prefix=["revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["revBinaryExpr";"[|"];head="arrayExpr"}
+  ]
+  "revLongid",set [
+    {prefix=["revLongid";"("];head="atomType"}
+    {prefix=["revLongid";"*";"tupleType"];head="tupleType"}
+    {prefix=["revLongid";",";"typeArguments"];head="typeArguments"}
+    {prefix=["revLongid";"->";"funType"];head="funType"}
+    {prefix=["revLongid";":";"IDENT"];head="atomicPattern"}
+    {prefix=["revLongid";"<";"IDENT"];head="identExpr"}
+    {prefix=["revLongid";"<";"longid"];head="atomType"}
+    {prefix=["revLongid";"MODULE"];head="file"}
+    {prefix=["revLongid";"OPEN"];head="declExpr"}
+    {prefix=["revLongid";"appType"];head="appType"}
+  ]
+  "revQualificationExpr",set [
+    {prefix=["revQualificationExpr";"("];head="parenExpr"}
+    {prefix=["revQualificationExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["revQualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["revQualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["revQualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["revQualificationExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["revQualificationExpr";"["];head="listExpr"}
+    {prefix=["revQualificationExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["revQualificationExpr";"[|"];head="arrayExpr"}
+    {prefix=["revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["revQualificationExpr";"prefix"];head="unaryExpr"}
+    {prefix=["revQualificationExpr";"revAppExpr"];head="revAppExpr"}
+  ]
+  "revSequentialExpr",set [
+    {prefix=["revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["revSequentialExpr";"["];head="listExpr"}
+    {prefix=["revSequentialExpr";"[|"];head="arrayExpr"}
+  ]
+  "revTupleExpr",set [
+    {prefix=["revTupleExpr";"("];head="parenExpr"}
+    {prefix=["revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["revTupleExpr";"["];head="listExpr"}
+    {prefix=["revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["revTupleExpr";"[|"];head="arrayExpr"}
+  ]
+  "rhsBlock",set [
+    {prefix=["rhsBlock";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["rhsBlock";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["rhsBlock";"longid";"MODULE"];head="file"}
+  ]
+  "sequentialExpr",set [
+    {prefix=["sequentialExpr";"("];head="parenExpr"}
+    {prefix=["sequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["sequentialExpr";"["];head="listExpr"}
+    {prefix=["sequentialExpr";"[|"];head="arrayExpr"}
+  ]
+  "suffixType",set [
+    {prefix=["suffixType";"appType"];head="appType"}
+  ]
+  "tupleExpr",set [
+    {prefix=["tupleExpr";"("];head="parenExpr"}
+    {prefix=["tupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["tupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["tupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["tupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["tupleExpr";"["];head="listExpr"}
+    {prefix=["tupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["tupleExpr";"[|"];head="arrayExpr"}
+  ]
+  "tuplePattern",set [
+    {prefix=["tuplePattern";"("];head="parameterPattern"}
+    {prefix=["tuplePattern";"LET"];head="letBinding"}
+  ]
+  "tupleType",set [
+    {prefix=["tupleType";"("];head="atomType"}
+    {prefix=["tupleType";",";"typeArguments"];head="typeArguments"}
+    {prefix=["tupleType";"->";"funType"];head="funType"}
+    {prefix=["tupleType";":";"IDENT"];head="atomicPattern"}
+    {prefix=["tupleType";"<";"IDENT"];head="identExpr"}
+    {prefix=["tupleType";"<";"longid"];head="atomType"}
+  ]
+  "typeArgument",set [
+    {prefix=["typeArgument";"("];head="atomType"}
+    {prefix=["typeArgument";",";"typeArguments"];head="typeArguments"}
+    {prefix=["typeArgument";":";"IDENT"];head="atomicPattern"}
+    {prefix=["typeArgument";"<";"IDENT"];head="identExpr"}
+    {prefix=["typeArgument";"<";"longid"];head="atomType"}
+  ]
+  "typeArguments",set [
+    {prefix=["typeArguments";"<";"IDENT"];head="identExpr"}
+    {prefix=["typeArguments";"<";"longid"];head="atomType"}
+  ]
+  "unaryExpr",set [
+    {prefix=["unaryExpr";"("];head="parenExpr"}
+    {prefix=["unaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["unaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["unaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["unaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["unaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["unaryExpr";"["];head="listExpr"}
+    {prefix=["unaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["unaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["unaryExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "valueExpr",set [
+    {prefix=["valueExpr";"("];head="parenExpr"}
+    {prefix=["valueExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["valueExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["valueExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["valueExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["valueExpr";"["];head="listExpr"}
+    {prefix=["valueExpr";"[|"];head="arrayExpr"}
+  ]
+  "|>",set [
+    {prefix=["|>";"("];head="atomicExpr"}
+    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "|]",set [
+    {prefix=["|]";"[|"];head="arrayExpr"}
+    {prefix=["|]";"sequentialExpr";"[|"];head="arrayExpr"}
+  ]
+  "||",set [
+    {prefix=["||";"("];head="atomicExpr"}
+    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "||>",set [
+    {prefix=["||>";"("];head="atomicExpr"}
+    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "|||",set [
+    {prefix=["|||";"("];head="atomicExpr"}
+    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
+  "|||>",set [
+    {prefix=["|||>";"("];head="atomicExpr"}
+    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
+  ]
 ]
 
-let tops: ViablePrefix list = [
-  {prefix=["!"];head="prefix"}
-  {prefix=["%"];head="infix"}
-  {prefix=["&"];head="infix"}
-  {prefix=["&&"];head="infix"}
-  {prefix=["("];head="atomType"}
-  {prefix=["("];head="atomicExpr"}
-  {prefix=["("];head="parameterPattern"}
-  {prefix=["("];head="parenExpr"}
-  {prefix=[")";"("];head="atomicExpr"}
-  {prefix=[")";"bindingPattern";"("];head="parameterPattern"}
-  {prefix=[")";"infix";"("];head="atomicExpr"}
-  {prefix=[")";"sequentialExpr";"("];head="parenExpr"}
-  {prefix=[")";"typeArgument";"("];head="atomType"}
-  {prefix=["*";"tupleType"];head="tupleType"}
-  {prefix=["+"];head="infix"}
-  {prefix=["+"];head="prefix"}
-  {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
-  {prefix=[",";"revTupleExpr"];head="tupleExpr"}
-  {prefix=[",";"tuplePattern"];head="tuplePattern"}
-  {prefix=[",";"typeArguments"];head="typeArguments"}
-  {prefix=["-"];head="infix"}
-  {prefix=["-"];head="prefix"}
-  {prefix=["->";"funType"];head="funType"}
-  {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-  {prefix=["."];head="qualificationSuffix"}
-  {prefix=[".";"revLongid"];head="revLongid"}
-  {prefix=[".."];head="infix"}
-  {prefix=["/"];head="infix"}
-  {prefix=[":";"IDENT"];head="atomicPattern"}
-  {prefix=["::"];head="infix"}
-  {prefix=[":?"];head="infix"}
-  {prefix=[":?>"];head="infix"}
-  {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-  {prefix=["<";"IDENT"];head="identExpr"}
-  {prefix=["<";"longid"];head="atomType"}
-  {prefix=["<<"];head="infix"}
-  {prefix=["<>"];head="infix"}
-  {prefix=["<|"];head="infix"}
-  {prefix=["<||"];head="infix"}
-  {prefix=["<|||"];head="infix"}
-  {prefix=["="];head="infix"}
-  {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
-  {prefix=[">";"typeArguments";"<";"IDENT"];head="identExpr"}
-  {prefix=[">";"typeArguments";"<";"longid"];head="atomType"}
-  {prefix=[">>"];head="infix"}
-  {prefix=["@"];head="infix"}
-  {prefix=["DUMMY"];head="declExpr"}
-  {prefix=["EOF";"rhsBlock";"longid";"MODULE"];head="file"}
-  {prefix=["FUN"];head="lambdaExpr"}
-  {prefix=["IDENT"];head="atomicPattern"}
-  {prefix=["IDENT"];head="identExpr"}
-  {prefix=["IDENT"];head="identExpr"}
-  {prefix=["IDENT"];head="parameterPattern"}
-  {prefix=["IDENT"];head="revLongid"}
-  {prefix=["IDENT";".";"revLongid"];head="revLongid"}
-  {prefix=["LET"];head="letBinding"}
-  {prefix=["LITERAL"];head="atomicExpr"}
-  {prefix=["LLPAREN"];head="rhsBlock"}
-  {prefix=["MODULE"];head="file"}
-  {prefix=["OPEN"];head="declExpr"}
-  {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-  {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-  {prefix=["RRPAREN";"sequentialExpr";"LLPAREN"];head="rhsBlock"}
-  {prefix=["TYPAR"];head="atomType"}
-  {prefix=["["];head="listExpr"}
-  {prefix=["["];head="suffixType"}
-  {prefix=["[";"."];head="qualificationSuffix"}
-  {prefix=["[|"];head="arrayExpr"}
-  {prefix=["]";"["];head="listExpr"}
-  {prefix=["]";"["];head="suffixType"}
-  {prefix=["]";"sequentialExpr";"["];head="listExpr"}
-  {prefix=["]";"tupleExpr";"[";"."];head="qualificationSuffix"}
-  {prefix=["appExpr"];head="unaryExpr"}
-  {prefix=["appExpr";"prefix"];head="unaryExpr"}
-  {prefix=["appType"];head="appType"}
-  {prefix=["appType"];head="tupleType"}
-  {prefix=["appType";"*";"tupleType"];head="tupleType"}
-  {prefix=["arrayExpr"];head="atomicExpr"}
-  {prefix=["atomType"];head="appType"}
-  {prefix=["atomicExpr"];head="revQualificationExpr"}
-  {prefix=["atomicPattern"];head="tuplePattern"}
-  {prefix=["atomicPattern";",";"tuplePattern"];head="tuplePattern"}
-  {prefix=["binaryExpr"];head="revTupleExpr"}
-  {prefix=["binaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-  {prefix=["bindingPattern";"("];head="parameterPattern"}
-  {prefix=["bindingPattern";"LET"];head="letBinding"}
-  {prefix=["declExpr"];head="revSequentialExpr"}
-  {prefix=["declExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-  {prefix=["file"];head=""}
-  {prefix=["funType"];head="funType"}
-  {prefix=["funType"];head="typeArgument"}
-  {prefix=["identExpr"];head="atomicExpr"}
-  {prefix=["identExpr";"."];head="qualificationSuffix"}
-  {prefix=["infix";"("];head="atomicExpr"}
-  {prefix=["infix";"revBinaryExpr"];head="revBinaryExpr"}
-  {prefix=["lambdaExpr"];head="valueExpr"}
-  {prefix=["lambdaExpr";",";"revTupleExpr"];head="tupleExpr"}
-  {prefix=["letBinding"];head="declExpr"}
-  {prefix=["listExpr"];head="atomicExpr"}
-  {prefix=["longid"];head="atomType"}
-  {prefix=["longid"];head="atomType"}
-  {prefix=["longid"];head="suffixType"}
-  {prefix=["longid";"MODULE"];head="file"}
-  {prefix=["longid";"OPEN"];head="declExpr"}
-  {prefix=["parameterPattern"];head="atomicPattern"}
-  {prefix=["parameterPattern";"FUN"];head="lambdaExpr"}
-  {prefix=["parenExpr"];head="atomicExpr"}
-  {prefix=["prefix"];head="unaryExpr"}
-  {prefix=["qualificationExpr"];head="revAppExpr"}
-  {prefix=["qualificationExpr";"revAppExpr"];head="revAppExpr"}
-  {prefix=["qualificationSuffix";"revQualificationExpr"];head="revQualificationExpr"}
-  {prefix=["revAppExpr"];head="appExpr"}
-  {prefix=["revAppExpr"];head="revAppExpr"}
-  {prefix=["revBinaryExpr"];head="binaryExpr"}
-  {prefix=["revBinaryExpr"];head="revBinaryExpr"}
-  {prefix=["revLongid"];head="longid"}
-  {prefix=["revLongid"];head="revLongid"}
-  {prefix=["revQualificationExpr"];head="qualificationExpr"}
-  {prefix=["revQualificationExpr"];head="revQualificationExpr"}
-  {prefix=["revSequentialExpr"];head="revSequentialExpr"}
-  {prefix=["revSequentialExpr"];head="sequentialExpr"}
-  {prefix=["revTupleExpr"];head="revTupleExpr"}
-  {prefix=["revTupleExpr"];head="tupleExpr"}
-  {prefix=["revTupleExpr"];head="tupleExpr"}
-  {prefix=["rhsBlock";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-  {prefix=["rhsBlock";"=";"bindingPattern";"LET"];head="letBinding"}
-  {prefix=["rhsBlock";"longid";"MODULE"];head="file"}
-  {prefix=["sequentialExpr";"("];head="parenExpr"}
-  {prefix=["sequentialExpr";"LLPAREN"];head="rhsBlock"}
-  {prefix=["sequentialExpr";"["];head="listExpr"}
-  {prefix=["sequentialExpr";"[|"];head="arrayExpr"}
-  {prefix=["suffixType";"appType"];head="appType"}
-  {prefix=["tupleExpr"];head="valueExpr"}
-  {prefix=["tupleExpr";"[";"."];head="qualificationSuffix"}
-  {prefix=["tuplePattern"];head="bindingPattern"}
-  {prefix=["tuplePattern"];head="tuplePattern"}
-  {prefix=["tupleType"];head="funType"}
-  {prefix=["tupleType"];head="tupleType"}
-  {prefix=["tupleType";"->";"funType"];head="funType"}
-  {prefix=["typeArgument"];head="typeArguments"}
-  {prefix=["typeArgument";"("];head="atomType"}
-  {prefix=["typeArgument";",";"typeArguments"];head="typeArguments"}
-  {prefix=["typeArgument";":";"IDENT"];head="atomicPattern"}
-  {prefix=["typeArguments"];head="typeArguments"}
-  {prefix=["typeArguments";"<";"IDENT"];head="identExpr"}
-  {prefix=["typeArguments";"<";"longid"];head="atomType"}
-  {prefix=["unaryExpr"];head="revBinaryExpr"}
-  {prefix=["unaryExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  {prefix=["valueExpr"];head="declExpr"}
-  {prefix=["valueExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-  {prefix=["valueExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-  {prefix=["|>"];head="infix"}
-  {prefix=["|]";"[|"];head="arrayExpr"}
-  {prefix=["|]";"sequentialExpr";"[|"];head="arrayExpr"}
-  {prefix=["||"];head="infix"}
-  {prefix=["||>"];head="infix"}
-  {prefix=["|||"];head="infix"}
-  {prefix=["|||>"];head="infix"}
-]
-let lookaheads: Map<string, ViablePrefix list> = Map [
-  "!",[
+let lookaheads: Map<string, ViablePrefix Set> = Map [
+  "!",set [
     {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
@@ -218,7 +712,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "%",[
+  "%",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -325,7 +819,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "&",[
+  "&",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -432,7 +926,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "&&",[
+  "&&",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -539,7 +1033,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "(",[
+  "(",set [
     {prefix=["!"];head="unaryExpr"}
     {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
@@ -613,7 +1107,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  ")",[
+  ")",set [
     {prefix=["%";"("];head="atomicExpr"}
     {prefix=["&";"("];head="atomicExpr"}
     {prefix=["&&";"("];head="atomicExpr"}
@@ -1173,7 +1667,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|||";"("];head="atomicExpr"}
     {prefix=["|||>";"("];head="atomicExpr"}
   ]
-  "*",[
+  "*",set [
     {prefix=[")";"typeArgument";"("];head="tupleType"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType"];head="tupleType"}
     {prefix=[">";"typeArguments";"<";"longid"];head="tupleType"}
@@ -1191,7 +1685,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["]";"[";"appType"];head="tupleType"}
     {prefix=["]";"[";"appType";"*";"tupleType"];head="tupleType"}
   ]
-  "+",[
+  "+",set [
     {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
@@ -1330,7 +1824,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  ",",[
+  ",",set [
     {prefix=[")";"("];head="revTupleExpr"}
     {prefix=[")";"("];head="tupleExpr"}
     {prefix=[")";"(";",";"revTupleExpr"];head="revTupleExpr"}
@@ -1880,7 +2374,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
   ]
-  "-",[
+  "-",set [
     {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
@@ -2019,7 +2513,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "->",[
+  "->",set [
     {prefix=[")";"bindingPattern";"(";"FUN"];head="lambdaExpr"}
     {prefix=[")";"typeArgument";"("];head="funType"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType"];head="funType"}
@@ -2055,7 +2549,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["]";"[";"appType";"*";"tupleType";"->";"funType"];head="funType"}
     {prefix=["]";"[";"appType";"->";"funType"];head="funType"}
   ]
-  ".",[
+  ".",set [
     {prefix=[")";"("];head="revQualificationExpr"}
     {prefix=[")";"infix";"("];head="revQualificationExpr"}
     {prefix=[")";"sequentialExpr";"("];head="revQualificationExpr"}
@@ -2072,7 +2566,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"[|"];head="revQualificationExpr"}
     {prefix=["|]";"sequentialExpr";"[|"];head="revQualificationExpr"}
   ]
-  "..",[
+  "..",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -2179,7 +2673,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "/",[
+  "/",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -2286,10 +2780,10 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  ":",[
+  ":",set [
     {prefix=["IDENT"];head="atomicPattern"}
   ]
-  "::",[
+  "::",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -2396,7 +2890,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  ":?",[
+  ":?",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -2503,7 +2997,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  ":?>",[
+  ":?>",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -2610,7 +3104,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  ";",[
+  ";",set [
     {prefix=[")";"("];head="revSequentialExpr"}
     {prefix=[")";"(";",";"revTupleExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
@@ -3046,12 +3540,12 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
   ]
-  "<",[
+  "<",set [
     {prefix=["IDENT"];head="atomType"}
     {prefix=["IDENT"];head="identExpr"}
     {prefix=["IDENT";".";"revLongid"];head="atomType"}
   ]
-  "<<",[
+  "<<",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -3158,7 +3652,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "<>",[
+  "<>",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -3265,7 +3759,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "<|",[
+  "<|",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -3372,7 +3866,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "<||",[
+  "<||",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -3479,7 +3973,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "<|||",[
+  "<|||",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -3586,7 +4080,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "=",[
+  "=",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -3761,7 +4255,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  ">",[
+  ">",set [
     {prefix=[")";"typeArgument";"(";"*";"tupleType";",";"typeArguments";"<";"IDENT"];head="identExpr"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";",";"typeArguments";"<";"longid"];head="atomType"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";"->";"funType";",";"typeArguments";"<";"IDENT"];head="identExpr"}
@@ -3891,7 +4385,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["]";"[";"appType";"<";"IDENT"];head="identExpr"}
     {prefix=["]";"[";"appType";"<";"longid"];head="atomType"}
   ]
-  ">>",[
+  ">>",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -3998,7 +4492,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "@",[
+  "@",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -4105,17 +4599,17 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "DUMMY",[
+  "DUMMY",set [
     {prefix=["("];head="parenExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LLPAREN"];head="rhsBlock"}
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
   ]
-  "EOF",[
+  "EOF",set [
     {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"longid";"MODULE"];head="file"}
   ]
-  "FUN",[
+  "FUN",set [
     {prefix=["("];head="parenExpr"}
     {prefix=[",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
@@ -4125,7 +4619,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
   ]
-  "IDENT",[
+  "IDENT",set [
     {prefix=["!"];head="unaryExpr"}
     {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
@@ -4145,13 +4639,11 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=[",";"tuplePattern"];head="tuplePattern"}
-    {prefix=[",";"tuplePattern"];head="tuplePattern"}
     {prefix=[",";"typeArguments"];head="typeArguments"}
     {prefix=["-"];head="unaryExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"funType"];head="funType"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["."];head="qualificationSuffix"}
     {prefix=["."];head="qualificationSuffix"}
     {prefix=[".";"revLongid"];head="revLongid"}
     {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
@@ -4213,14 +4705,14 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "LET",[
+  "LET",set [
     {prefix=["("];head="parenExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LLPAREN"];head="rhsBlock"}
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
   ]
-  "LITERAL",[
+  "LITERAL",set [
     {prefix=["!"];head="unaryExpr"}
     {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
@@ -4283,20 +4775,20 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "LLPAREN",[
+  "LLPAREN",set [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revLongid";"MODULE"];head="file"}
     {prefix=["IDENT";"MODULE"];head="file"}
   ]
-  "OPEN",[
+  "OPEN",set [
     {prefix=["("];head="parenExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LLPAREN"];head="rhsBlock"}
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
   ]
-  "RHSEND",[
+  "RHSEND",set [
     {prefix=[")";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
@@ -4722,7 +5214,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
   ]
-  "RRPAREN",[
+  "RRPAREN",set [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=[")";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
@@ -5158,7 +5650,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
   ]
-  "TYPAR",[
+  "TYPAR",set [
     {prefix=["("];head="atomType"}
     {prefix=["*";"tupleType"];head="tupleType"}
     {prefix=[",";"typeArguments"];head="typeArguments"}
@@ -5167,7 +5659,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["<";"IDENT"];head="identExpr"}
     {prefix=["<";"longid"];head="atomType"}
   ]
-  "[",[
+  "[",set [
     {prefix=["!"];head="unaryExpr"}
     {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
@@ -5239,7 +5731,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "[|",[
+  "[|",set [
     {prefix=["!"];head="unaryExpr"}
     {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
@@ -5302,7 +5794,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "]",[
+  "]",set [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
@@ -5950,7 +6442,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
   ]
-  "|>",[
+  "|>",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -6057,7 +6549,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "|]",[
+  "|]",set [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
@@ -6494,7 +6986,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
   ]
-  "||",[
+  "||",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -6601,7 +7093,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "||>",[
+  "||>",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -6708,7 +7200,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "|||",[
+  "|||",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -6815,7 +7307,7 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "|||>",[
+  "|||>",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -6922,4 +7414,492 @@ let lookaheads: Map<string, ViablePrefix list> = Map [
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
+]
+
+let top_prefixes: Map<string list, string Set> = Map [
+  ["!";"("],set ["parenExpr"]
+  ["!";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["!";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["!";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["!";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["!";"LLPAREN"],set ["rhsBlock"]
+  ["!";"["],set ["listExpr"]
+  ["!";"[";"."],set ["qualificationSuffix"]
+  ["!";"[|"],set ["arrayExpr"]
+  ["!";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["%";"("],set ["atomicExpr"]
+  ["%";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["&";"("],set ["atomicExpr"]
+  ["&";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["&&";"("],set ["atomicExpr"]
+  ["&&";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["(";"("],set ["atomType";"parameterPattern";"parenExpr"]
+  ["(";"*";"tupleType"],set ["tupleType"]
+  ["(";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["(";",";"tuplePattern"],set ["tuplePattern"]
+  ["(";",";"typeArguments"],set ["typeArguments"]
+  ["(";"->";"funType"],set ["funType"]
+  ["(";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["(";":";"IDENT"],set ["atomicPattern"]
+  ["(";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["(";"<";"IDENT"],set ["identExpr"]
+  ["(";"<";"longid"],set ["atomType"]
+  ["(";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["(";"FUN"],set ["lambdaExpr"]
+  ["(";"LET"],set ["letBinding"]
+  ["(";"LLPAREN"],set ["rhsBlock"]
+  ["(";"["],set ["listExpr"]
+  ["(";"[";"."],set ["qualificationSuffix"]
+  ["(";"[|"],set ["arrayExpr"]
+  ["(";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["(";"prefix"],set ["unaryExpr"]
+  ["(";"revAppExpr"],set ["revAppExpr"]
+  [")";"("],set ["atomicExpr"]
+  [")";"bindingPattern";"("],set ["parameterPattern"]
+  [")";"infix";"("],set ["atomicExpr"]
+  [")";"sequentialExpr";"("],set ["parenExpr"]
+  [")";"typeArgument";"("],set ["atomType"]
+  ["*";"tupleType"],set ["tupleType"]
+  ["+";"("],set ["atomicExpr";"parenExpr"]
+  ["+";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["+";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["+";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["+";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["+";"LLPAREN"],set ["rhsBlock"]
+  ["+";"["],set ["listExpr"]
+  ["+";"[";"."],set ["qualificationSuffix"]
+  ["+";"[|"],set ["arrayExpr"]
+  ["+";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["+";"revBinaryExpr"],set ["revBinaryExpr"]
+  [",";"revTupleExpr"],set ["revTupleExpr";"tupleExpr"]
+  [",";"tuplePattern"],set ["tuplePattern"]
+  [",";"typeArguments"],set ["typeArguments"]
+  ["-";"("],set ["atomicExpr";"parenExpr"]
+  ["-";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["-";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["-";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["-";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["-";"LLPAREN"],set ["rhsBlock"]
+  ["-";"["],set ["listExpr"]
+  ["-";"[";"."],set ["qualificationSuffix"]
+  ["-";"[|"],set ["arrayExpr"]
+  ["-";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["-";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["->";"funType"],set ["funType"]
+  ["->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  [".";"revLongid"],set ["revLongid"]
+  [".";"revQualificationExpr"],set ["revQualificationExpr"]
+  ["..";"("],set ["atomicExpr"]
+  ["..";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["/";"("],set ["atomicExpr"]
+  ["/";"revBinaryExpr"],set ["revBinaryExpr"]
+  [":";"IDENT"],set ["atomicPattern"]
+  ["::";"("],set ["atomicExpr"]
+  ["::";"revBinaryExpr"],set ["revBinaryExpr"]
+  [":?";"("],set ["atomicExpr"]
+  [":?";"revBinaryExpr"],set ["revBinaryExpr"]
+  [":?>";"("],set ["atomicExpr"]
+  [":?>";"revBinaryExpr"],set ["revBinaryExpr"]
+  [";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["<";"IDENT"],set ["identExpr"]
+  ["<";"longid"],set ["atomType"]
+  ["<<";"("],set ["atomicExpr"]
+  ["<<";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["<>";"("],set ["atomicExpr"]
+  ["<>";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["<|";"("],set ["atomicExpr"]
+  ["<|";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["<||";"("],set ["atomicExpr"]
+  ["<||";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["<|||";"("],set ["atomicExpr"]
+  ["<|||";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["=";"("],set ["atomicExpr"]
+  ["=";"bindingPattern";"LET"],set ["letBinding"]
+  ["=";"revBinaryExpr"],set ["revBinaryExpr"]
+  [">";"typeArguments";"<";"IDENT"],set ["identExpr"]
+  [">";"typeArguments";"<";"longid"],set ["atomType"]
+  [">>";"("],set ["atomicExpr"]
+  [">>";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["@";"("],set ["atomicExpr"]
+  ["@";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["DUMMY";"("],set ["parenExpr"]
+  ["DUMMY";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["DUMMY";"LLPAREN"],set ["rhsBlock"]
+  ["DUMMY";"["],set ["listExpr"]
+  ["DUMMY";"[|"],set ["arrayExpr"]
+  ["EOF";"rhsBlock";"longid";"MODULE"],set ["file"]
+  ["FUN";"("],set ["parenExpr"]
+  ["FUN";",";"revTupleExpr"],set ["tupleExpr"]
+  ["FUN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["FUN";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["FUN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["FUN";"LLPAREN"],set ["rhsBlock"]
+  ["FUN";"["],set ["listExpr"]
+  ["FUN";"[|"],set ["arrayExpr"]
+  ["IDENT";"("],set ["atomType";"parameterPattern";"parenExpr"]
+  ["IDENT";"*";"tupleType"],set ["tupleType"]
+  ["IDENT";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["IDENT";",";"tuplePattern"],set ["tuplePattern"]
+  ["IDENT";",";"typeArguments"],set ["typeArguments"]
+  ["IDENT";"->";"funType"],set ["funType"]
+  ["IDENT";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["IDENT";"."],set ["qualificationSuffix"]
+  ["IDENT";".";"revLongid"],set ["revLongid"]
+  ["IDENT";":";"IDENT"],set ["atomicPattern"]
+  ["IDENT";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["IDENT";"<";"IDENT"],set ["identExpr"]
+  ["IDENT";"<";"longid"],set ["atomType"]
+  ["IDENT";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["IDENT";"FUN"],set ["lambdaExpr"]
+  ["IDENT";"LET"],set ["letBinding"]
+  ["IDENT";"LLPAREN"],set ["rhsBlock"]
+  ["IDENT";"MODULE"],set ["file"]
+  ["IDENT";"OPEN"],set ["declExpr"]
+  ["IDENT";"["],set ["listExpr"]
+  ["IDENT";"[";"."],set ["qualificationSuffix"]
+  ["IDENT";"[|"],set ["arrayExpr"]
+  ["IDENT";"appType"],set ["appType"]
+  ["IDENT";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["IDENT";"prefix"],set ["unaryExpr"]
+  ["IDENT";"revAppExpr"],set ["revAppExpr"]
+  ["LET";"("],set ["parenExpr"]
+  ["LET";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["LET";"LLPAREN"],set ["rhsBlock"]
+  ["LET";"["],set ["listExpr"]
+  ["LET";"[|"],set ["arrayExpr"]
+  ["LITERAL";"("],set ["parenExpr"]
+  ["LITERAL";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["LITERAL";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["LITERAL";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["LITERAL";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["LITERAL";"LLPAREN"],set ["rhsBlock"]
+  ["LITERAL";"["],set ["listExpr"]
+  ["LITERAL";"[";"."],set ["qualificationSuffix"]
+  ["LITERAL";"[|"],set ["arrayExpr"]
+  ["LITERAL";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["LITERAL";"prefix"],set ["unaryExpr"]
+  ["LITERAL";"revAppExpr"],set ["revAppExpr"]
+  ["LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["LLPAREN";"longid";"MODULE"],set ["file"]
+  ["OPEN";"("],set ["parenExpr"]
+  ["OPEN";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["OPEN";"LLPAREN"],set ["rhsBlock"]
+  ["OPEN";"["],set ["listExpr"]
+  ["OPEN";"[|"],set ["arrayExpr"]
+  ["RHSEND";"valueExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["RHSEND";"valueExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["RRPAREN";"sequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  ["TYPAR";"("],set ["atomType"]
+  ["TYPAR";"*";"tupleType"],set ["tupleType"]
+  ["TYPAR";",";"typeArguments"],set ["typeArguments"]
+  ["TYPAR";"->";"funType"],set ["funType"]
+  ["TYPAR";":";"IDENT"],set ["atomicPattern"]
+  ["TYPAR";"<";"IDENT"],set ["identExpr"]
+  ["TYPAR";"<";"longid"],set ["atomType"]
+  ["[";"("],set ["parenExpr"]
+  ["[";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["[";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["[";"."],set ["qualificationSuffix"]
+  ["[";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["[";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["[";"LLPAREN"],set ["rhsBlock"]
+  ["[";"["],set ["listExpr"]
+  ["[";"[";"."],set ["qualificationSuffix"]
+  ["[";"[|"],set ["arrayExpr"]
+  ["[";"appType"],set ["appType"]
+  ["[";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["[";"prefix"],set ["unaryExpr"]
+  ["[";"revAppExpr"],set ["revAppExpr"]
+  ["[|";"("],set ["parenExpr"]
+  ["[|";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["[|";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["[|";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["[|";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["[|";"LLPAREN"],set ["rhsBlock"]
+  ["[|";"["],set ["listExpr"]
+  ["[|";"[";"."],set ["qualificationSuffix"]
+  ["[|";"[|"],set ["arrayExpr"]
+  ["[|";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["[|";"prefix"],set ["unaryExpr"]
+  ["[|";"revAppExpr"],set ["revAppExpr"]
+  ["]";"["],set ["listExpr";"suffixType"]
+  ["]";"sequentialExpr";"["],set ["listExpr"]
+  ["]";"tupleExpr";"[";"."],set ["qualificationSuffix"]
+  ["appExpr";"("],set ["parenExpr"]
+  ["appExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["appExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["appExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["appExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["appExpr";"LLPAREN"],set ["rhsBlock"]
+  ["appExpr";"["],set ["listExpr"]
+  ["appExpr";"[";"."],set ["qualificationSuffix"]
+  ["appExpr";"[|"],set ["arrayExpr"]
+  ["appExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["appExpr";"prefix"],set ["unaryExpr"]
+  ["appType";"("],set ["atomType"]
+  ["appType";"*";"tupleType"],set ["tupleType"]
+  ["appType";",";"typeArguments"],set ["typeArguments"]
+  ["appType";"->";"funType"],set ["funType"]
+  ["appType";":";"IDENT"],set ["atomicPattern"]
+  ["appType";"<";"IDENT"],set ["identExpr"]
+  ["appType";"<";"longid"],set ["atomType"]
+  ["arrayExpr";"("],set ["parenExpr"]
+  ["arrayExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["arrayExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["arrayExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["arrayExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["arrayExpr";"LLPAREN"],set ["rhsBlock"]
+  ["arrayExpr";"["],set ["listExpr"]
+  ["arrayExpr";"[";"."],set ["qualificationSuffix"]
+  ["arrayExpr";"[|"],set ["arrayExpr"]
+  ["arrayExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["arrayExpr";"prefix"],set ["unaryExpr"]
+  ["arrayExpr";"revAppExpr"],set ["revAppExpr"]
+  ["atomType";"("],set ["atomType"]
+  ["atomType";"*";"tupleType"],set ["tupleType"]
+  ["atomType";",";"typeArguments"],set ["typeArguments"]
+  ["atomType";"->";"funType"],set ["funType"]
+  ["atomType";":";"IDENT"],set ["atomicPattern"]
+  ["atomType";"<";"IDENT"],set ["identExpr"]
+  ["atomType";"<";"longid"],set ["atomType"]
+  ["atomicExpr";"("],set ["parenExpr"]
+  ["atomicExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["atomicExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["atomicExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["atomicExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["atomicExpr";"LLPAREN"],set ["rhsBlock"]
+  ["atomicExpr";"["],set ["listExpr"]
+  ["atomicExpr";"[";"."],set ["qualificationSuffix"]
+  ["atomicExpr";"[|"],set ["arrayExpr"]
+  ["atomicExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["atomicExpr";"prefix"],set ["unaryExpr"]
+  ["atomicExpr";"revAppExpr"],set ["revAppExpr"]
+  ["atomicPattern";"("],set ["parameterPattern"]
+  ["atomicPattern";",";"tuplePattern"],set ["tuplePattern"]
+  ["atomicPattern";"LET"],set ["letBinding"]
+  ["binaryExpr";"("],set ["parenExpr"]
+  ["binaryExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["binaryExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["binaryExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["binaryExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["binaryExpr";"LLPAREN"],set ["rhsBlock"]
+  ["binaryExpr";"["],set ["listExpr"]
+  ["binaryExpr";"[";"."],set ["qualificationSuffix"]
+  ["binaryExpr";"[|"],set ["arrayExpr"]
+  ["bindingPattern";"("],set ["parameterPattern"]
+  ["bindingPattern";"LET"],set ["letBinding"]
+  ["declExpr";"("],set ["parenExpr"]
+  ["declExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["declExpr";"LLPAREN"],set ["rhsBlock"]
+  ["declExpr";"["],set ["listExpr"]
+  ["declExpr";"[|"],set ["arrayExpr"]
+  ["funType";"("],set ["atomType"]
+  ["funType";",";"typeArguments"],set ["typeArguments"]
+  ["funType";":";"IDENT"],set ["atomicPattern"]
+  ["funType";"<";"IDENT"],set ["identExpr"]
+  ["funType";"<";"longid"],set ["atomType"]
+  ["identExpr";"("],set ["parenExpr"]
+  ["identExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["identExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["identExpr";"."],set ["qualificationSuffix"]
+  ["identExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["identExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["identExpr";"LLPAREN"],set ["rhsBlock"]
+  ["identExpr";"["],set ["listExpr"]
+  ["identExpr";"[";"."],set ["qualificationSuffix"]
+  ["identExpr";"[|"],set ["arrayExpr"]
+  ["identExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["identExpr";"prefix"],set ["unaryExpr"]
+  ["identExpr";"revAppExpr"],set ["revAppExpr"]
+  ["infix";"("],set ["atomicExpr"]
+  ["infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["lambdaExpr";"("],set ["parenExpr"]
+  ["lambdaExpr";",";"revTupleExpr"],set ["tupleExpr"]
+  ["lambdaExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["lambdaExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["lambdaExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["lambdaExpr";"LLPAREN"],set ["rhsBlock"]
+  ["lambdaExpr";"["],set ["listExpr"]
+  ["lambdaExpr";"[|"],set ["arrayExpr"]
+  ["letBinding";"("],set ["parenExpr"]
+  ["letBinding";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["letBinding";"LLPAREN"],set ["rhsBlock"]
+  ["letBinding";"["],set ["listExpr"]
+  ["letBinding";"[|"],set ["arrayExpr"]
+  ["listExpr";"("],set ["parenExpr"]
+  ["listExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["listExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["listExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["listExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["listExpr";"LLPAREN"],set ["rhsBlock"]
+  ["listExpr";"["],set ["listExpr"]
+  ["listExpr";"[";"."],set ["qualificationSuffix"]
+  ["listExpr";"[|"],set ["arrayExpr"]
+  ["listExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["listExpr";"prefix"],set ["unaryExpr"]
+  ["listExpr";"revAppExpr"],set ["revAppExpr"]
+  ["longid";"("],set ["atomType"]
+  ["longid";"*";"tupleType"],set ["tupleType"]
+  ["longid";",";"typeArguments"],set ["typeArguments"]
+  ["longid";"->";"funType"],set ["funType"]
+  ["longid";":";"IDENT"],set ["atomicPattern"]
+  ["longid";"<";"IDENT"],set ["identExpr"]
+  ["longid";"<";"longid"],set ["atomType"]
+  ["longid";"MODULE"],set ["file"]
+  ["longid";"OPEN"],set ["declExpr"]
+  ["longid";"appType"],set ["appType"]
+  ["parameterPattern";"("],set ["parameterPattern"]
+  ["parameterPattern";",";"tuplePattern"],set ["tuplePattern"]
+  ["parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["parameterPattern";"LET"],set ["letBinding"]
+  ["parenExpr";"("],set ["parenExpr"]
+  ["parenExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["parenExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["parenExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["parenExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["parenExpr";"LLPAREN"],set ["rhsBlock"]
+  ["parenExpr";"["],set ["listExpr"]
+  ["parenExpr";"[";"."],set ["qualificationSuffix"]
+  ["parenExpr";"[|"],set ["arrayExpr"]
+  ["parenExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["parenExpr";"prefix"],set ["unaryExpr"]
+  ["parenExpr";"revAppExpr"],set ["revAppExpr"]
+  ["prefix";"("],set ["parenExpr"]
+  ["prefix";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["prefix";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["prefix";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["prefix";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["prefix";"LLPAREN"],set ["rhsBlock"]
+  ["prefix";"["],set ["listExpr"]
+  ["prefix";"[";"."],set ["qualificationSuffix"]
+  ["prefix";"[|"],set ["arrayExpr"]
+  ["prefix";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["qualificationExpr";"("],set ["parenExpr"]
+  ["qualificationExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["qualificationExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["qualificationExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["qualificationExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["qualificationExpr";"LLPAREN"],set ["rhsBlock"]
+  ["qualificationExpr";"["],set ["listExpr"]
+  ["qualificationExpr";"[";"."],set ["qualificationSuffix"]
+  ["qualificationExpr";"[|"],set ["arrayExpr"]
+  ["qualificationExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["qualificationExpr";"prefix"],set ["unaryExpr"]
+  ["qualificationExpr";"revAppExpr"],set ["revAppExpr"]
+  ["qualificationSuffix";"revQualificationExpr"],set ["revQualificationExpr"]
+  ["revAppExpr";"("],set ["parenExpr"]
+  ["revAppExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["revAppExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revAppExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["revAppExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["revAppExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revAppExpr";"["],set ["listExpr"]
+  ["revAppExpr";"[";"."],set ["qualificationSuffix"]
+  ["revAppExpr";"[|"],set ["arrayExpr"]
+  ["revAppExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["revAppExpr";"prefix"],set ["unaryExpr"]
+  ["revBinaryExpr";"("],set ["parenExpr"]
+  ["revBinaryExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["revBinaryExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revBinaryExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["revBinaryExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["revBinaryExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revBinaryExpr";"["],set ["listExpr"]
+  ["revBinaryExpr";"[";"."],set ["qualificationSuffix"]
+  ["revBinaryExpr";"[|"],set ["arrayExpr"]
+  ["revLongid";"("],set ["atomType"]
+  ["revLongid";"*";"tupleType"],set ["tupleType"]
+  ["revLongid";",";"typeArguments"],set ["typeArguments"]
+  ["revLongid";"->";"funType"],set ["funType"]
+  ["revLongid";":";"IDENT"],set ["atomicPattern"]
+  ["revLongid";"<";"IDENT"],set ["identExpr"]
+  ["revLongid";"<";"longid"],set ["atomType"]
+  ["revLongid";"MODULE"],set ["file"]
+  ["revLongid";"OPEN"],set ["declExpr"]
+  ["revLongid";"appType"],set ["appType"]
+  ["revQualificationExpr";"("],set ["parenExpr"]
+  ["revQualificationExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["revQualificationExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revQualificationExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["revQualificationExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["revQualificationExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revQualificationExpr";"["],set ["listExpr"]
+  ["revQualificationExpr";"[";"."],set ["qualificationSuffix"]
+  ["revQualificationExpr";"[|"],set ["arrayExpr"]
+  ["revQualificationExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["revQualificationExpr";"prefix"],set ["unaryExpr"]
+  ["revQualificationExpr";"revAppExpr"],set ["revAppExpr"]
+  ["revSequentialExpr";"("],set ["parenExpr"]
+  ["revSequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revSequentialExpr";"["],set ["listExpr"]
+  ["revSequentialExpr";"[|"],set ["arrayExpr"]
+  ["revTupleExpr";"("],set ["parenExpr"]
+  ["revTupleExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revTupleExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["revTupleExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["revTupleExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revTupleExpr";"["],set ["listExpr"]
+  ["revTupleExpr";"[";"."],set ["qualificationSuffix"]
+  ["revTupleExpr";"[|"],set ["arrayExpr"]
+  ["rhsBlock";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["rhsBlock";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["rhsBlock";"longid";"MODULE"],set ["file"]
+  ["sequentialExpr";"("],set ["parenExpr"]
+  ["sequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  ["sequentialExpr";"["],set ["listExpr"]
+  ["sequentialExpr";"[|"],set ["arrayExpr"]
+  ["suffixType";"appType"],set ["appType"]
+  ["tupleExpr";"("],set ["parenExpr"]
+  ["tupleExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["tupleExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["tupleExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["tupleExpr";"LLPAREN"],set ["rhsBlock"]
+  ["tupleExpr";"["],set ["listExpr"]
+  ["tupleExpr";"[";"."],set ["qualificationSuffix"]
+  ["tupleExpr";"[|"],set ["arrayExpr"]
+  ["tuplePattern";"("],set ["parameterPattern"]
+  ["tuplePattern";"LET"],set ["letBinding"]
+  ["tupleType";"("],set ["atomType"]
+  ["tupleType";",";"typeArguments"],set ["typeArguments"]
+  ["tupleType";"->";"funType"],set ["funType"]
+  ["tupleType";":";"IDENT"],set ["atomicPattern"]
+  ["tupleType";"<";"IDENT"],set ["identExpr"]
+  ["tupleType";"<";"longid"],set ["atomType"]
+  ["typeArgument";"("],set ["atomType"]
+  ["typeArgument";",";"typeArguments"],set ["typeArguments"]
+  ["typeArgument";":";"IDENT"],set ["atomicPattern"]
+  ["typeArgument";"<";"IDENT"],set ["identExpr"]
+  ["typeArgument";"<";"longid"],set ["atomType"]
+  ["typeArguments";"<";"IDENT"],set ["identExpr"]
+  ["typeArguments";"<";"longid"],set ["atomType"]
+  ["unaryExpr";"("],set ["parenExpr"]
+  ["unaryExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["unaryExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["unaryExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["unaryExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["unaryExpr";"LLPAREN"],set ["rhsBlock"]
+  ["unaryExpr";"["],set ["listExpr"]
+  ["unaryExpr";"[";"."],set ["qualificationSuffix"]
+  ["unaryExpr";"[|"],set ["arrayExpr"]
+  ["unaryExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["valueExpr";"("],set ["parenExpr"]
+  ["valueExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["valueExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["valueExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["valueExpr";"LLPAREN"],set ["rhsBlock"]
+  ["valueExpr";"["],set ["listExpr"]
+  ["valueExpr";"[|"],set ["arrayExpr"]
+  ["|>";"("],set ["atomicExpr"]
+  ["|>";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["|]";"[|"],set ["arrayExpr"]
+  ["|]";"sequentialExpr";"[|"],set ["arrayExpr"]
+  ["||";"("],set ["atomicExpr"]
+  ["||";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["||>";"("],set ["atomicExpr"]
+  ["||>";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["|||";"("],set ["atomicExpr"]
+  ["|||";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["|||>";"("],set ["atomicExpr"]
+  ["|||>";"revBinaryExpr"],set ["revBinaryExpr"]
 ]

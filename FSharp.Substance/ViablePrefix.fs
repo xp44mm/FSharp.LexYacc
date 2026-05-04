@@ -1,13 +1,8 @@
 module FSharp.Substance.ViablePrefix
 
 let topOf tp =
-    RightSententialForm.tops
-    |> List.filter(fun v ->
-        not v.prefix.IsEmpty
-        && v.prefix.[0] = tp
-    )
-    |> List.map(fun v -> v.prefix)
-    |> Set.ofList //确保最短在先
+    RightSententialForm.tops.[tp]
+    |> Set.map(fun v -> v.prefix)
 
 let top_llparen = topOf "LLPAREN"
 
@@ -22,6 +17,7 @@ let top_semicolon = topOf ";"
 
 let la_llparen = RightSententialForm.lookaheads.[ "LLPAREN"]
 
+//测试：la_semicolon是否包括rrp,rhs
 let la_rrparen = RightSententialForm.lookaheads.[ "RRPAREN"]
 
 let la_rhsend = RightSententialForm.lookaheads.[ "RHSEND"]

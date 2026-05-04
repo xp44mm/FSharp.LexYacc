@@ -4,9 +4,25 @@ open FSharp.LexYacc
 }
 
 file:
-    | MODULE longid rhsBlock EOF {
-        snd s1, snd s2
+    | MODULE longid EOF {
+        snd s1, []
         }
+    | MODULE longid revOpenOrLets opt_semicolon EOF {
+        let ls = s2 |> List.rev |> List.map snd
+        snd s1, ls
+        }
+        
+opt_semicolon:
+    | ";" {s0}
+    | {None}
+    
+revOpenOrLets:
+    | revOpenOrLets ";" openOrLet  { s2::s0 }
+    | openOrLet { [s0] }
+
+openOrLet:
+    | OPEN longid {s0, OpenExpr(snd s1)}
+    | letBinding { s0 }
 
 longid:
     | revLongid  {
@@ -18,18 +34,17 @@ revLongid :
     | IDENT { [s0] }
     | revLongid "." IDENT { s2 :: s0 }
 
-sequentialExpr:
-    | revSequentialExpr { Expr.ofSequentialExpr s0 }
+// sequentialExpr:
+//    | revSequentialExpr { Expr.ofSequentialExpr s0 }
 
 revSequentialExpr:
     | revSequentialExpr ";" declExpr  { s2::s0 }
     | declExpr { [s0] }
 
 declExpr:
-    | OPEN longid {s0, OpenExpr(snd s1)}
     | letBinding { s0 }
     | valueExpr { s0 }
-    | DUMMY { s0, DummyExpr }
+    // | DUMMY { s0, DummyExpr }
 
 letBinding :
     | LET bindingPattern "=" valueExpr RHSEND {
@@ -40,7 +55,8 @@ letBinding :
         }
 
 rhsBlock:
-    | LLPAREN sequentialExpr RRPAREN { s1 }
+    // | LLPAREN sequentialExpr opt_semicolon RRPAREN { s1 }
+    | LLPAREN revSequentialExpr opt_semicolon RRPAREN { Expr.ofSequentialExpr s1 }
 
 valueExpr :
     | lambdaExpr { s0 }
@@ -118,15 +134,18 @@ qualificationSuffix:
     | "." "[" tupleExpr "]" { s2 }
       
 parenExpr:
-    | "(" sequentialExpr ")" { s0, ParenExpr(snd s1) }
+    // | "(" sequentialExpr opt_semicolon ")" { s0, ParenExpr(snd s1) }
+    | "(" revSequentialExpr opt_semicolon ")" { s0, ParenExpr(snd (Expr.ofSequentialExpr s1)) }
 
 listExpr:
     | "[" "]" { s0, ListExpr [] }
-    | "[" sequentialExpr "]" { s0, ListExpr(snd s1) }
+    // | "[" sequentialExpr opt_semicolon "]" { s0, ListExpr(snd s1) }
+    | "[" revSequentialExpr opt_semicolon "]" { s0, ListExpr(snd (Expr.ofSequentialExpr s1)) }
 
 arrayExpr:
     | "[|" "|]" { s0, ArrayExpr [] }
-    | "[|" sequentialExpr "|]" { s0, ArrayExpr(snd s1) }
+    // | "[|" sequentialExpr opt_semicolon "|]" { s0, ArrayExpr(snd s1) }
+    | "[|" revSequentialExpr opt_semicolon "|]" { s0, ArrayExpr(snd (Expr.ofSequentialExpr s1)) }
 
 prefix:
     | "!" {s0, "!" }
@@ -219,14 +238,14 @@ typeArguments:
 %type<string list*Expr list> file
 %type<(option<int>*string) list> revLongid
 %type<option<int>*string list> longid
-%type<option<int>*Expr list> sequentialExpr rhsBlock
-%type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr
-%type<option<int>*Expr> declExpr letBinding valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr
+%type<option<int>*Expr list> rhsBlock // sequentialExpr
+%type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr revOpenOrLets
+%type<option<int>*Expr> openOrLet declExpr letBinding valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr
 %type<option<int>*string> prefix infix
 %type<((option<int>*string)*(option<int>*Expr)) list> revBinaryExpr
 %type<option<int>*string> IDENT
 %type<option<int>*Literal> LITERAL
-%type<option<int>> DO DUMMY EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WHITESPACE WITH 
+%type<option<int>> DO EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WHITESPACE WITH opt_semicolon // DUMMY
     "!" "#" "%" "&" "&&" "(" "(|" ")" "*" "**" "+" "," "-" "->" "." ".." "/" 
     ":" "::" ":?" ":?>" ";" "<" "<-" "<<" "<>" "<|" "<||" "<|||" 
     "=" ">" ">>" "@" "[" "[|" "]" "{" "{|" "|" "|)" "|>" "|]" "||" "||>" "|||" "|||>" "|}" "}"

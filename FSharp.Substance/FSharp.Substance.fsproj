@@ -25,6 +25,7 @@
     <Compile Include="ViablePrefix.fs" />
     <Compile Include="StackOps.fs" />
     <Compile Include="ParseContext.fs" />
+    <Compile Include="LexFilter.fs" />
     <Compile Include="FSharpCompiler.fs" />
   </ItemGroup>
 

@@ -13,7 +13,7 @@ type ViablePrefix =
 
     /// 栈顶形状的各种可能性
     static member top(bnf: BNF) =
-        let rec loop (visited: Set<string>) (topSymbol:string) =
+        let rec loop (visited: Set<string>) (topSymbol: string) =
             seq {
                 for prod in bnf.productions do
                     match prod with
@@ -23,14 +23,10 @@ type ViablePrefix =
                             if not(visited.Contains head) then
                                 let vst = (Set.add head visited)
                                 yield! loop vst head
-
                         | Some idx ->
                             //不包括自己
                             let leftPart = body |> List.take(idx) |> List.rev
-                            {
-                                prefix = leftPart
-                                head = head
-                            }
+                            { prefix = leftPart; head = head }
                         | None -> ()
                     | [] -> ()
             }
@@ -39,8 +35,8 @@ type ViablePrefix =
         |> Seq.collect(fun symbol ->
             symbol
             |> loop Set.empty
-            |> Seq.map(fun vp -> {vp with prefix = symbol::vp.prefix})
-            )
+            |> Seq.map(fun vp -> { vp with prefix = symbol :: vp.prefix })
+        )
         |> Set.ofSeq
 
     ///返回(ViablePrefix,lookahead)集合
@@ -61,19 +57,17 @@ type ViablePrefix =
                             let leftPart = body |> List.take idx |> List.rev
                             let derivations = BnfUtils.derive bnf leftPart
                             for prefix in derivations do
-                                yield
-                                    {
-                                        prefix = prefix
-                                        head = head
-                                    }
+                                yield { prefix = prefix; head = head }
                         | None -> ()
                     | [] -> ()
             }
 
         bnf.terminals
-        |> Seq.collect(fun la -> 
+        |> Seq.collect(fun la ->
             la
             |> loop Set.empty
             |> Seq.map(fun vp -> vp, la)
         )
         |> Set.ofSeq
+
+

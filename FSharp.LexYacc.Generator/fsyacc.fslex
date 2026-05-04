@@ -31,7 +31,7 @@ whitespace+ {[]}
 ':' { [FsyaccToken.COLON] }
 '|' { [FsyaccToken.BAR] }
 '/' '/' dot* {[]}
-'%' 't' 'y' 'p' 'e' '<' [^ '\r' '\n' '"' ] * '>' { [FsyaccToken.PERCENT_TYPE(String.build buff)] }
+'%' 't' 'y' 'p' 'e' '<' [^ '\r' '\n' '"' '/' '%' ] * '>' { [FsyaccToken.PERCENT_TYPE(String.build buff)] }
 '%' 'l' 'e' 'f' 't'  { [FsyaccToken.LEFTASSOC] }
 '%' 'r' 'i' 'g' 'h' 't' { [FsyaccToken.RIGHTASSOC] }
 '%' 'n' 'o' 'n' 'a' 's' 's' 'o' 'c' { [FsyaccToken.NONASSOC] }

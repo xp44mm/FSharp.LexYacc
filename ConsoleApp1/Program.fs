@@ -7,16 +7,16 @@ open FSharp.Idioms.Literal
 open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
 
-//let path = Path.Combine(__SOURCE_DIRECTORY__, "Sample.fs")
-//let text = File.ReadAllText(path, Encoding.UTF8)
+let path = Path.Combine(__SOURCE_DIRECTORY__, "Sample.fs")
+let text = File.ReadAllText(path, Encoding.UTF8)
 
-//let nodes = FSharpCompiler.compile text
-//Console.WriteLine(stringify nodes)
+let nodes = FSharpCompiler.compile text
+Console.WriteLine(stringify nodes)
 
-
-
-for p in
-    ViablePrefix.la_rrparen
-    |> List.map (fun v -> v.head)    
-    do
-    Console.WriteLine(stringify p)
+//Console.WriteLine("la_semicolon")
+//for p in
+//    ViablePrefix.la_semicolon
+//    |> Seq.map(fun v -> v.prefix)
+//    |> Set.ofSeq
+//    do
+//    Console.WriteLine(stringify p)
