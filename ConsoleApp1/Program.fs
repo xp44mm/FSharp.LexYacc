@@ -6,6 +6,7 @@ open FSharp.Substance
 open FSharp.Idioms.Literal
 open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
+open FSharp.Substance.RightSententialForm
 
 let path = Path.Combine(__SOURCE_DIRECTORY__, "Sample.fs")
 let text = File.ReadAllText(path, Encoding.UTF8)
@@ -13,10 +14,11 @@ let text = File.ReadAllText(path, Encoding.UTF8)
 let nodes = FSharpCompiler.compile text
 Console.WriteLine(stringify nodes)
 
-//Console.WriteLine("la_semicolon")
+
+//let lookaheads = lookaheads.Keys |> Seq.toList
+//Console.WriteLine(stringify lookaheads)
 //for p in
-//    ViablePrefix.la_semicolon
-//    |> Seq.map(fun v -> v.prefix)
+//    lookaheads.["EOF"]
 //    |> Set.ofSeq
 //    do
 //    Console.WriteLine(stringify p)

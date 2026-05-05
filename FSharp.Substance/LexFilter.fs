@@ -18,6 +18,7 @@ open System.Diagnostics
 /// 依次的命名为：lead top gap la
 let lex_filter (states: YaccState list) (newline: int option) (la: FSharpToken) =
     match states, newline, la with
+    | PEEK_NEWLINE_OPEN ls -> ls
     | PEEK_EOF ls -> ls
     | PEEK_RPAREN ls -> ls
     | PEEK_RBRACK ls -> ls

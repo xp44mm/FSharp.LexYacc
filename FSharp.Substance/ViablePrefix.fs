@@ -1,8 +1,12 @@
 module FSharp.Substance.ViablePrefix
+open FSharp.Substance.RightSententialForm
+open System
 
 let topOf tp =
-    RightSententialForm.tops.[tp]
-    |> Set.map(fun v -> v.prefix)
+    top_prefixes
+    |> Map.filter(fun prefix _ -> prefix.Head = tp)
+    |> Map.keys
+    |> Set.ofSeq
 
 let top_llparen = topOf "LLPAREN"
 
@@ -24,42 +28,26 @@ let la_rhsend = RightSententialForm.lookaheads.[ "RHSEND"]
 
 let la_semicolon = RightSententialForm.lookaheads.[ ";"]
 
-let declarations = [
+let declarations:(string*Type) list = [
     "!", typeof<option<int>>
     "#", typeof<option<int>>
-    "%", typeof<option<int>>
-    "&", typeof<option<int>>
-    "&&", typeof<option<int>>
     "(", typeof<option<int>>
     "(|", typeof<option<int>>
     ")", typeof<option<int>>
-    "*", typeof<option<int>>
-    "**", typeof<option<int>>
     "+", typeof<option<int>>
     ",", typeof<option<int>>
     "-", typeof<option<int>>
     "->", typeof<option<int>>
     ".", typeof<option<int>>
-    "..", typeof<option<int>>
-    "/", typeof<option<int>>
     ":", typeof<option<int>>
-    "::", typeof<option<int>>
-    ":?", typeof<option<int>>
-    ":?>", typeof<option<int>>
     ";", typeof<option<int>>
     "<", typeof<option<int>>
     "<-", typeof<option<int>>
-    "<<", typeof<option<int>>
-    "<>", typeof<option<int>>
-    "<|", typeof<option<int>>
-    "<||", typeof<option<int>>
-    "<|||", typeof<option<int>>
     "=", typeof<option<int>>
     ">", typeof<option<int>>
-    ">>", typeof<option<int>>
-    "@", typeof<option<int>>
+    "ALWAYS_INFIX", typeof<option<int>*string>
+    "ALWAYS_PREFIX", typeof<option<int>*string>
     "DO", typeof<option<int>>
-    "DUMMY", typeof<option<int>>
     "EOF", typeof<option<int>>
     "FUN", typeof<option<int>>
     "IDENT", typeof<option<int>*string>
@@ -78,7 +66,7 @@ let declarations = [
     "[|", typeof<option<int>>
     "]", typeof<option<int>>
     "appExpr", typeof<option<int>*Expr>
-    "appType", typeof<(option<int> * TypeArgument)*((option<int> * SuffixType) list)>
+    "appType", typeof<(option<int>*TypeArgument)*((option<int> * SuffixType) list)>
     "arrayExpr", typeof<option<int>*Expr>
     "atomType", typeof<option<int>*TypeArgument>
     "atomicExpr", typeof<option<int>*Expr>
@@ -94,19 +82,21 @@ let declarations = [
     "letBinding", typeof<option<int>*Expr>
     "listExpr", typeof<option<int>*Expr>
     "longid", typeof<option<int>*string list>
+    "openOrLet", typeof<option<int>*Expr>
+    "opt_semicolon", typeof<option<int>>
     "parameterPattern", typeof<option<int>*Pattern>
     "parenExpr", typeof<option<int>*Expr>
-    "prifix", typeof<option<int>*string>
+    "prefix", typeof<option<int>*string>
     "qualificationExpr", typeof<option<int>*Expr>
     "qualificationSuffix", typeof<option<int>*Expr>
     "revAppExpr", typeof<(option<int>*Expr) list>
     "revBinaryExpr", typeof<((option<int>*string)*(option<int>*Expr)) list>
     "revLongid", typeof<(option<int>*string) list>
+    "revOpenOrLets", typeof<(option<int>*Expr) list>
     "revQualificationExpr", typeof<(option<int>*Expr) list>
     "revSequentialExpr", typeof<(option<int>*Expr) list>
     "revTupleExpr", typeof<(option<int>*Expr) list>
     "rhsBlock", typeof<option<int>*Expr list>
-    "sequentialExpr", typeof<option<int>*Expr list>
     "suffixType", typeof<option<int>*SuffixType>
     "tupleExpr", typeof<option<int>*Expr>
     "tuplePattern", typeof<(option<int>*Pattern)list>
@@ -119,12 +109,7 @@ let declarations = [
     "{|", typeof<option<int>>
     "|", typeof<option<int>>
     "|)", typeof<option<int>>
-    "|>", typeof<option<int>>
     "|]", typeof<option<int>>
-    "||", typeof<option<int>>
-    "||>", typeof<option<int>>
-    "|||", typeof<option<int>>
-    "|||>", typeof<option<int>>
     "|}", typeof<option<int>>
     "}", typeof<option<int>>
 ]

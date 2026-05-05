@@ -31,23 +31,12 @@ let offside_rrparen_or_rhsend (states: YaccState list) =
         ]
     [
         match states with
-        | TOP_SEMICOLON _ ->
-            let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
-            yield None, DUMMY
-            yield! loop dummyStates
+        //| TOP_SEMICOLON _ ->
+        //let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
+        //yield None, DUMMY
+        //yield! loop dummyStates
         | _ -> yield! loop states
     ]
-
-/// 当看见EOF
-let (|PEEK_EOF|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
-    if la <> EOF then
-        None
-    else
-        Some
-            [
-                yield! offside_rrparen_or_rhsend states
-                yield Some 0, la
-            ]
 
 /// 右圆括号之前
 let (|PEEK_RPAREN|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
@@ -123,8 +112,8 @@ let (|SEMICOLON_PEEK_NEWLINE|_|) (states: YaccState list, newline: int option, l
     | None -> None
     | Some i ->
         let st =
-            tops.[";"]
-            |> Set.filter(fun v -> v.prefix |> StackOps.isPrefixOf states)
+            top_prefixes
+            |> Map.filter(fun prefix _ -> prefix |> StackOps.isPrefixOf states)
         if st.IsEmpty then
             None
         else
@@ -152,17 +141,20 @@ let (|SEMICOLON_PEEK_NEWLINE|_|) (states: YaccState list, newline: int option, l
                                     parser.shift currentStates (Light.tokenRow None RRPAREN)
                                 //看block所属的头位置
                                 let llparen = nextStates.[2..]
-                                let vp =
-                                    RightSententialForm.tops.["LLPAREN"]
-                                    |> Set.filter(fun v -> StackOps.isPrefixOf llparen v.prefix)
+                                let (KeyValue(prefix, heads)) =
+                                    top_prefixes
+                                    |> Map.filter(fun prefix _ ->
+                                        StackOps.isPrefixOf llparen prefix
+                                    )
                                     |> Seq.exactlyOne
+
                                 let seenOffside =
-                                    let pos = getPosition llparen.[vp.prefix.Length - 1]
+                                    let pos = getPosition llparen.[prefix.Length - 1]
                                     match pos with
                                     | None ->
                                         //stateSymbols.[llparen.[vp.prefix.Length].state]
                                         //|> precede_declExpr.Contains
-                                        match vp.head with
+                                        match heads |> Seq.head with
                                         | "letBinding"
                                         | "file" -> failwith "必须新启一行"
                                         | "lambdaExpr" ->
@@ -171,7 +163,7 @@ let (|SEMICOLON_PEEK_NEWLINE|_|) (states: YaccState list, newline: int option, l
                                             //lookahead()
                                             //没有越位，继续rhsend
                                             false
-                                        | _ -> failwith $"SEMICOLON_PEEK_NEWLINE:{vp.head}"
+                                        | _ -> failwith $"SEMICOLON_PEEK_NEWLINE"
                                     | Some jj -> jj >= i
 
                                 yield! loop seenOffside nextStates
@@ -185,9 +177,9 @@ let (|SEMICOLON_PEEK_NEWLINE|_|) (states: YaccState list, newline: int option, l
                         ]
                     Some
                         [
-                            yield None, DUMMY
-                            let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
-                            yield! loop false dummyStates
+                            //yield None, DUMMY
+                            //let dummyStates = parser.shift states (Light.tokenRow None DUMMY)
+                            //yield! loop false dummyStates
                             yield Some 0, la
                         ]
 
@@ -218,17 +210,18 @@ let (|PEEK_NEWLINE_APP|_|) (states: YaccState list, newline: int option, la: FSh
                     true
                 | Some vp ->
                     // 此时栈顶符合APP的前缀
-                    let rec loop (vp: ViablePrefix) (suffix_states: YaccState list) =
-                        let lead = suffix_states.[vp.prefix.Length - 1]
+                    let rec loop (prefix: string list) (suffix_states: YaccState list) =
+                        let lead = suffix_states.[prefix.Length - 1]
                         match StackOps.getPosition lead with
                         | Some j ->
                             // 当新行继续缩进的时候，表示是APP续行
                             j < i
                         | None ->
-                            let topVp =
-                                tops.[stateSymbols.[lead.state]]
-                                |> Seq.find(fun vp ->
-                                    vp.prefix
+                            let (KeyValue(topVp, _)) =
+                                top_prefixes
+                                |> Seq.find(fun kvp ->
+                                    let prefix = kvp.Key
+                                    prefix
                                     |> StackOps.isPrefixOf suffix_states
                                 )
                             let suffix_states = suffix_states.[vp.prefix.Length - 1 ..]
@@ -236,21 +229,65 @@ let (|PEEK_NEWLINE_APP|_|) (states: YaccState list, newline: int option, la: FSh
 
                     //首先看la是否是valueExpr这是app的条件；再看缩进是否符合APP
                     first_valueExpr.Contains la_tag
-                    && loop vp states
+                    && loop vp.prefix states
 
         if noSemicolon then
             Some [ newline, la ]
         else
             None
 
-/// 补齐rrparen,rhsend,semicolon => offside
-let (|PEEK_NEWLINE_OFFSIDE|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
+/// open or let 模块的成员
+let (|PEEK_NEWLINE_OPEN|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
     match newline with
     | None -> None
     | Some i ->
-        //此时已经排除了la<>decl first，已经排除了stack top follow semicolon
-        let tops = 
-            top_prefixes
-            |> Map.filter(fun prefix heads -> prefix |> StackOps.isPrefixOf states)
+        let la_tag = FSharpToken.tag la
+        if not(lookaheads.ContainsKey la_tag) then
+            Some [ newline, la ]
+        else
+            let ps =
+                lookaheads.[la_tag]
+                |> Set.filter(fun v -> StackOps.isPrefixOf states v.prefix)
+            if ps.IsEmpty then
+                let latestLine = StackOps.getLatestLine states
+                let lead = List.last latestLine
+                let info = YaccStateInfo.from lead
+                let j = info.position.Value
+                if i = j then
+                    let st =
+                        lookaheads.[";"]
+                        |> Set.filter(fun v -> StackOps.equals latestLine v.prefix)
+                    if st.IsEmpty then
+                        None
+                    else
+                        Some
+                            [
+                                None, SEMICOLON
+                                newline, la
+                            ]
+                else
+                    None
+            else
+                Some [ newline, la ]
 
-        Some tops
+/// 当看见EOF
+let (|PEEK_EOF|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
+    if la = EOF then
+        let vps =
+            lookaheads.["EOF"]
+            |> Set.filter(fun v -> v.prefix |> StackOps.isPrefixOf states)
+        if Set.isEmpty vps then
+            None
+        else
+            let vp = Seq.exactlyOne vps
+            let lead = states.[vp.prefix.Length - 1]
+            match StackOps.getPosition lead with
+            | Some j ->
+                // 必须对齐
+                if 0 = j then
+                    Some [ newline, la ]
+                else
+                    None
+            | None -> None
+    else
+        None

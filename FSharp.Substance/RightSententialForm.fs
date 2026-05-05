@@ -1,1043 +1,23 @@
 module FSharp.Substance.RightSententialForm
 open FSharp.LexYacc
-
-
-let follow_semicolon: string Set =
-  set ["!";"(";"+";"-";"FUN";"IDENT";"LET";"LITERAL";"OPEN";"[";"[|"]
-let precede_declExpr: string Set = set ["(";";";"LLPAREN";"[";"[|"]
-let first_declExpr: string Set = set ["!";"(";"+";"-";"FUN";"IDENT";"LET";"LITERAL";"OPEN";"[";"[|"]
-let first_valueExpr: string Set = set ["!";"(";"+";"-";"FUN";"IDENT";"LITERAL";"[";"[|"]
-
-
-let tops: Map<string, ViablePrefix Set> = Map [
-  "!",set [
-    {prefix=["!";"("];head="parenExpr"}
-    {prefix=["!";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["!";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["!";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["!";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["!";"LLPAREN"];head="rhsBlock"}
-    {prefix=["!";"["];head="listExpr"}
-    {prefix=["!";"[";"."];head="qualificationSuffix"}
-    {prefix=["!";"[|"];head="arrayExpr"}
-    {prefix=["!";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "%",set [
-    {prefix=["%";"("];head="atomicExpr"}
-    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "&",set [
-    {prefix=["&";"("];head="atomicExpr"}
-    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "&&",set [
-    {prefix=["&&";"("];head="atomicExpr"}
-    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "(",set [
-    {prefix=["(";"("];head="atomType"}
-    {prefix=["(";"("];head="parameterPattern"}
-    {prefix=["(";"("];head="parenExpr"}
-    {prefix=["(";"*";"tupleType"];head="tupleType"}
-    {prefix=["(";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["(";",";"tuplePattern"];head="tuplePattern"}
-    {prefix=["(";",";"typeArguments"];head="typeArguments"}
-    {prefix=["(";"->";"funType"];head="funType"}
-    {prefix=["(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["(";":";"IDENT"];head="atomicPattern"}
-    {prefix=["(";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["(";"<";"IDENT"];head="identExpr"}
-    {prefix=["(";"<";"longid"];head="atomType"}
-    {prefix=["(";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["(";"FUN"];head="lambdaExpr"}
-    {prefix=["(";"LET"];head="letBinding"}
-    {prefix=["(";"LLPAREN"];head="rhsBlock"}
-    {prefix=["(";"["];head="listExpr"}
-    {prefix=["(";"[";"."];head="qualificationSuffix"}
-    {prefix=["(";"[|"];head="arrayExpr"}
-    {prefix=["(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["(";"prefix"];head="unaryExpr"}
-    {prefix=["(";"revAppExpr"];head="revAppExpr"}
-  ]
-  ")",set [
-    {prefix=[")";"("];head="atomicExpr"}
-    {prefix=[")";"bindingPattern";"("];head="parameterPattern"}
-    {prefix=[")";"infix";"("];head="atomicExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"typeArgument";"("];head="atomType"}
-  ]
-  "*",set [
-    {prefix=["*";"tupleType"];head="tupleType"}
-  ]
-  "+",set [
-    {prefix=["+";"("];head="atomicExpr"}
-    {prefix=["+";"("];head="parenExpr"}
-    {prefix=["+";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["+";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["+";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["+";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["+";"LLPAREN"];head="rhsBlock"}
-    {prefix=["+";"["];head="listExpr"}
-    {prefix=["+";"[";"."];head="qualificationSuffix"}
-    {prefix=["+";"[|"];head="arrayExpr"}
-    {prefix=["+";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  ",",set [
-    {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=[",";"tuplePattern"];head="tuplePattern"}
-    {prefix=[",";"typeArguments"];head="typeArguments"}
-  ]
-  "-",set [
-    {prefix=["-";"("];head="atomicExpr"}
-    {prefix=["-";"("];head="parenExpr"}
-    {prefix=["-";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["-";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["-";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["-";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["-";"LLPAREN"];head="rhsBlock"}
-    {prefix=["-";"["];head="listExpr"}
-    {prefix=["-";"[";"."];head="qualificationSuffix"}
-    {prefix=["-";"[|"];head="arrayExpr"}
-    {prefix=["-";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "->",set [
-    {prefix=["->";"funType"];head="funType"}
-    {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-  ]
-  ".",set [
-    {prefix=[".";"revLongid"];head="revLongid"}
-    {prefix=[".";"revQualificationExpr"];head="revQualificationExpr"}
-  ]
-  "..",set [
-    {prefix=["..";"("];head="atomicExpr"}
-    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "/",set [
-    {prefix=["/";"("];head="atomicExpr"}
-    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  ":",set [
-    {prefix=[":";"IDENT"];head="atomicPattern"}
-  ]
-  "::",set [
-    {prefix=["::";"("];head="atomicExpr"}
-    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  ":?",set [
-    {prefix=[":?";"("];head="atomicExpr"}
-    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  ":?>",set [
-    {prefix=[":?>";"("];head="atomicExpr"}
-    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  ";",set [
-    {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-  ]
-  "<",set [
-    {prefix=["<";"IDENT"];head="identExpr"}
-    {prefix=["<";"longid"];head="atomType"}
-  ]
-  "<<",set [
-    {prefix=["<<";"("];head="atomicExpr"}
-    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "<>",set [
-    {prefix=["<>";"("];head="atomicExpr"}
-    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "<|",set [
-    {prefix=["<|";"("];head="atomicExpr"}
-    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "<||",set [
-    {prefix=["<||";"("];head="atomicExpr"}
-    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "<|||",set [
-    {prefix=["<|||";"("];head="atomicExpr"}
-    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "=",set [
-    {prefix=["=";"("];head="atomicExpr"}
-    {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  ">",set [
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="identExpr"}
-    {prefix=[">";"typeArguments";"<";"longid"];head="atomType"}
-  ]
-  ">>",set [
-    {prefix=[">>";"("];head="atomicExpr"}
-    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "@",set [
-    {prefix=["@";"("];head="atomicExpr"}
-    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "DUMMY",set [
-    {prefix=["DUMMY";"("];head="parenExpr"}
-    {prefix=["DUMMY";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["DUMMY";"LLPAREN"];head="rhsBlock"}
-    {prefix=["DUMMY";"["];head="listExpr"}
-    {prefix=["DUMMY";"[|"];head="arrayExpr"}
-  ]
-  "EOF",set [
-    {prefix=["EOF";"rhsBlock";"longid";"MODULE"];head="file"}
-  ]
-  "FUN",set [
-    {prefix=["FUN";"("];head="parenExpr"}
-    {prefix=["FUN";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["FUN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["FUN";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["FUN";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["FUN";"LLPAREN"];head="rhsBlock"}
-    {prefix=["FUN";"["];head="listExpr"}
-    {prefix=["FUN";"[|"];head="arrayExpr"}
-  ]
-  "IDENT",set [
-    {prefix=["IDENT";"("];head="atomType"}
-    {prefix=["IDENT";"("];head="parameterPattern"}
-    {prefix=["IDENT";"("];head="parenExpr"}
-    {prefix=["IDENT";"*";"tupleType"];head="tupleType"}
-    {prefix=["IDENT";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";",";"tuplePattern"];head="tuplePattern"}
-    {prefix=["IDENT";",";"typeArguments"];head="typeArguments"}
-    {prefix=["IDENT";"->";"funType"];head="funType"}
-    {prefix=["IDENT";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["IDENT";"."];head="qualificationSuffix"}
-    {prefix=["IDENT";".";"revLongid"];head="revLongid"}
-    {prefix=["IDENT";":";"IDENT"];head="atomicPattern"}
-    {prefix=["IDENT";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["IDENT";"<";"IDENT"];head="identExpr"}
-    {prefix=["IDENT";"<";"longid"];head="atomType"}
-    {prefix=["IDENT";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["IDENT";"FUN"];head="lambdaExpr"}
-    {prefix=["IDENT";"LET"];head="letBinding"}
-    {prefix=["IDENT";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"MODULE"];head="file"}
-    {prefix=["IDENT";"OPEN"];head="declExpr"}
-    {prefix=["IDENT";"["];head="listExpr"}
-    {prefix=["IDENT";"[";"."];head="qualificationSuffix"}
-    {prefix=["IDENT";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"appType"];head="appType"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="unaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revAppExpr"}
-  ]
-  "LET",set [
-    {prefix=["LET";"("];head="parenExpr"}
-    {prefix=["LET";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["LET";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LET";"["];head="listExpr"}
-    {prefix=["LET";"[|"];head="arrayExpr"}
-  ]
-  "LITERAL",set [
-    {prefix=["LITERAL";"("];head="parenExpr"}
-    {prefix=["LITERAL";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["LITERAL";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["LITERAL";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["LITERAL";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"["];head="listExpr"}
-    {prefix=["LITERAL";"[";"."];head="qualificationSuffix"}
-    {prefix=["LITERAL";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="unaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
-  ]
-  "LLPAREN",set [
-    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["LLPAREN";"longid";"MODULE"];head="file"}
-  ]
-  "OPEN",set [
-    {prefix=["OPEN";"("];head="parenExpr"}
-    {prefix=["OPEN";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["OPEN";"LLPAREN"];head="rhsBlock"}
-    {prefix=["OPEN";"["];head="listExpr"}
-    {prefix=["OPEN";"[|"];head="arrayExpr"}
-  ]
-  "RHSEND",set [
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-  ]
-  "RRPAREN",set [
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN"];head="rhsBlock"}
-  ]
-  "TYPAR",set [
-    {prefix=["TYPAR";"("];head="atomType"}
-    {prefix=["TYPAR";"*";"tupleType"];head="tupleType"}
-    {prefix=["TYPAR";",";"typeArguments"];head="typeArguments"}
-    {prefix=["TYPAR";"->";"funType"];head="funType"}
-    {prefix=["TYPAR";":";"IDENT"];head="atomicPattern"}
-    {prefix=["TYPAR";"<";"IDENT"];head="identExpr"}
-    {prefix=["TYPAR";"<";"longid"];head="atomType"}
-  ]
-  "[",set [
-    {prefix=["[";"("];head="parenExpr"}
-    {prefix=["[";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["[";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["[";"."];head="qualificationSuffix"}
-    {prefix=["[";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["[";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["[";"LLPAREN"];head="rhsBlock"}
-    {prefix=["[";"["];head="listExpr"}
-    {prefix=["[";"[";"."];head="qualificationSuffix"}
-    {prefix=["[";"[|"];head="arrayExpr"}
-    {prefix=["[";"appType"];head="appType"}
-    {prefix=["[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["[";"prefix"];head="unaryExpr"}
-    {prefix=["[";"revAppExpr"];head="revAppExpr"}
-  ]
-  "[|",set [
-    {prefix=["[|";"("];head="parenExpr"}
-    {prefix=["[|";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["[|";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["[|";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["[|";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["[|";"LLPAREN"];head="rhsBlock"}
-    {prefix=["[|";"["];head="listExpr"}
-    {prefix=["[|";"[";"."];head="qualificationSuffix"}
-    {prefix=["[|";"[|"];head="arrayExpr"}
-    {prefix=["[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["[|";"prefix"];head="unaryExpr"}
-    {prefix=["[|";"revAppExpr"];head="revAppExpr"}
-  ]
-  "]",set [
-    {prefix=["]";"["];head="listExpr"}
-    {prefix=["]";"["];head="suffixType"}
-    {prefix=["]";"sequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"tupleExpr";"[";"."];head="qualificationSuffix"}
-  ]
-  "appExpr",set [
-    {prefix=["appExpr";"("];head="parenExpr"}
-    {prefix=["appExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["appExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["appExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["appExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["appExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["appExpr";"["];head="listExpr"}
-    {prefix=["appExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["appExpr";"[|"];head="arrayExpr"}
-    {prefix=["appExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["appExpr";"prefix"];head="unaryExpr"}
-  ]
-  "appType",set [
-    {prefix=["appType";"("];head="atomType"}
-    {prefix=["appType";"*";"tupleType"];head="tupleType"}
-    {prefix=["appType";",";"typeArguments"];head="typeArguments"}
-    {prefix=["appType";"->";"funType"];head="funType"}
-    {prefix=["appType";":";"IDENT"];head="atomicPattern"}
-    {prefix=["appType";"<";"IDENT"];head="identExpr"}
-    {prefix=["appType";"<";"longid"];head="atomType"}
-  ]
-  "arrayExpr",set [
-    {prefix=["arrayExpr";"("];head="parenExpr"}
-    {prefix=["arrayExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["arrayExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["arrayExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["arrayExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["arrayExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["arrayExpr";"["];head="listExpr"}
-    {prefix=["arrayExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["arrayExpr";"[|"];head="arrayExpr"}
-    {prefix=["arrayExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["arrayExpr";"prefix"];head="unaryExpr"}
-    {prefix=["arrayExpr";"revAppExpr"];head="revAppExpr"}
-  ]
-  "atomType",set [
-    {prefix=["atomType";"("];head="atomType"}
-    {prefix=["atomType";"*";"tupleType"];head="tupleType"}
-    {prefix=["atomType";",";"typeArguments"];head="typeArguments"}
-    {prefix=["atomType";"->";"funType"];head="funType"}
-    {prefix=["atomType";":";"IDENT"];head="atomicPattern"}
-    {prefix=["atomType";"<";"IDENT"];head="identExpr"}
-    {prefix=["atomType";"<";"longid"];head="atomType"}
-  ]
-  "atomicExpr",set [
-    {prefix=["atomicExpr";"("];head="parenExpr"}
-    {prefix=["atomicExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["atomicExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["atomicExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["atomicExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["atomicExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["atomicExpr";"["];head="listExpr"}
-    {prefix=["atomicExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["atomicExpr";"[|"];head="arrayExpr"}
-    {prefix=["atomicExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["atomicExpr";"prefix"];head="unaryExpr"}
-    {prefix=["atomicExpr";"revAppExpr"];head="revAppExpr"}
-  ]
-  "atomicPattern",set [
-    {prefix=["atomicPattern";"("];head="parameterPattern"}
-    {prefix=["atomicPattern";",";"tuplePattern"];head="tuplePattern"}
-    {prefix=["atomicPattern";"LET"];head="letBinding"}
-  ]
-  "binaryExpr",set [
-    {prefix=["binaryExpr";"("];head="parenExpr"}
-    {prefix=["binaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["binaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["binaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["binaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["binaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["binaryExpr";"["];head="listExpr"}
-    {prefix=["binaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["binaryExpr";"[|"];head="arrayExpr"}
-  ]
-  "bindingPattern",set [
-    {prefix=["bindingPattern";"("];head="parameterPattern"}
-    {prefix=["bindingPattern";"LET"];head="letBinding"}
-  ]
-  "declExpr",set [
-    {prefix=["declExpr";"("];head="parenExpr"}
-    {prefix=["declExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["declExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["declExpr";"["];head="listExpr"}
-    {prefix=["declExpr";"[|"];head="arrayExpr"}
-  ]
-  "funType",set [
-    {prefix=["funType";"("];head="atomType"}
-    {prefix=["funType";",";"typeArguments"];head="typeArguments"}
-    {prefix=["funType";":";"IDENT"];head="atomicPattern"}
-    {prefix=["funType";"<";"IDENT"];head="identExpr"}
-    {prefix=["funType";"<";"longid"];head="atomType"}
-  ]
-  "identExpr",set [
-    {prefix=["identExpr";"("];head="parenExpr"}
-    {prefix=["identExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["identExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["identExpr";"."];head="qualificationSuffix"}
-    {prefix=["identExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["identExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["identExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["identExpr";"["];head="listExpr"}
-    {prefix=["identExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["identExpr";"[|"];head="arrayExpr"}
-    {prefix=["identExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["identExpr";"prefix"];head="unaryExpr"}
-    {prefix=["identExpr";"revAppExpr"];head="revAppExpr"}
-  ]
-  "infix",set [
-    {prefix=["infix";"("];head="atomicExpr"}
-    {prefix=["infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "lambdaExpr",set [
-    {prefix=["lambdaExpr";"("];head="parenExpr"}
-    {prefix=["lambdaExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["lambdaExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["lambdaExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["lambdaExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["lambdaExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["lambdaExpr";"["];head="listExpr"}
-    {prefix=["lambdaExpr";"[|"];head="arrayExpr"}
-  ]
-  "letBinding",set [
-    {prefix=["letBinding";"("];head="parenExpr"}
-    {prefix=["letBinding";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["letBinding";"LLPAREN"];head="rhsBlock"}
-    {prefix=["letBinding";"["];head="listExpr"}
-    {prefix=["letBinding";"[|"];head="arrayExpr"}
-  ]
-  "listExpr",set [
-    {prefix=["listExpr";"("];head="parenExpr"}
-    {prefix=["listExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["listExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["listExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["listExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["listExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["listExpr";"["];head="listExpr"}
-    {prefix=["listExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["listExpr";"[|"];head="arrayExpr"}
-    {prefix=["listExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["listExpr";"prefix"];head="unaryExpr"}
-    {prefix=["listExpr";"revAppExpr"];head="revAppExpr"}
-  ]
-  "longid",set [
-    {prefix=["longid";"("];head="atomType"}
-    {prefix=["longid";"*";"tupleType"];head="tupleType"}
-    {prefix=["longid";",";"typeArguments"];head="typeArguments"}
-    {prefix=["longid";"->";"funType"];head="funType"}
-    {prefix=["longid";":";"IDENT"];head="atomicPattern"}
-    {prefix=["longid";"<";"IDENT"];head="identExpr"}
-    {prefix=["longid";"<";"longid"];head="atomType"}
-    {prefix=["longid";"MODULE"];head="file"}
-    {prefix=["longid";"OPEN"];head="declExpr"}
-    {prefix=["longid";"appType"];head="appType"}
-  ]
-  "parameterPattern",set [
-    {prefix=["parameterPattern";"("];head="parameterPattern"}
-    {prefix=["parameterPattern";",";"tuplePattern"];head="tuplePattern"}
-    {prefix=["parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["parameterPattern";"LET"];head="letBinding"}
-  ]
-  "parenExpr",set [
-    {prefix=["parenExpr";"("];head="parenExpr"}
-    {prefix=["parenExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["parenExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["parenExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["parenExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["parenExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["parenExpr";"["];head="listExpr"}
-    {prefix=["parenExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["parenExpr";"[|"];head="arrayExpr"}
-    {prefix=["parenExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["parenExpr";"prefix"];head="unaryExpr"}
-    {prefix=["parenExpr";"revAppExpr"];head="revAppExpr"}
-  ]
-  "prefix",set [
-    {prefix=["prefix";"("];head="parenExpr"}
-    {prefix=["prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["prefix";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["prefix";"["];head="listExpr"}
-    {prefix=["prefix";"[";"."];head="qualificationSuffix"}
-    {prefix=["prefix";"[|"];head="arrayExpr"}
-    {prefix=["prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "qualificationExpr",set [
-    {prefix=["qualificationExpr";"("];head="parenExpr"}
-    {prefix=["qualificationExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["qualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["qualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["qualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["qualificationExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["qualificationExpr";"["];head="listExpr"}
-    {prefix=["qualificationExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["qualificationExpr";"[|"];head="arrayExpr"}
-    {prefix=["qualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["qualificationExpr";"prefix"];head="unaryExpr"}
-    {prefix=["qualificationExpr";"revAppExpr"];head="revAppExpr"}
-  ]
-  "qualificationSuffix",set [
-    {prefix=["qualificationSuffix";"revQualificationExpr"];head="revQualificationExpr"}
-  ]
-  "revAppExpr",set [
-    {prefix=["revAppExpr";"("];head="parenExpr"}
-    {prefix=["revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["revAppExpr";"["];head="listExpr"}
-    {prefix=["revAppExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["revAppExpr";"[|"];head="arrayExpr"}
-    {prefix=["revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["revAppExpr";"prefix"];head="unaryExpr"}
-  ]
-  "revBinaryExpr",set [
-    {prefix=["revBinaryExpr";"("];head="parenExpr"}
-    {prefix=["revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["revBinaryExpr";"["];head="listExpr"}
-    {prefix=["revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["revBinaryExpr";"[|"];head="arrayExpr"}
-  ]
-  "revLongid",set [
-    {prefix=["revLongid";"("];head="atomType"}
-    {prefix=["revLongid";"*";"tupleType"];head="tupleType"}
-    {prefix=["revLongid";",";"typeArguments"];head="typeArguments"}
-    {prefix=["revLongid";"->";"funType"];head="funType"}
-    {prefix=["revLongid";":";"IDENT"];head="atomicPattern"}
-    {prefix=["revLongid";"<";"IDENT"];head="identExpr"}
-    {prefix=["revLongid";"<";"longid"];head="atomType"}
-    {prefix=["revLongid";"MODULE"];head="file"}
-    {prefix=["revLongid";"OPEN"];head="declExpr"}
-    {prefix=["revLongid";"appType"];head="appType"}
-  ]
-  "revQualificationExpr",set [
-    {prefix=["revQualificationExpr";"("];head="parenExpr"}
-    {prefix=["revQualificationExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["revQualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["revQualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["revQualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["revQualificationExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["revQualificationExpr";"["];head="listExpr"}
-    {prefix=["revQualificationExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["revQualificationExpr";"[|"];head="arrayExpr"}
-    {prefix=["revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["revQualificationExpr";"prefix"];head="unaryExpr"}
-    {prefix=["revQualificationExpr";"revAppExpr"];head="revAppExpr"}
-  ]
-  "revSequentialExpr",set [
-    {prefix=["revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["revSequentialExpr";"["];head="listExpr"}
-    {prefix=["revSequentialExpr";"[|"];head="arrayExpr"}
-  ]
-  "revTupleExpr",set [
-    {prefix=["revTupleExpr";"("];head="parenExpr"}
-    {prefix=["revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["revTupleExpr";"["];head="listExpr"}
-    {prefix=["revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["revTupleExpr";"[|"];head="arrayExpr"}
-  ]
-  "rhsBlock",set [
-    {prefix=["rhsBlock";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["rhsBlock";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["rhsBlock";"longid";"MODULE"];head="file"}
-  ]
-  "sequentialExpr",set [
-    {prefix=["sequentialExpr";"("];head="parenExpr"}
-    {prefix=["sequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["sequentialExpr";"["];head="listExpr"}
-    {prefix=["sequentialExpr";"[|"];head="arrayExpr"}
-  ]
-  "suffixType",set [
-    {prefix=["suffixType";"appType"];head="appType"}
-  ]
-  "tupleExpr",set [
-    {prefix=["tupleExpr";"("];head="parenExpr"}
-    {prefix=["tupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["tupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["tupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["tupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["tupleExpr";"["];head="listExpr"}
-    {prefix=["tupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["tupleExpr";"[|"];head="arrayExpr"}
-  ]
-  "tuplePattern",set [
-    {prefix=["tuplePattern";"("];head="parameterPattern"}
-    {prefix=["tuplePattern";"LET"];head="letBinding"}
-  ]
-  "tupleType",set [
-    {prefix=["tupleType";"("];head="atomType"}
-    {prefix=["tupleType";",";"typeArguments"];head="typeArguments"}
-    {prefix=["tupleType";"->";"funType"];head="funType"}
-    {prefix=["tupleType";":";"IDENT"];head="atomicPattern"}
-    {prefix=["tupleType";"<";"IDENT"];head="identExpr"}
-    {prefix=["tupleType";"<";"longid"];head="atomType"}
-  ]
-  "typeArgument",set [
-    {prefix=["typeArgument";"("];head="atomType"}
-    {prefix=["typeArgument";",";"typeArguments"];head="typeArguments"}
-    {prefix=["typeArgument";":";"IDENT"];head="atomicPattern"}
-    {prefix=["typeArgument";"<";"IDENT"];head="identExpr"}
-    {prefix=["typeArgument";"<";"longid"];head="atomType"}
-  ]
-  "typeArguments",set [
-    {prefix=["typeArguments";"<";"IDENT"];head="identExpr"}
-    {prefix=["typeArguments";"<";"longid"];head="atomType"}
-  ]
-  "unaryExpr",set [
-    {prefix=["unaryExpr";"("];head="parenExpr"}
-    {prefix=["unaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["unaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["unaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["unaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["unaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["unaryExpr";"["];head="listExpr"}
-    {prefix=["unaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["unaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["unaryExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "valueExpr",set [
-    {prefix=["valueExpr";"("];head="parenExpr"}
-    {prefix=["valueExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["valueExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["valueExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["valueExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["valueExpr";"["];head="listExpr"}
-    {prefix=["valueExpr";"[|"];head="arrayExpr"}
-  ]
-  "|>",set [
-    {prefix=["|>";"("];head="atomicExpr"}
-    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "|]",set [
-    {prefix=["|]";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="arrayExpr"}
-  ]
-  "||",set [
-    {prefix=["||";"("];head="atomicExpr"}
-    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "||>",set [
-    {prefix=["||>";"("];head="atomicExpr"}
-    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "|||",set [
-    {prefix=["|||";"("];head="atomicExpr"}
-    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "|||>",set [
-    {prefix=["|||>";"("];head="atomicExpr"}
-    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-]
-
 let lookaheads: Map<string, ViablePrefix Set> = Map [
   "!",set [
-    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["("];head="parenExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["LLPAREN"];head="rhsBlock"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
-    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "%",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "&",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "&&",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   "(",set [
     {prefix=["!"];head="unaryExpr"}
-    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["("];head="atomType"}
     {prefix=["("];head="parameterPattern"}
     {prefix=["("];head="parenExpr"}
@@ -1045,8 +25,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"infix";"("];head="revAppExpr"}
     {prefix=[")";"infix";"(";"revAppExpr"];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=["*";"tupleType"];head="tupleType"}
     {prefix=["+"];head="unaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
@@ -1057,28 +37,18 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"funType"];head="funType"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[":";"IDENT"];head="atomicPattern"}
-    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["<";"IDENT"];head="identExpr"}
     {prefix=["<";"longid"];head="atomType"}
-    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revAppExpr"}
-    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_PREFIX"];head="unaryExpr"}
     {prefix=["FUN"];head="lambdaExpr"}
     {prefix=["IDENT"];head="revAppExpr"}
     {prefix=["IDENT";".";"revQualificationExpr"];head="revAppExpr"}
@@ -1093,24 +63,16 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["[|"];head="arrayExpr"}
     {prefix=["]";"["];head="revAppExpr"}
     {prefix=["]";"[";"revAppExpr"];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|"];head="revAppExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
   ]
   ")",set [
-    {prefix=["%";"("];head="atomicExpr"}
-    {prefix=["&";"("];head="atomicExpr"}
-    {prefix=["&&";"("];head="atomicExpr"}
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"(";"("];head="parenExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"("];head="parenExpr"}
@@ -1178,38 +140,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"typeArgument";"(";"("];head="atomType"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";"("];head="atomType"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";"->";"funType";"("];head="atomType"}
@@ -1224,16 +186,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"typeArgument";"(";":";"IDENT";",";"tuplePattern";"("];head="parameterPattern"}
     {prefix=["+";"("];head="atomicExpr"}
     {prefix=["-";"("];head="atomicExpr"}
-    {prefix=["..";"("];head="atomicExpr"}
-    {prefix=["/";"("];head="atomicExpr"}
-    {prefix=["::";"("];head="atomicExpr"}
-    {prefix=[":?";"("];head="atomicExpr"}
-    {prefix=[":?>";"("];head="atomicExpr"}
-    {prefix=["<<";"("];head="atomicExpr"}
-    {prefix=["<>";"("];head="atomicExpr"}
-    {prefix=["<|";"("];head="atomicExpr"}
-    {prefix=["<||";"("];head="atomicExpr"}
-    {prefix=["<|||";"("];head="atomicExpr"}
+    {prefix=[";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["=";"("];head="atomicExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"("];head="parenExpr"}
@@ -1311,10 +264,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"longid";"->";"funType";":";"IDENT";",";"tuplePattern";"("];head="parameterPattern"}
     {prefix=[">";"typeArguments";"<";"longid";":";"IDENT";"("];head="parameterPattern"}
     {prefix=[">";"typeArguments";"<";"longid";":";"IDENT";",";"tuplePattern";"("];head="parameterPattern"}
-    {prefix=[">>";"("];head="atomicExpr"}
-    {prefix=["@";"("];head="atomicExpr"}
-    {prefix=["DUMMY";"("];head="parenExpr"}
-    {prefix=["DUMMY";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["ALWAYS_INFIX";"("];head="atomicExpr"}
     {prefix=["IDENT";"("];head="atomType"}
     {prefix=["IDENT";"("];head="parameterPattern"}
     {prefix=["IDENT";"("];head="parenExpr"}
@@ -1342,8 +292,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revLongid";"->";"funType";":";"IDENT";",";"tuplePattern";"("];head="parameterPattern"}
     {prefix=["IDENT";".";"revLongid";":";"IDENT";"("];head="parameterPattern"}
     {prefix=["IDENT";".";"revLongid";":";"IDENT";",";"tuplePattern";"("];head="parameterPattern"}
-    {prefix=["IDENT";".";"revLongid";"OPEN";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revLongid";"OPEN";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revLongid";"appType";"("];head="atomType"}
     {prefix=["IDENT";".";"revLongid";"appType";"*";"tupleType";"("];head="atomType"}
     {prefix=["IDENT";".";"revLongid";"appType";"*";"tupleType";"->";"funType";"("];head="atomType"}
@@ -1391,8 +339,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";":";"IDENT";"("];head="parameterPattern"}
     {prefix=["IDENT";":";"IDENT";",";"tuplePattern";"("];head="parameterPattern"}
     {prefix=["IDENT";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"OPEN";"("];head="parenExpr"}
-    {prefix=["IDENT";"OPEN";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"appType";"("];head="atomType"}
     {prefix=["IDENT";"appType";"*";"tupleType";"("];head="atomType"}
     {prefix=["IDENT";"appType";"*";"tupleType";"->";"funType";"("];head="atomType"}
@@ -1471,12 +417,12 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["TYPAR";"("];head="atomType"}
     {prefix=["TYPAR";"*";"tupleType";"("];head="atomType"}
     {prefix=["TYPAR";"*";"tupleType";"->";"funType";"("];head="atomType"}
@@ -1533,38 +479,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
@@ -1597,7 +543,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|>";"("];head="atomicExpr"}
     {prefix=["|]";"[|";"("];head="parenExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
@@ -1630,42 +575,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["||";"("];head="atomicExpr"}
-    {prefix=["||>";"("];head="atomicExpr"}
-    {prefix=["|||";"("];head="atomicExpr"}
-    {prefix=["|||>";"("];head="atomicExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
   ]
   "*",set [
     {prefix=[")";"typeArgument";"("];head="tupleType"}
@@ -1686,9 +627,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"appType";"*";"tupleType"];head="tupleType"}
   ]
   "+",set [
-    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["("];head="atomicExpr"}
     {prefix=["("];head="parenExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
@@ -1707,29 +645,19 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
@@ -1748,8 +676,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["IDENT"];head="revBinaryExpr"}
     {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -1786,14 +713,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
@@ -1802,7 +729,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
@@ -1811,18 +737,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   ",",set [
     {prefix=[")";"("];head="revTupleExpr"}
@@ -1891,38 +813,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"typeArgument";"("];head="typeArguments"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType"];head="typeArguments"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";",";"typeArguments"];head="typeArguments"}
@@ -2245,38 +1167,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revTupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr"];head="revTupleExpr"}
@@ -2341,43 +1263,40 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
   ]
   "-",set [
-    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["("];head="atomicExpr"}
     {prefix=["("];head="parenExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
@@ -2396,29 +1315,19 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
@@ -2437,8 +1346,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["IDENT"];head="revBinaryExpr"}
     {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -2475,14 +1383,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
@@ -2491,7 +1399,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
@@ -2500,18 +1407,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   "->",set [
     {prefix=[")";"bindingPattern";"(";"FUN"];head="lambdaExpr"}
@@ -2552,7 +1455,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
   ".",set [
     {prefix=[")";"("];head="revQualificationExpr"}
     {prefix=[")";"infix";"("];head="revQualificationExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revQualificationExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revQualificationExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revQualificationExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revQualificationExpr"}
     {prefix=["IDENT"];head="revLongid"}
@@ -2561,1524 +1464,2176 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr"];head="revQualificationExpr"}
     {prefix=["LITERAL"];head="revQualificationExpr"}
     {prefix=["]";"["];head="revQualificationExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revQualificationExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revQualificationExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revQualificationExpr"}
     {prefix=["|]";"[|"];head="revQualificationExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revQualificationExpr"}
-  ]
-  "..",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "/",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revQualificationExpr"}
   ]
   ":",set [
     {prefix=["IDENT"];head="atomicPattern"}
   ]
-  "::",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  ":?",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  ":?>",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
   ";",set [
     {prefix=[")";"("];head="revSequentialExpr"}
+    {prefix=[")";"(";"("];head="parenExpr"}
     {prefix=[")";"(";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"["];head="listExpr"}
+    {prefix=[")";"(";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix"];head="revSequentialExpr"}
+    {prefix=[")";"(";"prefix";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"["];head="listExpr"}
+    {prefix=[")";"(";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"("];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"prefix";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["DUMMY"];head="revSequentialExpr"}
-    {prefix=["DUMMY";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT"];head="revSequentialExpr"}
+    {prefix=["IDENT";"("];head="parenExpr"}
     {prefix=["IDENT";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["IDENT";".";"revLongid";"OPEN"];head="revSequentialExpr"}
-    {prefix=["IDENT";".";"revLongid";"OPEN";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revLongid";"OPEN"];head="revOpenOrLets"}
+    {prefix=["IDENT";".";"revLongid";"OPEN";";";"revOpenOrLets"];head="revOpenOrLets"}
+    {prefix=["IDENT";".";"revLongid";"OPEN";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
+    {prefix=["IDENT";".";"revLongid";"OPEN";"longid";"MODULE"];head="file"}
     {prefix=["IDENT";".";"revQualificationExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["IDENT";"OPEN"];head="revSequentialExpr"}
-    {prefix=["IDENT";"OPEN";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"OPEN"];head="revOpenOrLets"}
+    {prefix=["IDENT";"OPEN";";";"revOpenOrLets"];head="revOpenOrLets"}
+    {prefix=["IDENT";"OPEN";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
+    {prefix=["IDENT";"OPEN";"longid";"MODULE"];head="file"}
+    {prefix=["IDENT";"["];head="listExpr"}
+    {prefix=["IDENT";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix"];head="revSequentialExpr"}
+    {prefix=["IDENT";"prefix";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"["];head="listExpr"}
+    {prefix=["IDENT";"prefix";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"("];head="parenExpr"}
     {prefix=["LITERAL";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"["];head="listExpr"}
+    {prefix=["LITERAL";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"prefix";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"["];head="listExpr"}
+    {prefix=["LITERAL";"prefix";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET"];head="revOpenOrLets"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revOpenOrLets"];head="revOpenOrLets"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="revSequentialExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="revSequentialExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"longid";"MODULE"];head="file"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="revOpenOrLets"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revOpenOrLets"];head="revOpenOrLets"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"longid";"MODULE"];head="file"}
     {prefix=["]";"["];head="revSequentialExpr"}
+    {prefix=["]";"[";"("];head="parenExpr"}
     {prefix=["]";"[";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"["];head="listExpr"}
+    {prefix=["]";"[";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix"];head="revSequentialExpr"}
+    {prefix=["]";"[";"prefix";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"["];head="listExpr"}
+    {prefix=["]";"[";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"("];head="parenExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"["];head="listExpr"}
+    {prefix=["|]";"[|";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"prefix";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"["];head="listExpr"}
+    {prefix=["|]";"[|";"prefix";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
   ]
   "<",set [
     {prefix=["IDENT"];head="atomType"}
     {prefix=["IDENT"];head="identExpr"}
     {prefix=["IDENT";".";"revLongid"];head="atomType"}
-  ]
-  "<<",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "<>",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "<|",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "<||",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "<|||",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   "=",set [
     {prefix=["("];head="atomicExpr"}
@@ -4100,14 +3655,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";"->";"funType";":";"IDENT";",";"tuplePattern";"LET"];head="letBinding"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";"->";"funType";":";"IDENT";"LET"];head="letBinding"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";":";"IDENT";",";"tuplePattern";"LET"];head="letBinding"}
@@ -4222,14 +3777,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
@@ -4246,14 +3801,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   ">",set [
     {prefix=[")";"typeArgument";"(";"*";"tupleType";",";"typeArguments";"<";"IDENT"];head="identExpr"}
@@ -4385,7 +3940,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"appType";"<";"IDENT"];head="identExpr"}
     {prefix=["]";"[";"appType";"<";"longid"];head="atomType"}
   ]
-  ">>",set [
+  "ALWAYS_INFIX",set [
     {prefix=["("];head="atomicExpr"}
     {prefix=[")";"("];head="revBinaryExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -4403,14 +3958,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
@@ -4459,14 +4014,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
@@ -4483,131 +4038,42 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
-  "@",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "DUMMY",set [
+  "ALWAYS_PREFIX",set [
     {prefix=["("];head="parenExpr"}
+    {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["LLPAREN"];head="rhsBlock"}
     {prefix=["["];head="listExpr"}
+    {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
   ]
   "EOF",set [
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"longid";"MODULE"];head="file"}
+    {prefix=[";";"revOpenOrLets";"longid";"MODULE"];head="file"}
+    {prefix=["IDENT";".";"revLongid";"MODULE"];head="file"}
+    {prefix=["IDENT";".";"revLongid";"OPEN";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
+    {prefix=["IDENT";".";"revLongid";"OPEN";"longid";"MODULE"];head="file"}
+    {prefix=["IDENT";"MODULE"];head="file"}
+    {prefix=["IDENT";"OPEN";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
+    {prefix=["IDENT";"OPEN";"longid";"MODULE"];head="file"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"longid";"MODULE"];head="file"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"longid";"MODULE"];head="file"}
   ]
   "FUN",set [
     {prefix=["("];head="parenExpr"}
@@ -4621,9 +4087,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
   ]
   "IDENT",set [
     {prefix=["!"];head="unaryExpr"}
-    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["("];head="atomType"}
     {prefix=["("];head="parameterPattern"}
     {prefix=["("];head="parenExpr"}
@@ -4631,8 +4094,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"infix";"("];head="revAppExpr"}
     {prefix=[")";"infix";"(";"revAppExpr"];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"typeArgument";"("];head="appType"}
     {prefix=["*";"tupleType"];head="tupleType"}
     {prefix=["+"];head="unaryExpr"}
@@ -4646,20 +4109,10 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["."];head="qualificationSuffix"}
     {prefix=[".";"revLongid"];head="revLongid"}
-    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[":";"IDENT"];head="atomicPattern"}
-    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["<";"IDENT"];head="identExpr"}
     {prefix=["<";"longid"];head="atomType"}
-    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
@@ -4667,8 +4120,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"longid"];head="appType"}
-    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_PREFIX"];head="unaryExpr"}
     {prefix=["FUN"];head="lambdaExpr"}
     {prefix=["IDENT"];head="appType"}
     {prefix=["IDENT"];head="revAppExpr"}
@@ -4683,7 +4136,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
     {prefix=["LLPAREN"];head="rhsBlock"}
     {prefix=["MODULE"];head="file"}
-    {prefix=["OPEN"];head="declExpr"}
+    {prefix=["OPEN"];head="openOrLet"}
     {prefix=["TYPAR"];head="appType"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
@@ -4691,64 +4144,49 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"["];head="revAppExpr"}
     {prefix=["]";"[";"appType"];head="appType"}
     {prefix=["]";"[";"revAppExpr"];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|"];head="revAppExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
   ]
   "LET",set [
     {prefix=["("];head="parenExpr"}
+    {prefix=[";";"revOpenOrLets"];head="revOpenOrLets"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["IDENT";".";"revLongid";"MODULE"];head="file"}
+    {prefix=["IDENT";"MODULE"];head="file"}
     {prefix=["LLPAREN"];head="rhsBlock"}
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
   ]
   "LITERAL",set [
     {prefix=["!"];head="unaryExpr"}
-    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["("];head="parenExpr"}
     {prefix=[")";"("];head="revAppExpr"}
     {prefix=[")";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"infix";"("];head="revAppExpr"}
     {prefix=[")";"infix";"(";"revAppExpr"];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=["+"];head="unaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-"];head="unaryExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revAppExpr"}
-    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_PREFIX"];head="unaryExpr"}
     {prefix=["IDENT"];head="revAppExpr"}
     {prefix=["IDENT";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
@@ -4761,32 +4199,23 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["[|"];head="arrayExpr"}
     {prefix=["]";"["];head="revAppExpr"}
     {prefix=["]";"[";"revAppExpr"];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|"];head="revAppExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
   ]
   "LLPAREN",set [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["IDENT";".";"revLongid";"MODULE"];head="file"}
-    {prefix=["IDENT";"MODULE"];head="file"}
   ]
   "OPEN",set [
-    {prefix=["("];head="parenExpr"}
-    {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
-    {prefix=["["];head="listExpr"}
-    {prefix=["[|"];head="arrayExpr"}
+    {prefix=[";";"revOpenOrLets"];head="revOpenOrLets"}
+    {prefix=["IDENT";".";"revLongid";"MODULE"];head="file"}
+    {prefix=["IDENT";"MODULE"];head="file"}
   ]
   "RHSEND",set [
     {prefix=[")";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
@@ -4853,38 +4282,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
@@ -5049,10 +4478,10 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
@@ -5085,38 +4514,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
@@ -5181,38 +4610,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
   ]
   "RRPAREN",set [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
@@ -5279,38 +4708,39 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
@@ -5375,12 +4805,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["DUMMY";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["DUMMY";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revLongid";"OPEN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revLongid";"OPEN";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
@@ -5415,8 +4841,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"OPEN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"OPEN";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
@@ -5483,12 +4907,12 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN"];head="rhsBlock"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN"];head="rhsBlock"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["]";"[";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
@@ -5521,38 +4945,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
@@ -5617,38 +5041,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
   ]
   "TYPAR",set [
     {prefix=["("];head="atomType"}
@@ -5661,16 +5085,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
   ]
   "[",set [
     {prefix=["!"];head="unaryExpr"}
-    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["("];head="parenExpr"}
     {prefix=[")";"("];head="revAppExpr"}
     {prefix=[")";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"infix";"("];head="revAppExpr"}
     {prefix=[")";"infix";"(";"revAppExpr"];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"typeArgument";"("];head="appType"}
     {prefix=["+"];head="unaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
@@ -5679,17 +5100,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["."];head="qualificationSuffix"}
-    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
@@ -5697,8 +5108,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"longid"];head="appType"}
-    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_PREFIX"];head="unaryExpr"}
     {prefix=["IDENT"];head="appType"}
     {prefix=["IDENT"];head="revAppExpr"}
     {prefix=["IDENT";".";"revLongid"];head="appType"}
@@ -5717,57 +5128,39 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"["];head="revAppExpr"}
     {prefix=["]";"[";"appType"];head="appType"}
     {prefix=["]";"[";"revAppExpr"];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|"];head="revAppExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
   ]
   "[|",set [
     {prefix=["!"];head="unaryExpr"}
-    {prefix=["%";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["&&";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["("];head="parenExpr"}
     {prefix=[")";"("];head="revAppExpr"}
     {prefix=[")";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"infix";"("];head="revAppExpr"}
     {prefix=[")";"infix";"(";"revAppExpr"];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revAppExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=["+"];head="unaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-"];head="unaryExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["..";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["/";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["::";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[":?>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["<<";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["<|||";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revAppExpr"}
-    {prefix=[">>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["@";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_PREFIX"];head="unaryExpr"}
     {prefix=["IDENT"];head="revAppExpr"}
     {prefix=["IDENT";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
@@ -5780,19 +5173,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["[|"];head="arrayExpr"}
     {prefix=["]";"["];head="revAppExpr"}
     {prefix=["]";"[";"revAppExpr"];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revAppExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|>";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"[|"];head="revAppExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revAppExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
-    {prefix=["||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["||>";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|||>";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
   ]
   "]",set [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
@@ -5891,54 +5279,55 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=[";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
@@ -6035,13 +5424,9 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["DUMMY";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["DUMMY";"["];head="listExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["IDENT";".";"revLongid";"OPEN";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["IDENT";".";"revLongid";"OPEN";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
@@ -6091,8 +5476,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
     {prefix=["IDENT";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["IDENT";"OPEN";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["IDENT";"OPEN";"["];head="listExpr"}
     {prefix=["IDENT";"["];head="listExpr"}
     {prefix=["IDENT";"[";"."];head="qualificationSuffix"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
@@ -6192,13 +5575,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"["];head="listExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"["];head="listExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"["];head="listExpr"}
     {prefix=["["];head="listExpr"}
     {prefix=["["];head="suffixType"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
@@ -6249,54 +5632,54 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
@@ -6393,161 +5776,54 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-  ]
-  "|>",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
   ]
   "|]",set [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
@@ -6614,38 +5890,39 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=[";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
@@ -6710,12 +5987,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["DUMMY";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["DUMMY";"[|"];head="arrayExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revLongid";"OPEN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revLongid";"OPEN";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
@@ -6749,8 +6022,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"OPEN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"OPEN";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -6818,12 +6089,12 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"sequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
     {prefix=["[|"];head="arrayExpr"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -6857,38 +6128,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
@@ -6953,469 +6224,40 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-  ]
-  "||",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "||>",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "|||",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-  ]
-  "|||>",set [
-    {prefix=["("];head="atomicExpr"}
-    {prefix=[")";"("];head="revBinaryExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"("];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"("];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[")";"sequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"["];head="revBinaryExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"["];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"sequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
-    {prefix=["|]";"sequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
   ]
 ]
-
 let top_prefixes: Map<string list, string Set> = Map [
   ["!";"("],set ["parenExpr"]
   ["!";",";"revTupleExpr"],set ["revTupleExpr"]
@@ -7427,12 +6269,6 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["!";"[";"."],set ["qualificationSuffix"]
   ["!";"[|"],set ["arrayExpr"]
   ["!";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["%";"("],set ["atomicExpr"]
-  ["%";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["&";"("],set ["atomicExpr"]
-  ["&";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["&&";"("],set ["atomicExpr"]
-  ["&&";"revBinaryExpr"],set ["revBinaryExpr"]
   ["(";"("],set ["atomType";"parameterPattern";"parenExpr"]
   ["(";"*";"tupleType"],set ["tupleType"]
   ["(";",";"revTupleExpr"],set ["revTupleExpr"]
@@ -7457,7 +6293,7 @@ let top_prefixes: Map<string list, string Set> = Map [
   [")";"("],set ["atomicExpr"]
   [")";"bindingPattern";"("],set ["parameterPattern"]
   [")";"infix";"("],set ["atomicExpr"]
-  [")";"sequentialExpr";"("],set ["parenExpr"]
+  [")";"opt_semicolon";"revSequentialExpr";"("],set ["parenExpr"]
   [")";"typeArgument";"("],set ["atomType"]
   ["*";"tupleType"],set ["tupleType"]
   ["+";"("],set ["atomicExpr";"parenExpr"]
@@ -7489,45 +6325,35 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   [".";"revLongid"],set ["revLongid"]
   [".";"revQualificationExpr"],set ["revQualificationExpr"]
-  ["..";"("],set ["atomicExpr"]
-  ["..";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["/";"("],set ["atomicExpr"]
-  ["/";"revBinaryExpr"],set ["revBinaryExpr"]
   [":";"IDENT"],set ["atomicPattern"]
-  ["::";"("],set ["atomicExpr"]
-  ["::";"revBinaryExpr"],set ["revBinaryExpr"]
-  [":?";"("],set ["atomicExpr"]
-  [":?";"revBinaryExpr"],set ["revBinaryExpr"]
-  [":?>";"("],set ["atomicExpr"]
-  [":?>";"revBinaryExpr"],set ["revBinaryExpr"]
+  [";";"revOpenOrLets"],set ["revOpenOrLets"]
+  [";";"revOpenOrLets";"longid";"MODULE"],set ["file"]
   [";";"revSequentialExpr"],set ["revSequentialExpr"]
+  [";";"revSequentialExpr";"("],set ["parenExpr"]
+  [";";"revSequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  [";";"revSequentialExpr";"["],set ["listExpr"]
+  [";";"revSequentialExpr";"[|"],set ["arrayExpr"]
   ["<";"IDENT"],set ["identExpr"]
   ["<";"longid"],set ["atomType"]
-  ["<<";"("],set ["atomicExpr"]
-  ["<<";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["<>";"("],set ["atomicExpr"]
-  ["<>";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["<|";"("],set ["atomicExpr"]
-  ["<|";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["<||";"("],set ["atomicExpr"]
-  ["<||";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["<|||";"("],set ["atomicExpr"]
-  ["<|||";"revBinaryExpr"],set ["revBinaryExpr"]
   ["=";"("],set ["atomicExpr"]
   ["=";"bindingPattern";"LET"],set ["letBinding"]
   ["=";"revBinaryExpr"],set ["revBinaryExpr"]
   [">";"typeArguments";"<";"IDENT"],set ["identExpr"]
   [">";"typeArguments";"<";"longid"],set ["atomType"]
-  [">>";"("],set ["atomicExpr"]
-  [">>";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["@";"("],set ["atomicExpr"]
-  ["@";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["DUMMY";"("],set ["parenExpr"]
-  ["DUMMY";";";"revSequentialExpr"],set ["revSequentialExpr"]
-  ["DUMMY";"LLPAREN"],set ["rhsBlock"]
-  ["DUMMY";"["],set ["listExpr"]
-  ["DUMMY";"[|"],set ["arrayExpr"]
-  ["EOF";"rhsBlock";"longid";"MODULE"],set ["file"]
+  ["ALWAYS_INFIX";"("],set ["atomicExpr"]
+  ["ALWAYS_INFIX";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["ALWAYS_PREFIX";"("],set ["parenExpr"]
+  ["ALWAYS_PREFIX";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["ALWAYS_PREFIX";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["ALWAYS_PREFIX";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["ALWAYS_PREFIX";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["ALWAYS_PREFIX";"LLPAREN"],set ["rhsBlock"]
+  ["ALWAYS_PREFIX";"["],set ["listExpr"]
+  ["ALWAYS_PREFIX";"[";"."],set ["qualificationSuffix"]
+  ["ALWAYS_PREFIX";"[|"],set ["arrayExpr"]
+  ["ALWAYS_PREFIX";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["EOF";"longid";"MODULE"],set ["file"]
+  ["EOF";"opt_semicolon";"revOpenOrLets";"longid";"MODULE"],set ["file"]
   ["FUN";"("],set ["parenExpr"]
   ["FUN";",";"revTupleExpr"],set ["tupleExpr"]
   ["FUN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
@@ -7554,7 +6380,7 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["IDENT";"LET"],set ["letBinding"]
   ["IDENT";"LLPAREN"],set ["rhsBlock"]
   ["IDENT";"MODULE"],set ["file"]
-  ["IDENT";"OPEN"],set ["declExpr"]
+  ["IDENT";"OPEN"],set ["openOrLet"]
   ["IDENT";"["],set ["listExpr"]
   ["IDENT";"[";"."],set ["qualificationSuffix"]
   ["IDENT";"[|"],set ["arrayExpr"]
@@ -7563,10 +6389,12 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["IDENT";"prefix"],set ["unaryExpr"]
   ["IDENT";"revAppExpr"],set ["revAppExpr"]
   ["LET";"("],set ["parenExpr"]
+  ["LET";";";"revOpenOrLets"],set ["revOpenOrLets"]
   ["LET";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["LET";"LLPAREN"],set ["rhsBlock"]
   ["LET";"["],set ["listExpr"]
   ["LET";"[|"],set ["arrayExpr"]
+  ["LET";"longid";"MODULE"],set ["file"]
   ["LITERAL";"("],set ["parenExpr"]
   ["LITERAL";",";"revTupleExpr"],set ["revTupleExpr"]
   ["LITERAL";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
@@ -7581,15 +6409,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["LITERAL";"revAppExpr"],set ["revAppExpr"]
   ["LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["LLPAREN";"longid";"MODULE"],set ["file"]
-  ["OPEN";"("],set ["parenExpr"]
-  ["OPEN";";";"revSequentialExpr"],set ["revSequentialExpr"]
-  ["OPEN";"LLPAREN"],set ["rhsBlock"]
-  ["OPEN";"["],set ["listExpr"]
-  ["OPEN";"[|"],set ["arrayExpr"]
+  ["OPEN";";";"revOpenOrLets"],set ["revOpenOrLets"]
+  ["OPEN";"longid";"MODULE"],set ["file"]
   ["RHSEND";"valueExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["RHSEND";"valueExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["RRPAREN";"sequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  ["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN"],set ["rhsBlock"]
   ["TYPAR";"("],set ["atomType"]
   ["TYPAR";"*";"tupleType"],set ["tupleType"]
   ["TYPAR";",";"typeArguments"],set ["typeArguments"]
@@ -7624,7 +6448,7 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["[|";"prefix"],set ["unaryExpr"]
   ["[|";"revAppExpr"],set ["revAppExpr"]
   ["]";"["],set ["listExpr";"suffixType"]
-  ["]";"sequentialExpr";"["],set ["listExpr"]
+  ["]";"opt_semicolon";"revSequentialExpr";"["],set ["listExpr"]
   ["]";"tupleExpr";"[";"."],set ["qualificationSuffix"]
   ["appExpr";"("],set ["parenExpr"]
   ["appExpr";",";"revTupleExpr"],set ["revTupleExpr"]
@@ -7723,10 +6547,12 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["lambdaExpr";"["],set ["listExpr"]
   ["lambdaExpr";"[|"],set ["arrayExpr"]
   ["letBinding";"("],set ["parenExpr"]
+  ["letBinding";";";"revOpenOrLets"],set ["revOpenOrLets"]
   ["letBinding";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["letBinding";"LLPAREN"],set ["rhsBlock"]
   ["letBinding";"["],set ["listExpr"]
   ["letBinding";"[|"],set ["arrayExpr"]
+  ["letBinding";"longid";"MODULE"],set ["file"]
   ["listExpr";"("],set ["parenExpr"]
   ["listExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["listExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
@@ -7747,8 +6573,15 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["longid";"<";"IDENT"],set ["identExpr"]
   ["longid";"<";"longid"],set ["atomType"]
   ["longid";"MODULE"],set ["file"]
-  ["longid";"OPEN"],set ["declExpr"]
+  ["longid";"OPEN"],set ["openOrLet"]
   ["longid";"appType"],set ["appType"]
+  ["openOrLet";";";"revOpenOrLets"],set ["revOpenOrLets"]
+  ["openOrLet";"longid";"MODULE"],set ["file"]
+  ["opt_semicolon";"revOpenOrLets";"longid";"MODULE"],set ["file"]
+  ["opt_semicolon";"revSequentialExpr";"("],set ["parenExpr"]
+  ["opt_semicolon";"revSequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  ["opt_semicolon";"revSequentialExpr";"["],set ["listExpr"]
+  ["opt_semicolon";"revSequentialExpr";"[|"],set ["arrayExpr"]
   ["parameterPattern";"("],set ["parameterPattern"]
   ["parameterPattern";",";"tuplePattern"],set ["tuplePattern"]
   ["parameterPattern";"FUN"],set ["lambdaExpr"]
@@ -7816,8 +6649,9 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["revLongid";"<";"IDENT"],set ["identExpr"]
   ["revLongid";"<";"longid"],set ["atomType"]
   ["revLongid";"MODULE"],set ["file"]
-  ["revLongid";"OPEN"],set ["declExpr"]
+  ["revLongid";"OPEN"],set ["openOrLet"]
   ["revLongid";"appType"],set ["appType"]
+  ["revOpenOrLets";"longid";"MODULE"],set ["file"]
   ["revQualificationExpr";"("],set ["parenExpr"]
   ["revQualificationExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["revQualificationExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
@@ -7844,11 +6678,6 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["revTupleExpr";"[|"],set ["arrayExpr"]
   ["rhsBlock";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["rhsBlock";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["rhsBlock";"longid";"MODULE"],set ["file"]
-  ["sequentialExpr";"("],set ["parenExpr"]
-  ["sequentialExpr";"LLPAREN"],set ["rhsBlock"]
-  ["sequentialExpr";"["],set ["listExpr"]
-  ["sequentialExpr";"[|"],set ["arrayExpr"]
   ["suffixType";"appType"],set ["appType"]
   ["tupleExpr";"("],set ["parenExpr"]
   ["tupleExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
@@ -7890,16 +6719,13 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["valueExpr";"LLPAREN"],set ["rhsBlock"]
   ["valueExpr";"["],set ["listExpr"]
   ["valueExpr";"[|"],set ["arrayExpr"]
-  ["|>";"("],set ["atomicExpr"]
-  ["|>";"revBinaryExpr"],set ["revBinaryExpr"]
   ["|]";"[|"],set ["arrayExpr"]
-  ["|]";"sequentialExpr";"[|"],set ["arrayExpr"]
-  ["||";"("],set ["atomicExpr"]
-  ["||";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["||>";"("],set ["atomicExpr"]
-  ["||>";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["|||";"("],set ["atomicExpr"]
-  ["|||";"revBinaryExpr"],set ["revBinaryExpr"]
-  ["|||>";"("],set ["atomicExpr"]
-  ["|||>";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["|]";"opt_semicolon";"revSequentialExpr";"[|"],set ["arrayExpr"]
 ]
+let follow_semicolon: string Set =
+  set ["!";"(";")";"+";"-";"ALWAYS_PREFIX";"EOF";"FUN";"IDENT";"LET";"LITERAL";"OPEN";"RRPAREN";"[";"[|";"]";"|]"]
+let precede_semicolon: string Set =
+  set [")";">";"IDENT";"LITERAL";"RHSEND";"RRPAREN";"]";"|]"]
+let precede_declExpr: string Set = set ["(";";";"LLPAREN";"[";"[|"]
+let first_declExpr: string Set = set ["!";"(";"+";"-";"ALWAYS_PREFIX";"FUN";"IDENT";"LET";"LITERAL";"[";"[|"]
+let first_valueExpr: string Set = set ["!";"(";"+";"-";"ALWAYS_PREFIX";"FUN";"IDENT";"LITERAL";"[";"[|"]

@@ -1,6 +1,7 @@
 module FSharp.Substance.StackOps
 
 open FSharp.Substance.FSharpYacc
+open FSharp.Substance.RightSententialForm
 
 open FSharp.Idioms
 open FSharp.Idioms.Literal
@@ -14,39 +15,21 @@ let getPosition (state: YaccState) =
     match stateSymbols.[state.state] with
     | "!"
     | "#"
-    | "%"
-    | "&"
-    | "&&"
     | "("
     | "(|"
     | ")"
-    | "*"
-    | "**"
     | "+"
     | ","
     | "-"
     | "->"
     | "."
-    | ".."
-    | "/"
     | ":"
-    | "::"
-    | ":?"
-    | ":?>"
     | ";"
     | "<"
     | "<-"
-    | "<<"
-    | "<>"
-    | "<|"
-    | "<||"
-    | "<|||"
     | "="
     | ">"
-    | ">>"
-    | "@"
     | "DO"
-    | "DUMMY"
     | "EOF"
     | "FUN"
     | "LET"
@@ -61,22 +44,20 @@ let getPosition (state: YaccState) =
     | "["
     | "[|"
     | "]"
+    | "opt_semicolon"
     | "{"
     | "{|"
     | "|"
     | "|)"
-    | "|>"
     | "|]"
-    | "||"
-    | "||>"
-    | "|||"
-    | "|||>"
     | "|}"
     | "}" -> unbox<option<int>> state.lexeme
+    | "ALWAYS_INFIX"
+    | "ALWAYS_PREFIX"
     | "IDENT"
     | "TYPAR"
     | "infix"
-    | "prifix" ->
+    | "prefix" ->
         unbox<option<int> * string> state.lexeme
         |> fst
     | "LITERAL" ->
@@ -91,6 +72,7 @@ let getPosition (state: YaccState) =
     | "lambdaExpr"
     | "letBinding"
     | "listExpr"
+    | "openOrLet"
     | "parenExpr"
     | "qualificationExpr"
     | "qualificationSuffix"
@@ -112,7 +94,7 @@ let getPosition (state: YaccState) =
     | "parameterPattern" ->
         unbox<option<int> * Pattern> state.lexeme
         |> fst
-    | "file" -> None // unbox<list<string>*list<Expr>> state.lexeme
+    | "file" -> None //unbox<list<string>*list<Expr>> state.lexeme
     | "funType"
     | "tupleType"
     | "typeArguments" ->
@@ -123,6 +105,7 @@ let getPosition (state: YaccState) =
         unbox<option<int> * list<string>> state.lexeme
         |> fst
     | "revAppExpr"
+    | "revOpenOrLets"
     | "revQualificationExpr"
     | "revSequentialExpr"
     | "revTupleExpr" ->
@@ -134,13 +117,11 @@ let getPosition (state: YaccState) =
         |> List.head
         |> snd
         |> fst
-
     | "revLongid" ->
         unbox<list<option<int> * string>> state.lexeme
         |> List.head
         |> fst
-    | "rhsBlock"
-    | "sequentialExpr" ->
+    | "rhsBlock" ->
         unbox<option<int> * list<Expr>> state.lexeme
         |> fst
     | "suffixType" ->
@@ -168,11 +149,31 @@ let isPrefixOf (states: YaccState list) (symbols: string list) =
             && loop restStates restSymbols
     loop states symbols
 
+let equals (states: YaccState list) (symbols: string list) =
+    let rec loop (sts: YaccState list) (syms: string list) =
+        match sts, syms with
+        | [], [] -> true
+        | _, []
+        | [], _ -> false
+        | st :: restStates, sym :: restSymbols ->
+            sym = stateSymbols.[st.state]
+            && loop restStates restSymbols
+    loop states symbols
+
 let (|OPEN_LONGID|_|) (states: YaccState list) =
-    let open_longid = [
-        ["IDENT";".";"revLongid";"OPEN"]
-        ["IDENT";"OPEN"]
-    ]
+    let open_longid =
+        [
+            [
+                "IDENT"
+                "."
+                "revLongid"
+                "OPEN"
+            ]
+            [
+                "IDENT"
+                "OPEN"
+            ]
+        ]
     open_longid
     |> Seq.tryFind(isPrefixOf states)
     |> Option.map(fun symbols ->
@@ -184,8 +185,8 @@ let (|OPEN_LONGID|_|) (states: YaccState list) =
 let (|STACK_TOP|) (states: YaccState list) =
     let top = stateSymbols.[states.[0].state]
     let ls =
-        RightSententialForm.tops.[top]
-        |> Set.filter(fun v -> v.prefix |> isPrefixOf states)
+        top_prefixes
+        |> Map.filter(fun prefix _ -> prefix |> isPrefixOf states)
 
     if ls.IsEmpty then
         Console.WriteLine("// 栈顶形状不匹配")
@@ -199,16 +200,16 @@ let (|STACK_TOP|) (states: YaccState list) =
         ls
 
 let (|TOP_RRPAREN|_|) (states: YaccState list) =
-    ViablePrefix.top_rrparen
-    |> Seq.tryFind(isPrefixOf states)
+    top_prefixes
+    |> Seq.tryFind(fun kvp -> isPrefixOf states kvp.Key)
 
 let (|TOP_RHSEND|_|) (states: YaccState list) =
-    ViablePrefix.top_rhsend
-    |> Seq.tryFind(isPrefixOf states)
+    top_prefixes
+    |> Seq.tryFind(fun kvp -> isPrefixOf states kvp.Key)
 
 let (|TOP_SEMICOLON|_|) (states: YaccState list) =
-    ViablePrefix.top_semicolon
-    |> Seq.tryFind(isPrefixOf states)
+    top_prefixes
+    |> Seq.tryFind(fun kvp -> isPrefixOf states kvp.Key)
 
 let (|LOOKAHEAD_LLPAREN|_|) (states: YaccState list) =
     RightSententialForm.lookaheads.["LLPAREN"]
@@ -243,3 +244,31 @@ let balanceLeft (left: string) (right: string) (states: YaccState list) =
                 else i
             loop (h :: acc) i t
     loop [] 1 states
+
+/// truncate context
+let (|Offside|Aligned|NewBlock|) (i: int) (states: YaccState list) =
+    let rec loop rev (rest: YaccStateInfo list) =
+        match rest with
+        | [] ->
+            //没有找到
+            NewBlock
+        | h :: t ->
+            match h.position with
+            | None -> loop (h :: rev) t
+            | Some j ->
+                if j > i then loop (h :: rev) t
+                elif j = i then Aligned(List.rev rev)
+                else Offside(List.rev rev)
+    states
+    |> List.map YaccStateInfo.from
+    |> loop []
+
+/// truncate context
+let getLatestLine (states: YaccState list) =
+    let i =
+        states
+        |> List.findIndex(fun st ->
+            let info = YaccStateInfo.from st
+            info.position.IsSome
+        )
+    states.[..i]

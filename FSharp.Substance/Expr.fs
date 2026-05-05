@@ -1,7 +1,7 @@
 namespace FSharp.Substance
 
 type Expr =
-    | DummyExpr
+    //| DummyExpr
     | OpenExpr of string list
     | OperatorSectionExpr of string
     | LetBindingExpr of Pattern * Expr list
@@ -22,11 +22,11 @@ type Expr =
 
 module Expr =
     let ofSequentialExpr (revSequentialExpr: (option<int> * Expr) list) =
-        let s0 =
-            match revSequentialExpr with
-            | (_, DummyExpr) :: tail -> tail
-            | _ -> revSequentialExpr
-        let i, ls = s0 |> List.rev |> List.unzip
+        //let s0 =
+        //    match revSequentialExpr with
+        //    | (_, DummyExpr) :: tail -> tail
+        //    | _ -> revSequentialExpr
+        let i, ls = revSequentialExpr |> List.rev |> List.unzip
         i.[0], ls
 
     let ofTupleExpr (revTupleExpr: (option<int> * Expr) list) =

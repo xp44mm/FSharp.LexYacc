@@ -34,9 +34,6 @@ revLongid :
     | IDENT { [s0] }
     | revLongid "." IDENT { s2 :: s0 }
 
-// sequentialExpr:
-//    | revSequentialExpr { Expr.ofSequentialExpr s0 }
-
 revSequentialExpr:
     | revSequentialExpr ";" declExpr  { s2::s0 }
     | declExpr { [s0] }
@@ -44,7 +41,6 @@ revSequentialExpr:
 declExpr:
     | letBinding { s0 }
     | valueExpr { s0 }
-    // | DUMMY { s0, DummyExpr }
 
 letBinding :
     | LET bindingPattern "=" valueExpr RHSEND {
@@ -55,7 +51,6 @@ letBinding :
         }
 
 rhsBlock:
-    // | LLPAREN sequentialExpr opt_semicolon RRPAREN { s1 }
     | LLPAREN revSequentialExpr opt_semicolon RRPAREN { Expr.ofSequentialExpr s1 }
 
 valueExpr :
@@ -134,48 +129,27 @@ qualificationSuffix:
     | "." "[" tupleExpr "]" { s2 }
       
 parenExpr:
-    // | "(" sequentialExpr opt_semicolon ")" { s0, ParenExpr(snd s1) }
     | "(" revSequentialExpr opt_semicolon ")" { s0, ParenExpr(snd (Expr.ofSequentialExpr s1)) }
 
 listExpr:
     | "[" "]" { s0, ListExpr [] }
-    // | "[" sequentialExpr opt_semicolon "]" { s0, ListExpr(snd s1) }
     | "[" revSequentialExpr opt_semicolon "]" { s0, ListExpr(snd (Expr.ofSequentialExpr s1)) }
 
 arrayExpr:
     | "[|" "|]" { s0, ArrayExpr [] }
-    // | "[|" sequentialExpr opt_semicolon "|]" { s0, ArrayExpr(snd s1) }
     | "[|" revSequentialExpr opt_semicolon "|]" { s0, ArrayExpr(snd (Expr.ofSequentialExpr s1)) }
 
 prefix:
+    | ALWAYS_PREFIX {s0}
     | "!" {s0, "!" }
     | "+" {s0, "+" }
     | "-" {s0, "-" }
 
 infix:
-    | "%" {s0, "%"}
-    | "&" { s0, "&"}
-    | "&&"    { s0, "&&"   }
-    | ".."    { s0, ".."   }
-    | "/"     { s0, "/"    }
-    | "::"    { s0, "::"   }
-    | ":?"    { s0, ":?"   }
-    | ":?>"   { s0, ":?>"  }
-    | "<<"    { s0, "<<"   }
-    | "<>"    { s0, "<>"   }
-    | "<|"    { s0, "<|"   }
-    | "<||"   { s0, "<||"  }
-    | "<|||"  { s0, "<|||" }
-    | ">>"    { s0, ">>"   }
-    | "@"     { s0, "@"    }
-    | "|>"    { s0, "|>"   }
-    | "||"    { s0, "||"   }
-    | "||>"   { s0, "||>"  }
-    | "|||"   { s0, "|||"  }
-    | "|||>"  { s0, "|||>" }
-    | "="     { s0, "="    }
-    | "+" {s0, "+" }
-    | "-" {s0, "-" }
+    | ALWAYS_INFIX {s0}
+    | "=" {s0, "="}
+    | "+" {s0, "+"}
+    | "-" {s0, "-"}
 
 bindingPattern:
   | tuplePattern { Pattern.ofTuplePattern s0 }
@@ -213,9 +187,7 @@ tupleType :
     
 appType :
     | atomType {s0,[]}
-    | appType suffixType { 
-        let hd,tl = s0
-        hd,s1::tl }
+    | appType suffixType { fst s0, s1::snd s0 }
         
 atomType :
     | TYPAR {fst s0, Typar(snd s0) }
@@ -234,29 +206,25 @@ typeArguments:
     | typeArgument { [s0] }
     | typeArguments "," typeArgument { s2::s0 }
     
-// expr
 %type<string list*Expr list> file
 %type<(option<int>*string) list> revLongid
 %type<option<int>*string list> longid
-%type<option<int>*Expr list> rhsBlock // sequentialExpr
+%type<option<int>*Expr list> rhsBlock
 %type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr revOpenOrLets
 %type<option<int>*Expr> openOrLet declExpr letBinding valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr
 %type<option<int>*string> prefix infix
 %type<((option<int>*string)*(option<int>*Expr)) list> revBinaryExpr
-%type<option<int>*string> IDENT
+%type<option<int>*string> IDENT TYPAR ALWAYS_INFIX ALWAYS_PREFIX
 %type<option<int>*Literal> LITERAL
-%type<option<int>> DO EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WHITESPACE WITH opt_semicolon // DUMMY
-    "!" "#" "%" "&" "&&" "(" "(|" ")" "*" "**" "+" "," "-" "->" "." ".." "/" 
-    ":" "::" ":?" ":?>" ";" "<" "<-" "<<" "<>" "<|" "<||" "<|||" 
-    "=" ">" ">>" "@" "[" "[|" "]" "{" "{|" "|" "|)" "|>" "|]" "||" "||>" "|||" "|||>" "|}" "}"
+%type<option<int>> DO EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WHITESPACE WITH opt_semicolon
+    "!" "#" "(" "(|" ")" "+" "," "-" "->" "." ":" ";" "<" "<-" "=" ">" "[" "[|" "]" "{" "{|" "|" "|)" "|]" "|}" "}"
     
 // TypeArgument
 %type<option<int>*TypeArgument> typeArgument
-%type<(option<int> * TypeArgument)*((option<int> * SuffixType) list)> appType
+%type<(option<int>*TypeArgument)*((option<int> * SuffixType) list)> appType
 %type<(option<int>*TypeArgument) list> tupleType funType typeArguments
 %type<option<int>*SuffixType> suffixType
 %type<option<int>*TypeArgument> atomType
-%type<option<int>*string> TYPAR
 
 // pattern
 %type<option<int>*Pattern> bindingPattern atomicPattern parameterPattern
