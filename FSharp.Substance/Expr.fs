@@ -1,10 +1,19 @@
 namespace FSharp.Substance
 
-type Expr =
-    //| DummyExpr
+open System
+
+type RuleClause =
+    {
+        pattern: Pattern
+        guard: Expr option
+        result: Expr list
+    }
+
+and Expr =
     | OpenExpr of string list
     | OperatorSectionExpr of string
     | LetBindingExpr of Pattern * Expr list
+    | MatchExpr of Expr * RuleClause list
     | LambdaExpr of Pattern * Expr list
     | TupleExpr of Expr list
     | BinaryExpr of Expr * (string * Expr) list
@@ -20,13 +29,24 @@ type Expr =
     | QualificationExpr of Expr list
     | TypeApplicationExpr of string * TypeArgument list
 
+module RuleClause =
+    let just (pattern: Pattern) (guard: Expr option) (result: Expr list) =
+        {
+            pattern = pattern
+            guard = guard
+            result = result
+        }
+        
 module Expr =
     let ofSequentialExpr (revSequentialExpr: (option<int> * Expr) list) =
         //let s0 =
         //    match revSequentialExpr with
         //    | (_, DummyExpr) :: tail -> tail
         //    | _ -> revSequentialExpr
-        let i, ls = revSequentialExpr |> List.rev |> List.unzip
+        let i, ls =
+            revSequentialExpr
+            |> List.rev
+            |> List.unzip
         i.[0], ls
 
     let ofTupleExpr (revTupleExpr: (option<int> * Expr) list) =
@@ -39,13 +59,14 @@ module Expr =
         i.[0], e
 
     ///最后一个元素是lambda表达式
+    [<Obsolete("不再支持放宽规则")>]
     let ofTupleLambdaExpr
         (revTupleExpr: (option<int> * Expr) list)
         (lambdaExpr: option<int> * Expr)
         =
         let ls = revTupleExpr |> List.map snd
         let i, e = lambdaExpr
-        let expr = TupleExpr(List.rev (e :: ls))
+        let expr = TupleExpr(List.rev(e :: ls))
         i, expr
 
     let ofBinaryExpr (revBinaryExpr: ((option<int> * string) * (option<int> * Expr)) list) =

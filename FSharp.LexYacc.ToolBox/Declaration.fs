@@ -1,9 +1,7 @@
 ﻿module FSharp.LexYacc.Declaration
-//open FslexFsyacc.TypeArguments
 
 ///// 
 //let types (declarationLines:Map<TypeArgument, Set<string>>) = 
-//    // todo 检测符号重复
 //    declarationLines
 //    |> Seq.collect(fun(KeyValue (tp,symbols)) ->
 //        symbols

@@ -43,12 +43,12 @@ rule : char list -> FSharpToken list =
 
 ' ' + { [WHITESPACE] }
 '!' { [EXCLAM] }
-'#' { [HASH] }
+// '#' { [HASH] }
 '%' { [ALWAYS_INFIX "%"] }
 '&' { [ALWAYS_INFIX "&"] }
 '(' { [LPAREN] }
 ')' { [RPAREN] }
-'*' { [ALWAYS_INFIX "*"] }
+'*' { [STAR] }
 '+' { [PLUS] }
 ',' { [COMMA] }
 '-' { [MINUS] }
@@ -128,5 +128,7 @@ ident_start_char ident_char* {
         | s -> IDENT s
     [tok]
  }
+
+'#' ident_start_char ident_char* {[IDENT(String.build buff)]}
 
 _ { failwith(stringify buff.[0]) }

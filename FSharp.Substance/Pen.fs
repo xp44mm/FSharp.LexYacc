@@ -4,17 +4,16 @@ open System
 open System.IO
 open System.Text
 
-//FSharp.Literals
-
 let isContinuation (line: string) =
     [ " "; "]"; "|]"; ")"; "|)"; "}"; "|}" ]
     |> Seq.exists(fun c -> line.StartsWith c)
 
-let getTopLevels path =
+let getTopLevels (lines:string[]) =
     let lines =
-        File.ReadAllLines(path, Encoding.UTF8)
+        //File.ReadAllLines(path, Encoding.UTF8)
+        lines
+        |> Array.filter(fun line -> String.IsNullOrWhiteSpace line |> not)
         |> Array.toList
-        |> List.filter(fun line -> String.IsNullOrWhiteSpace line |> not)
 
     let splitByIndent lines =
         let rec collect groups current =
@@ -32,8 +31,8 @@ let getTopLevels path =
     |> List.map List.rev
     |> List.rev
 
-let getBindings path =
-    path
+let getBindings (lines:string[]) =
+    lines
     |> getTopLevels
     |> List.filter(fun lines -> lines.[0].StartsWith "let ")
     |> List.map(fun lines ->

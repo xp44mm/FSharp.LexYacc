@@ -5073,7 +5073,7 @@ A modified version of *Unqualified Lookup* (§14.2.1) is applied to the expressi
 *AddressOf*(*expr*_(1a).[*expr*_(1b)] , DefinitelyMutates) *<-*_(stobj) *expr*₂
 
 Note: Because assignments have the preceding interpretations, local values must be mutable so that primitive field assignments and array lookups can mutate their immediate contents. In this context, “immediate” contents means the contents of a mutable value type. For example, given
-
+```
 [<Struct>]  
 type SA =  
 new(v) = { x = v }  
@@ -5088,30 +5088,30 @@ let s1 = SA(0)
 let mutable s2 = SA(0)  
 let s3 = SB(0)  
 let mutable s4 = SB(0)
-
+```
 Then these are not permitted:
-
+```
 s1.x <- 3  
 s3.sa.x <- 3
-
+```
 and these are:
-
+```
 s2.x <- 3  
 s4.sa.x <- 3  
 s4.sa <- SA(2)
-
+```
 ## Control Flow Expressions
 
 ### Parenthesized and Block Expressions 
 
 A *parenthesized expression* has the following form:
-
+```
 (*expr*)
-
+```
 A *block expression* has the following form:
-
+```
 begin *expr* end
-
+```
 The expression *expr* is checked with the same initial type as the overall expression.
 
 The elaborated form of the expression is simply the elaborated form of *expr*.
@@ -5119,13 +5119,13 @@ The elaborated form of the expression is simply the elaborated form of *expr*.
 ### Sequential Execution Expressions
 
 A *sequential execution expression* has the following form:
-
+```
 *expr*₁; *expr*₂
-
+```
 For example:
-
+```
 printfn "Hello"; printfn "World"; 3
-
+```
 The ; token is optional when both of the following are true:
 
 - The expression *expr*₂ occurs on a subsequent line that starts in the same column as *expr*₁.
@@ -5141,7 +5141,7 @@ Sequential execution expressions are a primitive elaborated form.
 ### Conditional Expressions
 
 A *conditional expression* has the following form:s
-
+```
 if *expr*_(1a) then *expr*_(1b)
 
 elif *expr*_(3a) then *expr*_(2b)
@@ -5151,54 +5151,54 @@ elif *expr*_(3a) then *expr*_(2b)
 elif *expr*_(na) then *expr*_(nb)
 
 else *expr*_(last)
-
+```
 The *elif* and *else* branches may be omitted. For example:
-
+```
 if (1 + 1 = 2) then "ok" else "not ok"
 
 if (1 + 1 = 2) then printfn "ok"
-
+```
 Conditional expressions are equivalent to pattern matching on Boolean values. For example, the following expression forms are equivalent:
-
+```
 if *expr*₁ then *expr*₂ else *expr*₃
 
 match (*expr*₁:bool) with true -> *expr*₂ | false -> *expr*₃
-
+```
 If the *else* branch is omitted, the expression is a *sequential conditional expression* and is equivalent to:
-
+```
 match (*expr*₁:bool) with true -> *expr*₂ | false -> ()
-
+```
 with the exception that the initial type of the overall expression is first asserted to be unit.
 
 ### Shortcut Operator Expressions
 
 Under default definitions, expressions of the following form are respectively an *shortcut and expression* and a *shortcut or expression*:
-
+```
 *expr* && *expr*
 
 *expr* || *expr*
-
+```
 These expressions are defined by their syntactic translation:
-
+```
 *expr₁* && *expr₂* → if *expr₁* then *expr₂ *else false
 
 *expr₁* || *expr₂* → if *expr₁* then true else *expr₂ *
-
+```
 Note: The rules in this section apply when the following operators, as defined in the F# core library, are applied to two arguments.
-
+```
 FSharp.Core.LanguagePrimitives.IntrinsicOperators.(&&)  
 FSharp.Core.LanguagePrimitives.IntrinsicOperators.(||)
-
+```
 If the operator is not immediately applied to two arguments, it is interpreted as a strict function that evaluates both its arguments before use.
 
 ### Pattern-Matching Expressions and Functions
 
 A *pattern-matching expression*has the following form:
-
+```fsharp
 match *expr* with *rules*
-
+```
 Pattern matching is used to evaluate the given expression and select a rule (§7). For example:
-
+```fsharp
 match (3, 2) with
 
 | 1, j -> printfn "j = %d" j
@@ -5206,21 +5206,21 @@ match (3, 2) with
 | i, 2 -> printfn "i = %d" i
 
 | _ -> printfn "no match"
-
+```
 A *pattern-matching function* is an expression of the following form:
-
+```fsharp
 function *rules*
-
+```
 A pattern-matching function is syntactic sugar for a single-argument function expression that is followed by immediate matches on the argument. For example:
-
+```fsharp
 function
 
 | 1, j -> printfn "j = %d" j
 
 | _ -> printfn "no match"
-
+```
 is syntactic sugar for the following, where x is a fresh variable:
-
+```fsharp
 fun x ->
 
 match x with
@@ -5228,28 +5228,28 @@ match x with
 | 1, j -> printfn "j = %d" j
 
 | _ -> printfn "no match"
-
+```
 ### Sequence Iteration Expressions
 
 An expression of the following form is a *sequence iteration expression*:
-
+```fsharp
 for *pat* in *expr*₁ do *expr*₂ done
-
+```
 The done token is optional if *expr*₂ appears on a later line and is indented from the column position of the for token. In this case, parsing inserts a $done token automatically and applies an additional syntax rule for lightweight syntax (§15.1.1).
 
 For example:
-
+```fsharp
 for x, y in [(1, 2); (3, 4)] do
 
 printfn "x = %d, y = %d" x y
-
+```
 The expression *expr*₁ is checked with a fresh initial type *ty*_(expr,) which is then asserted to be a subtype of type IEnumerable<*ty*>, for a fresh type *ty*. If the assertion succeeds, the expression elaborates to the following, where *v* is of type IEnumerator<*ty*> and *pat* is a pattern of type *ty*:
-
+```fsharp
 let *v* = *expr*₁.GetEnumerator()
 
 try
 
-while (*v*.MoveNext()) do
+while ( *v*.MoveNext() ) do
 
 match *v*.Current with
 
@@ -5259,18 +5259,18 @@ match *v*.Current with
 
 finally
 
-match box(*v*) with
+match box( *v* ) with
 
 | :? System.IDisposable as *d* -> *d*.Dispose()
 
 | _ -> ()
-
+```
 If the assertion fails, the type *ty*_(expr) may also be of any static type that satisfies the “collection pattern” of CLI libraries. If so, the *enumerable extraction* process is used to enumerate the type. In particular, *ty*_(expr) may be any type that has an accessible GetEnumerator method that accepts zero arguments and returns a value that has accessible MoveNext and Current properties. The type of *pat* is the same as the return type of the Current property on the enumerator value. However, if the Current property has return type obj and the collection type *ty* has an Item property with a more specific (non-object) return type *ty₂*, type *ty₂* is used instead, and a dynamic cast is inserted to convert v.Current to *ty₂*.
 
 A sequence iteration of the form
-
+```fsharp
 for *var* in *expr*₁ .. *expr*₂ do *expr*₃ done
-
+```
 where the type of *expr*₁ or *expr*₂ is equivalent to int, is elaborated as a simple for-loop expression (§6.5.7)
 
 ### Simple for-Loop Expressions

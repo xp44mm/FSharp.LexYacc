@@ -19,23 +19,18 @@ type SpliterTest(output: ITestOutputHelper) =
         let path =
             @"D:\Application Data\GitHub\xp44mm\FSharp.LexYacc\FSharp.LexYacc\Bootstrap\"
         let path = Path.Combine(path, file + ".fs")
+        let lines = File.ReadAllLines(path, Encoding.UTF8)
 
-        let groups = Pen.getTopLevels path
-
-        output.WriteLine($"{groups.Length}")
-
+        let groups = Pen.getTopLevels lines
+        output.WriteLine($"组数：{groups.Length}")
         for g in groups do
-            output.WriteLine($"{g.[0]}")
+            output.WriteLine($"每组第一行：{g.[0]}")
 
-        let bds = Pen.getBindings path
-
-        output.WriteLine($"{bds.Length}")
-
+        let bds = Pen.getBindings lines
+        output.WriteLine($"绑定数字：{bds.Length}")
         for (lhs, rhs) in bds do
             //output.WriteLine($"{lhs}")
-            output.WriteLine($"{rhs}")
-
-        ()
+            output.WriteLine($"左手边：{lhs}；右手边：{rhs}")
 
     [<Theory>]
     [<InlineData("FslexYacc")>]
@@ -43,22 +38,21 @@ type SpliterTest(output: ITestOutputHelper) =
         let path =
             @"D:\Application Data\GitHub\xp44mm\FSharp.LexYacc\FSharp.LexYacc\Bootstrap\"
         let path = Path.Combine(path, file + ".fs")
+        let lines = File.ReadAllLines(path, Encoding.UTF8)
 
-        let bds = Pen.getBindings path
+        let bds = Pen.getBindings lines
 
         //output.WriteLine($"{bds.Length}")
 
         //for (lhs,rhs) in bds do
         //    //output.WriteLine($"{lhs}")
         //    output.WriteLine($"{rhs}")
+
         let code = bds.[0] |> snd |> String.concat "\n"
         output.WriteLine($"{code}")
 
         let iter = LexicalIterator.forChar code
-        let tokens =
-            iter |> FSharpLexerTailer.tokenize
+        let tokens = iter |> FSharpLexerTailer.tokenize
 
         for tok in tokens do
             output.WriteLine(stringify tok)
-            
-        ()

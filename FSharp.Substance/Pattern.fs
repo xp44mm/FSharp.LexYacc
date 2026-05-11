@@ -1,6 +1,7 @@
 namespace FSharp.Substance
 
 type Pattern =
+    | LiteralPattern of Literal
     | IdentPattern of string
     | TypeAnnotationPattern of string * TypeArgument
     | ParenPattern of Pattern

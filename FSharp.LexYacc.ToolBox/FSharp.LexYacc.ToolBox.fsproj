@@ -27,6 +27,7 @@
 		<Compile Include="BnfUtils.fs" />
 		<Compile Include="FlatFsyaccFileUtils.fs" />
 		<Compile Include="ViablePrefix.fs" />
+		<Compile Include="BnfAnalysisRecord.fs" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -8,12 +8,6 @@ open System.Text.RegularExpressions
 open FSharp.Idioms
 open FSharp.Idioms.Literal
 
-//let renderSymbol (sym: string) =
-//    if Regex.IsMatch(sym, @"^\w+$") then
-//        sym
-//    else
-//        sym |> Literal.stringify
-
 let renderSymbol (sym: string) =
     if System.String.IsNullOrEmpty sym then
         "\"\""
@@ -37,15 +31,15 @@ let renderAssociativity (assoc: Associativity) =
     | NonAssoc -> "%nonassoc"
 
 let renderPrecedenceStatement (stmt: PrecedenceStatement) =
-    $"%%{renderAssociativity stmt.assoc} {renderSymbols stmt.ids}"
+    "%" + $"{renderAssociativity stmt.assoc} {renderSymbols stmt.ids}"
 
 let renderDeclarationStatement (stmt: DeclarationStatement) =
-    $"%%type<{stmt.typeTitle}> {renderSymbols stmt.ids}"
+    "%" + $"type<{stmt.typeTitle}> {renderSymbols stmt.ids}"
 
 //render表示生成.yacc文件
 let renderRhs (body: string list) =
     if body.IsEmpty then
-        "(*empty*)"
+        "(* empty *)"
     else
         renderSymbols body
 
@@ -76,35 +70,31 @@ let render (fsyacc: RawFsyaccFile) =
     let r =
         fsyacc.ruleGroups
         |> List.map(fun ruleGroup -> renderRuleGroup ruleGroup)
-        |> String.concat "\r\n"
+        //|> String.concat "\r\n"
 
     let p () =
         fsyacc.precedenceStmts
         |> List.map(fun prec -> renderPrecedenceStatement prec)
-        |> String.concat "\r\n"
+        //|> String.concat "\r\n"
 
     let d () =
         fsyacc.declarationStmts
         |> List.map(fun dec -> renderDeclarationStatement dec)
-        |> String.concat "\r\n"
-
-    // rule+prec+decl
-    let rpd =
-        [
-            r
-            if fsyacc.precedenceStmts.IsEmpty then
-                ()
-            else
-                p()
-            if fsyacc.declarationStmts.IsEmpty then
-                ()
-            else
-                d()
-        ]
-        |> String.concat "\r\n%%\r\n"
+        //|> String.concat "\r\n"
 
     [
         h
-        rpd
+
+        yield! r
+
+        if fsyacc.precedenceStmts.IsEmpty then
+            ()
+        else
+            yield! p()
+
+        if fsyacc.declarationStmts.IsEmpty then
+            ()
+        else
+            yield! d()
     ]
     |> String.concat "\r\n"

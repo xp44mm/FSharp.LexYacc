@@ -3,15 +3,21 @@ open FSharp.LexYacc
 let lookaheads: Map<string, ViablePrefix Set> = Map [
   "!",set [
     {prefix=["("];head="parenExpr"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
@@ -27,6 +33,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["*";"tupleType"];head="tupleType"}
     {prefix=["+"];head="unaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
@@ -37,6 +44,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"funType"];head="funType"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[":";"IDENT"];head="atomicPattern"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["<";"IDENT"];head="identExpr"}
@@ -57,7 +65,11 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LET"];head="letBinding"}
     {prefix=["LITERAL"];head="revAppExpr"}
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
@@ -184,6 +196,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"typeArgument";"(";"->";"funType";":";"IDENT";",";"tuplePattern";"("];head="parameterPattern"}
     {prefix=[")";"typeArgument";"(";":";"IDENT";"("];head="parameterPattern"}
     {prefix=[")";"typeArgument";"(";":";"IDENT";",";"tuplePattern";"("];head="parameterPattern"}
+    {prefix=["*";"("];head="atomicExpr"}
     {prefix=["+";"("];head="atomicExpr"}
     {prefix=["-";"("];head="atomicExpr"}
     {prefix=[";";"revSequentialExpr";"("];head="parenExpr"}
@@ -412,15 +425,19 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"("];head="parenExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"("];head="parenExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["TYPAR";"("];head="atomType"}
@@ -609,22 +626,127 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
   ]
   "*",set [
+    {prefix=["("];head="atomicExpr"}
+    {prefix=[")";"("];head="revBinaryExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"(";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"(";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"infix";"("];head="revBinaryExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"infix";"(";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[")";"typeArgument";"("];head="tupleType"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType"];head="tupleType"}
+    {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"longid"];head="tupleType"}
     {prefix=[">";"typeArguments";"<";"longid";"*";"tupleType"];head="tupleType"}
+    {prefix=["IDENT"];head="revBinaryExpr"}
     {prefix=["IDENT"];head="tupleType"}
     {prefix=["IDENT";"*";"tupleType"];head="tupleType"}
     {prefix=["IDENT";".";"revLongid"];head="tupleType"}
     {prefix=["IDENT";".";"revLongid";"*";"tupleType"];head="tupleType"}
     {prefix=["IDENT";".";"revLongid";"appType"];head="tupleType"}
     {prefix=["IDENT";".";"revLongid";"appType";"*";"tupleType"];head="tupleType"}
+    {prefix=["IDENT";".";"revQualificationExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["IDENT";"appType"];head="tupleType"}
     {prefix=["IDENT";"appType";"*";"tupleType"];head="tupleType"}
+    {prefix=["IDENT";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";"prefix"];head="revBinaryExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["LITERAL"];head="revBinaryExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["LITERAL";"prefix"];head="revBinaryExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["LITERAL";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["TYPAR"];head="tupleType"}
     {prefix=["TYPAR";"*";"tupleType"];head="tupleType"}
+    {prefix=["]";"["];head="revBinaryExpr"}
     {prefix=["]";"[";"appType"];head="tupleType"}
     {prefix=["]";"[";"appType";"*";"tupleType"];head="tupleType"}
+    {prefix=["]";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"[";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"[";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revBinaryExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"[|"];head="revBinaryExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"[|";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"[|";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   "+",set [
     {prefix=["("];head="atomicExpr"}
@@ -653,10 +775,12 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
@@ -701,7 +825,11 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
@@ -748,103 +876,55 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
   ]
   ",",set [
     {prefix=[")";"("];head="revTupleExpr"}
-    {prefix=[")";"("];head="tupleExpr"}
     {prefix=[")";"(";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"(";"prefix"];head="revTupleExpr"}
-    {prefix=[")";"(";"prefix"];head="tupleExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"(";"revAppExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"revAppExpr"];head="tupleExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"bindingPattern";"("];head="tuplePattern"}
     {prefix=[")";"bindingPattern";"(";",";"tuplePattern"];head="tuplePattern"}
     {prefix=[")";"infix";"("];head="revTupleExpr"}
-    {prefix=[")";"infix";"("];head="tupleExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"prefix"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"prefix"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[")";"typeArgument";"("];head="typeArguments"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType"];head="typeArguments"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";",";"typeArguments"];head="typeArguments"}
@@ -862,69 +942,37 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"typeArgument";"(";":";"IDENT"];head="tuplePattern"}
     {prefix=[")";"typeArgument";"(";":";"IDENT";",";"tuplePattern"];head="tuplePattern"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=[">";"typeArguments";"<";"longid"];head="typeArguments"}
     {prefix=[">";"typeArguments";"<";"longid";"*";"tupleType"];head="typeArguments"}
     {prefix=[">";"typeArguments";"<";"longid";"*";"tupleType";",";"typeArguments"];head="typeArguments"}
@@ -942,7 +990,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"longid";":";"IDENT"];head="tuplePattern"}
     {prefix=[">";"typeArguments";"<";"longid";":";"IDENT";",";"tuplePattern"];head="tuplePattern"}
     {prefix=["IDENT"];head="revTupleExpr"}
-    {prefix=["IDENT"];head="tupleExpr"}
     {prefix=["IDENT"];head="tuplePattern"}
     {prefix=["IDENT"];head="typeArguments"}
     {prefix=["IDENT";"*";"tupleType"];head="typeArguments"}
@@ -954,7 +1001,6 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"*";"tupleType";":";"IDENT"];head="tuplePattern"}
     {prefix=["IDENT";"*";"tupleType";":";"IDENT";",";"tuplePattern"];head="tuplePattern"}
     {prefix=["IDENT";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";",";"tuplePattern"];head="tuplePattern"}
     {prefix=["IDENT";",";"typeArguments"];head="typeArguments"}
     {prefix=["IDENT";"->";"funType"];head="typeArguments"}
@@ -994,37 +1040,21 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revLongid";"appType";":";"IDENT"];head="tuplePattern"}
     {prefix=["IDENT";".";"revLongid";"appType";":";"IDENT";",";"tuplePattern"];head="tuplePattern"}
     {prefix=["IDENT";".";"revQualificationExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";":";"IDENT"];head="tuplePattern"}
     {prefix=["IDENT";":";"IDENT";",";"tuplePattern"];head="tuplePattern"}
     {prefix=["IDENT";"appType"];head="typeArguments"}
@@ -1044,65 +1074,35 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"appType";":";"IDENT"];head="tuplePattern"}
     {prefix=["IDENT";"appType";":";"IDENT";",";"tuplePattern"];head="tuplePattern"}
     {prefix=["IDENT";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";"prefix"];head="revTupleExpr"}
-    {prefix=["IDENT";"prefix"];head="tupleExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"revAppExpr"];head="tupleExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["LITERAL"];head="revTupleExpr"}
-    {prefix=["LITERAL"];head="tupleExpr"}
     {prefix=["LITERAL";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"prefix"];head="revTupleExpr"}
-    {prefix=["LITERAL";"prefix"];head="tupleExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"revAppExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["TYPAR"];head="typeArguments"}
     {prefix=["TYPAR";"*";"tupleType"];head="typeArguments"}
     {prefix=["TYPAR";"*";"tupleType";",";"typeArguments"];head="typeArguments"}
@@ -1120,9 +1120,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["TYPAR";":";"IDENT"];head="tuplePattern"}
     {prefix=["TYPAR";":";"IDENT";",";"tuplePattern"];head="tuplePattern"}
     {prefix=["]";"["];head="revTupleExpr"}
-    {prefix=["]";"["];head="tupleExpr"}
     {prefix=["]";"[";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"[";"appType"];head="typeArguments"}
     {prefix=["]";"[";"appType";"*";"tupleType"];head="typeArguments"}
     {prefix=["]";"[";"appType";"*";"tupleType";",";"typeArguments"];head="typeArguments"}
@@ -1140,161 +1138,83 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"appType";":";"IDENT"];head="tuplePattern"}
     {prefix=["]";"[";"appType";":";"IDENT";",";"tuplePattern"];head="tuplePattern"}
     {prefix=["]";"[";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"[";"prefix"];head="revTupleExpr"}
-    {prefix=["]";"[";"prefix"];head="tupleExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"[";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"revAppExpr"];head="tupleExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"[|"];head="revTupleExpr"}
-    {prefix=["|]";"[|"];head="tupleExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"prefix"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"prefix"];head="tupleExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"revAppExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="tupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="tupleExpr"}
   ]
   "-",set [
     {prefix=["("];head="atomicExpr"}
@@ -1323,10 +1243,12 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
@@ -1371,7 +1293,11 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
@@ -1417,16 +1343,57 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   "->",set [
+    {prefix=[")";"(";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
     {prefix=[")";"bindingPattern";"(";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
     {prefix=[")";"typeArgument";"("];head="funType"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType"];head="funType"}
     {prefix=[")";"typeArgument";"(";"*";"tupleType";"->";"funType"];head="funType"}
     {prefix=[")";"typeArgument";"(";"->";"funType"];head="funType"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"longid"];head="funType"}
     {prefix=[">";"typeArguments";"<";"longid";"*";"tupleType"];head="funType"}
     {prefix=[">";"typeArguments";"<";"longid";"*";"tupleType";"->";"funType"];head="funType"}
     {prefix=[">";"typeArguments";"<";"longid";"->";"funType"];head="funType"}
     {prefix=["IDENT"];head="funType"}
+    {prefix=["IDENT"];head="ruleClause"}
     {prefix=["IDENT";"*";"tupleType"];head="funType"}
     {prefix=["IDENT";"*";"tupleType";"->";"funType"];head="funType"}
     {prefix=["IDENT";"->";"funType"];head="funType"}
@@ -1438,19 +1405,84 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revLongid";"appType";"*";"tupleType"];head="funType"}
     {prefix=["IDENT";".";"revLongid";"appType";"*";"tupleType";"->";"funType"];head="funType"}
     {prefix=["IDENT";".";"revLongid";"appType";"->";"funType"];head="funType"}
+    {prefix=["IDENT";".";"revQualificationExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
     {prefix=["IDENT";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"WHEN";"matchPattern"];head="ruleClause"}
     {prefix=["IDENT";"appType"];head="funType"}
     {prefix=["IDENT";"appType";"*";"tupleType"];head="funType"}
     {prefix=["IDENT";"appType";"*";"tupleType";"->";"funType"];head="funType"}
     {prefix=["IDENT";"appType";"->";"funType"];head="funType"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["LITERAL"];head="ruleClause"}
+    {prefix=["LITERAL";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
     {prefix=["TYPAR"];head="funType"}
     {prefix=["TYPAR";"*";"tupleType"];head="funType"}
     {prefix=["TYPAR";"*";"tupleType";"->";"funType"];head="funType"}
     {prefix=["TYPAR";"->";"funType"];head="funType"}
+    {prefix=["]";"[";"WHEN";"matchPattern"];head="ruleClause"}
     {prefix=["]";"[";"appType"];head="funType"}
     {prefix=["]";"[";"appType";"*";"tupleType"];head="funType"}
     {prefix=["]";"[";"appType";"*";"tupleType";"->";"funType"];head="funType"}
     {prefix=["]";"[";"appType";"->";"funType"];head="funType"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"[|";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
   ]
   ".",set [
     {prefix=[")";"("];head="revQualificationExpr"}
@@ -1479,18 +1511,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"["];head="listExpr"}
     {prefix=[")";"(";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1499,18 +1539,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix"];head="revSequentialExpr"}
@@ -1519,18 +1567,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1539,18 +1595,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr"];head="revSequentialExpr"}
@@ -1559,18 +1623,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1579,18 +1651,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -1599,18 +1679,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1619,18 +1707,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"("];head="revSequentialExpr"}
@@ -1639,18 +1735,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1659,18 +1763,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix"];head="revSequentialExpr"}
@@ -1679,18 +1791,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1699,18 +1819,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr"];head="revSequentialExpr"}
@@ -1719,18 +1847,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1739,18 +1875,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -1759,18 +1903,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1779,18 +1931,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revSequentialExpr"}
@@ -1799,18 +1959,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1819,18 +1987,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix"];head="revSequentialExpr"}
@@ -1839,18 +2015,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1859,18 +2043,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revSequentialExpr"}
@@ -1879,18 +2071,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1899,18 +2099,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -1919,18 +2127,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1939,18 +2155,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revSequentialExpr"}
@@ -1959,10 +2183,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revSequentialExpr"}
@@ -1971,18 +2199,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -1991,18 +2227,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix"];head="revSequentialExpr"}
@@ -2011,18 +2255,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2031,18 +2283,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revSequentialExpr"}
@@ -2051,18 +2311,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2071,18 +2339,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -2091,18 +2367,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2111,26 +2395,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2139,18 +2435,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix"];head="revSequentialExpr"}
@@ -2159,18 +2463,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2179,18 +2491,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revSequentialExpr"}
@@ -2199,18 +2519,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2219,18 +2547,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -2239,18 +2575,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2259,18 +2603,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT"];head="revSequentialExpr"}
@@ -2279,10 +2631,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revLongid";"OPEN"];head="revOpenOrLets"}
@@ -2295,18 +2651,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2315,18 +2679,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix"];head="revSequentialExpr"}
@@ -2335,18 +2707,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2355,18 +2735,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revSequentialExpr"}
@@ -2375,18 +2763,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2395,18 +2791,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -2415,18 +2819,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2435,26 +2847,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"OPEN"];head="revOpenOrLets"}
     {prefix=["IDENT";"OPEN";";";"revOpenOrLets"];head="revOpenOrLets"}
     {prefix=["IDENT";"OPEN";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
@@ -2467,18 +2891,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix"];head="revSequentialExpr"}
@@ -2487,18 +2919,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2507,18 +2947,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr"];head="revSequentialExpr"}
@@ -2527,18 +2975,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2547,18 +3003,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -2567,18 +3031,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2587,18 +3059,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL"];head="revSequentialExpr"}
@@ -2607,18 +3087,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"["];head="listExpr"}
     {prefix=["LITERAL";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2627,18 +3115,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix"];head="revSequentialExpr"}
@@ -2647,18 +3143,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2667,18 +3171,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr"];head="revSequentialExpr"}
@@ -2687,18 +3199,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2707,18 +3227,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -2727,18 +3255,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2747,40 +3283,70 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN"];head="revSequentialExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"("];head="parenExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET"];head="revOpenOrLets"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET"];head="revSequentialExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"("];head="parenExpr"}
@@ -2788,33 +3354,59 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"longid";"MODULE"];head="file"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="revSequentialExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr"];head="revSequentialExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="revOpenOrLets"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="revSequentialExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"("];head="parenExpr"}
@@ -2822,10 +3414,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revOpenOrLets";"longid";"MODULE"];head="file"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN"];head="rhsBlock"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"longid";"MODULE"];head="file"}
@@ -2835,18 +3431,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"["];head="listExpr"}
     {prefix=["]";"[";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2855,18 +3459,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix"];head="revSequentialExpr"}
@@ -2875,18 +3487,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2895,18 +3515,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr"];head="revSequentialExpr"}
@@ -2915,18 +3543,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2935,18 +3571,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -2955,18 +3599,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -2975,18 +3627,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revSequentialExpr"}
@@ -2995,18 +3655,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3015,18 +3683,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix"];head="revSequentialExpr"}
@@ -3035,18 +3711,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3055,18 +3739,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revSequentialExpr"}
@@ -3075,18 +3767,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3095,18 +3795,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -3115,18 +3823,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3135,18 +3851,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revSequentialExpr"}
@@ -3155,18 +3879,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3175,18 +3907,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix"];head="revSequentialExpr"}
@@ -3195,18 +3935,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3215,18 +3963,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revSequentialExpr"}
@@ -3235,18 +3991,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3255,18 +4019,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -3275,18 +4047,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3295,18 +4075,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|"];head="revSequentialExpr"}
@@ -3315,18 +4103,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"["];head="listExpr"}
     {prefix=["|]";"[|";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3335,18 +4131,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix"];head="revSequentialExpr"}
@@ -3355,18 +4159,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3375,18 +4187,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revSequentialExpr"}
@@ -3395,18 +4215,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3415,18 +4243,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -3435,18 +4271,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3455,18 +4299,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revSequentialExpr"}
@@ -3475,18 +4327,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3495,18 +4355,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix"];head="revSequentialExpr"}
@@ -3515,18 +4383,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3535,18 +4411,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revSequentialExpr"}
@@ -3555,18 +4439,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3575,18 +4467,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revSequentialExpr"}
@@ -3595,18 +4495,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
@@ -3615,18 +4523,26 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
   ]
@@ -4049,15 +4965,21 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
   ]
   "ALWAYS_PREFIX",set [
     {prefix=["("];head="parenExpr"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
@@ -4077,11 +4999,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
   ]
   "FUN",set [
     {prefix=["("];head="parenExpr"}
-    {prefix=[",";"revTupleExpr"];head="tupleExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
   ]
@@ -4097,6 +5021,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"typeArgument";"("];head="appType"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["*";"tupleType"];head="tupleType"}
     {prefix=["+"];head="unaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
@@ -4107,6 +5032,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"funType"];head="funType"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=["."];head="qualificationSuffix"}
     {prefix=[".";"revLongid"];head="revLongid"}
     {prefix=[":";"IDENT"];head="atomicPattern"}
@@ -4134,10 +5060,15 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LET"];head="letBinding"}
     {prefix=["LITERAL"];head="revAppExpr"}
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
     {prefix=["MODULE"];head="file"}
     {prefix=["OPEN"];head="openOrLet"}
     {prefix=["TYPAR"];head="appType"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
+    {prefix=["WITH";"tupleExpr";"MATCH"];head="matchExpr"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
@@ -4148,6 +5079,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
+    {prefix=["|";"WITH";"tupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|";"revRuleClauses"];head="revRuleClauses"}
     {prefix=["|]";"[|"];head="revAppExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
@@ -4159,7 +5092,9 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["IDENT";".";"revLongid";"MODULE"];head="file"}
     {prefix=["IDENT";"MODULE"];head="file"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
   ]
@@ -4172,12 +5107,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["+"];head="unaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-"];head="unaryExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
@@ -4193,7 +5130,12 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr"];head="revAppExpr"}
     {prefix=["LITERAL"];head="revAppExpr"}
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
+    {prefix=["WITH";"tupleExpr";"MATCH"];head="matchExpr"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
@@ -4203,6 +5145,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
+    {prefix=["|";"WITH";"tupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|";"revRuleClauses"];head="revRuleClauses"}
     {prefix=["|]";"[|"];head="revAppExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
@@ -4210,7 +5154,17 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
   ]
   "LLPAREN",set [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
+  ]
+  "MATCH",set [
+    {prefix=["("];head="parenExpr"}
+    {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["["];head="listExpr"}
+    {prefix=["[|"];head="arrayExpr"}
   ]
   "OPEN",set [
     {prefix=[";";"revOpenOrLets"];head="revOpenOrLets"}
@@ -4219,860 +5173,1936 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
   ]
   "RHSEND",set [
     {prefix=[")";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
   ]
   "RRPAREN",set [
-    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN"];head="rhsBlock"}
-    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN"];head="rhsBlock"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
   ]
   "TYPAR",set [
     {prefix=["("];head="atomType"}
@@ -5082,6 +7112,220 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[":";"IDENT"];head="atomicPattern"}
     {prefix=["<";"IDENT"];head="identExpr"}
     {prefix=["<";"longid"];head="atomType"}
+  ]
+  "WHEN",set [
+    {prefix=["IDENT"];head="patternAndGuard"}
+    {prefix=["LITERAL"];head="patternAndGuard"}
+  ]
+  "WITH",set [
+    {prefix=[")";"(";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
   ]
   "[",set [
     {prefix=["!"];head="unaryExpr"}
@@ -5093,12 +7337,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"typeArgument";"("];head="appType"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["+"];head="unaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-"];head="unaryExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=["."];head="qualificationSuffix"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
@@ -5120,8 +7366,12 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr"];head="revAppExpr"}
     {prefix=["LITERAL"];head="revAppExpr"}
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
     {prefix=["TYPAR"];head="appType"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
@@ -5146,12 +7396,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr"];head="revAppExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["+"];head="unaryExpr"}
     {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["-"];head="unaryExpr"}
     {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
@@ -5167,7 +7419,11 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr"];head="revAppExpr"}
     {prefix=["LITERAL"];head="revAppExpr"}
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
-    {prefix=["LLPAREN"];head="rhsBlock"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
     {prefix=["["];head="listExpr"}
     {prefix=["[";"."];head="qualificationSuffix"}
     {prefix=["[|"];head="arrayExpr"}
@@ -5568,18 +7824,20 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"["];head="listExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"["];head="listExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"["];head="listExpr"}
     {prefix=["["];head="listExpr"}
@@ -5824,6 +8082,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+  ]
+  "|",set [
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard"];head="revRuleClauses"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses"];head="revRuleClauses"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="revRuleClauses"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses"];head="revRuleClauses"}
+    {prefix=["WITH";"tupleExpr";"MATCH"];head="matchExpr"}
   ]
   "|]",set [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
@@ -6083,16 +8348,20 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
-    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
     {prefix=["[|"];head="arrayExpr"}
@@ -6262,9 +8531,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["!";"("],set ["parenExpr"]
   ["!";",";"revTupleExpr"],set ["revTupleExpr"]
   ["!";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["!";"->";"patternAndGuard"],set ["ruleClause"]
   ["!";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["!";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["!";"LLPAREN"],set ["rhsBlock"]
+  ["!";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["!";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["!";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["!";"MATCH"],set ["matchExpr"]
+  ["!";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["!";"["],set ["listExpr"]
   ["!";"[";"."],set ["qualificationSuffix"]
   ["!";"[|"],set ["arrayExpr"]
@@ -6276,6 +8550,7 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["(";",";"typeArguments"],set ["typeArguments"]
   ["(";"->";"funType"],set ["funType"]
   ["(";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["(";"->";"patternAndGuard"],set ["ruleClause"]
   ["(";":";"IDENT"],set ["atomicPattern"]
   ["(";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["(";"<";"IDENT"],set ["identExpr"]
@@ -6283,7 +8558,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["(";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["(";"FUN"],set ["lambdaExpr"]
   ["(";"LET"],set ["letBinding"]
-  ["(";"LLPAREN"],set ["rhsBlock"]
+  ["(";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["(";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["(";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["(";"MATCH"],set ["matchExpr"]
+  ["(";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["(";"["],set ["listExpr"]
   ["(";"[";"."],set ["qualificationSuffix"]
   ["(";"[|"],set ["arrayExpr"]
@@ -6295,27 +8574,39 @@ let top_prefixes: Map<string list, string Set> = Map [
   [")";"infix";"("],set ["atomicExpr"]
   [")";"opt_semicolon";"revSequentialExpr";"("],set ["parenExpr"]
   [")";"typeArgument";"("],set ["atomType"]
+  ["*";"("],set ["atomicExpr"]
+  ["*";"revBinaryExpr"],set ["revBinaryExpr"]
   ["*";"tupleType"],set ["tupleType"]
   ["+";"("],set ["atomicExpr";"parenExpr"]
   ["+";",";"revTupleExpr"],set ["revTupleExpr"]
   ["+";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["+";"->";"patternAndGuard"],set ["ruleClause"]
   ["+";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["+";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["+";"LLPAREN"],set ["rhsBlock"]
+  ["+";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["+";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["+";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["+";"MATCH"],set ["matchExpr"]
+  ["+";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["+";"["],set ["listExpr"]
   ["+";"[";"."],set ["qualificationSuffix"]
   ["+";"[|"],set ["arrayExpr"]
   ["+";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
   ["+";"revBinaryExpr"],set ["revBinaryExpr"]
-  [",";"revTupleExpr"],set ["revTupleExpr";"tupleExpr"]
+  [",";"revTupleExpr"],set ["revTupleExpr"]
   [",";"tuplePattern"],set ["tuplePattern"]
   [",";"typeArguments"],set ["typeArguments"]
   ["-";"("],set ["atomicExpr";"parenExpr"]
   ["-";",";"revTupleExpr"],set ["revTupleExpr"]
   ["-";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["-";"->";"patternAndGuard"],set ["ruleClause"]
   ["-";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["-";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["-";"LLPAREN"],set ["rhsBlock"]
+  ["-";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["-";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["-";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["-";"MATCH"],set ["matchExpr"]
+  ["-";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["-";"["],set ["listExpr"]
   ["-";"[";"."],set ["qualificationSuffix"]
   ["-";"[|"],set ["arrayExpr"]
@@ -6323,6 +8614,7 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["-";"revBinaryExpr"],set ["revBinaryExpr"]
   ["->";"funType"],set ["funType"]
   ["->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["->";"patternAndGuard"],set ["ruleClause"]
   [".";"revLongid"],set ["revLongid"]
   [".";"revQualificationExpr"],set ["revQualificationExpr"]
   [":";"IDENT"],set ["atomicPattern"]
@@ -6330,7 +8622,9 @@ let top_prefixes: Map<string list, string Set> = Map [
   [";";"revOpenOrLets";"longid";"MODULE"],set ["file"]
   [";";"revSequentialExpr"],set ["revSequentialExpr"]
   [";";"revSequentialExpr";"("],set ["parenExpr"]
-  [";";"revSequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  [";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  [";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  [";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   [";";"revSequentialExpr";"["],set ["listExpr"]
   [";";"revSequentialExpr";"[|"],set ["arrayExpr"]
   ["<";"IDENT"],set ["identExpr"]
@@ -6345,9 +8639,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["ALWAYS_PREFIX";"("],set ["parenExpr"]
   ["ALWAYS_PREFIX";",";"revTupleExpr"],set ["revTupleExpr"]
   ["ALWAYS_PREFIX";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["ALWAYS_PREFIX";"->";"patternAndGuard"],set ["ruleClause"]
   ["ALWAYS_PREFIX";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["ALWAYS_PREFIX";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["ALWAYS_PREFIX";"LLPAREN"],set ["rhsBlock"]
+  ["ALWAYS_PREFIX";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["ALWAYS_PREFIX";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["ALWAYS_PREFIX";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["ALWAYS_PREFIX";"MATCH"],set ["matchExpr"]
+  ["ALWAYS_PREFIX";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["ALWAYS_PREFIX";"["],set ["listExpr"]
   ["ALWAYS_PREFIX";"[";"."],set ["qualificationSuffix"]
   ["ALWAYS_PREFIX";"[|"],set ["arrayExpr"]
@@ -6355,11 +8654,13 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["EOF";"longid";"MODULE"],set ["file"]
   ["EOF";"opt_semicolon";"revOpenOrLets";"longid";"MODULE"],set ["file"]
   ["FUN";"("],set ["parenExpr"]
-  ["FUN";",";"revTupleExpr"],set ["tupleExpr"]
   ["FUN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["FUN";"->";"patternAndGuard"],set ["ruleClause"]
   ["FUN";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["FUN";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["FUN";"LLPAREN"],set ["rhsBlock"]
+  ["FUN";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["FUN";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["FUN";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["FUN";"["],set ["listExpr"]
   ["FUN";"[|"],set ["arrayExpr"]
   ["IDENT";"("],set ["atomType";"parameterPattern";"parenExpr"]
@@ -6369,6 +8670,7 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["IDENT";",";"typeArguments"],set ["typeArguments"]
   ["IDENT";"->";"funType"],set ["funType"]
   ["IDENT";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["IDENT";"->";"patternAndGuard"],set ["ruleClause"]
   ["IDENT";"."],set ["qualificationSuffix"]
   ["IDENT";".";"revLongid"],set ["revLongid"]
   ["IDENT";":";"IDENT"],set ["atomicPattern"]
@@ -6378,42 +8680,68 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["IDENT";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["IDENT";"FUN"],set ["lambdaExpr"]
   ["IDENT";"LET"],set ["letBinding"]
-  ["IDENT";"LLPAREN"],set ["rhsBlock"]
+  ["IDENT";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["IDENT";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["IDENT";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["IDENT";"MATCH"],set ["matchExpr"]
   ["IDENT";"MODULE"],set ["file"]
   ["IDENT";"OPEN"],set ["openOrLet"]
+  ["IDENT";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["IDENT";"["],set ["listExpr"]
   ["IDENT";"[";"."],set ["qualificationSuffix"]
   ["IDENT";"[|"],set ["arrayExpr"]
   ["IDENT";"appType"],set ["appType"]
   ["IDENT";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["IDENT";"opt_bar";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
   ["IDENT";"prefix"],set ["unaryExpr"]
   ["IDENT";"revAppExpr"],set ["revAppExpr"]
+  ["IDENT";"|";"revRuleClauses"],set ["revRuleClauses"]
   ["LET";"("],set ["parenExpr"]
   ["LET";";";"revOpenOrLets"],set ["revOpenOrLets"]
   ["LET";";";"revSequentialExpr"],set ["revSequentialExpr"]
-  ["LET";"LLPAREN"],set ["rhsBlock"]
+  ["LET";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["LET";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["LET";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["LET";"["],set ["listExpr"]
   ["LET";"[|"],set ["arrayExpr"]
   ["LET";"longid";"MODULE"],set ["file"]
   ["LITERAL";"("],set ["parenExpr"]
   ["LITERAL";",";"revTupleExpr"],set ["revTupleExpr"]
   ["LITERAL";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["LITERAL";"->";"patternAndGuard"],set ["ruleClause"]
   ["LITERAL";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["LITERAL";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["LITERAL";"LLPAREN"],set ["rhsBlock"]
+  ["LITERAL";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["LITERAL";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["LITERAL";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["LITERAL";"MATCH"],set ["matchExpr"]
+  ["LITERAL";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["LITERAL";"["],set ["listExpr"]
   ["LITERAL";"[";"."],set ["qualificationSuffix"]
   ["LITERAL";"[|"],set ["arrayExpr"]
   ["LITERAL";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["LITERAL";"opt_bar";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
   ["LITERAL";"prefix"],set ["unaryExpr"]
   ["LITERAL";"revAppExpr"],set ["revAppExpr"]
+  ["LITERAL";"|";"revRuleClauses"],set ["revRuleClauses"]
   ["LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
   ["LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["MATCH";"("],set ["parenExpr"]
+  ["MATCH";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["MATCH";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["MATCH";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["MATCH";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["MATCH";"["],set ["listExpr"]
+  ["MATCH";"[|"],set ["arrayExpr"]
   ["OPEN";";";"revOpenOrLets"],set ["revOpenOrLets"]
   ["OPEN";"longid";"MODULE"],set ["file"]
   ["RHSEND";"valueExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["RHSEND";"valueExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["RHSEND";"valueExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  ["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["TYPAR";"("],set ["atomType"]
   ["TYPAR";"*";"tupleType"],set ["tupleType"]
   ["TYPAR";",";"typeArguments"],set ["typeArguments"]
@@ -6421,13 +8749,20 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["TYPAR";":";"IDENT"],set ["atomicPattern"]
   ["TYPAR";"<";"IDENT"],set ["identExpr"]
   ["TYPAR";"<";"longid"],set ["atomType"]
+  ["WHEN";"matchPattern"],set ["patternAndGuard"]
+  ["WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
   ["[";"("],set ["parenExpr"]
   ["[";",";"revTupleExpr"],set ["revTupleExpr"]
   ["[";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["[";"->";"patternAndGuard"],set ["ruleClause"]
   ["[";"."],set ["qualificationSuffix"]
   ["[";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["[";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["[";"LLPAREN"],set ["rhsBlock"]
+  ["[";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["[";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["[";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["[";"MATCH"],set ["matchExpr"]
+  ["[";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["[";"["],set ["listExpr"]
   ["[";"[";"."],set ["qualificationSuffix"]
   ["[";"[|"],set ["arrayExpr"]
@@ -6438,9 +8773,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["[|";"("],set ["parenExpr"]
   ["[|";",";"revTupleExpr"],set ["revTupleExpr"]
   ["[|";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["[|";"->";"patternAndGuard"],set ["ruleClause"]
   ["[|";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["[|";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["[|";"LLPAREN"],set ["rhsBlock"]
+  ["[|";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["[|";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["[|";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["[|";"MATCH"],set ["matchExpr"]
+  ["[|";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["[|";"["],set ["listExpr"]
   ["[|";"[";"."],set ["qualificationSuffix"]
   ["[|";"[|"],set ["arrayExpr"]
@@ -6453,9 +8793,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["appExpr";"("],set ["parenExpr"]
   ["appExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["appExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["appExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["appExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["appExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["appExpr";"LLPAREN"],set ["rhsBlock"]
+  ["appExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["appExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["appExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["appExpr";"MATCH"],set ["matchExpr"]
+  ["appExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["appExpr";"["],set ["listExpr"]
   ["appExpr";"[";"."],set ["qualificationSuffix"]
   ["appExpr";"[|"],set ["arrayExpr"]
@@ -6471,9 +8816,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["arrayExpr";"("],set ["parenExpr"]
   ["arrayExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["arrayExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["arrayExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["arrayExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["arrayExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["arrayExpr";"LLPAREN"],set ["rhsBlock"]
+  ["arrayExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["arrayExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["arrayExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["arrayExpr";"MATCH"],set ["matchExpr"]
+  ["arrayExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["arrayExpr";"["],set ["listExpr"]
   ["arrayExpr";"[";"."],set ["qualificationSuffix"]
   ["arrayExpr";"[|"],set ["arrayExpr"]
@@ -6490,9 +8840,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["atomicExpr";"("],set ["parenExpr"]
   ["atomicExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["atomicExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["atomicExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["atomicExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["atomicExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["atomicExpr";"LLPAREN"],set ["rhsBlock"]
+  ["atomicExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["atomicExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["atomicExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["atomicExpr";"MATCH"],set ["matchExpr"]
+  ["atomicExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["atomicExpr";"["],set ["listExpr"]
   ["atomicExpr";"[";"."],set ["qualificationSuffix"]
   ["atomicExpr";"[|"],set ["arrayExpr"]
@@ -6505,9 +8860,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["binaryExpr";"("],set ["parenExpr"]
   ["binaryExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["binaryExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["binaryExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["binaryExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["binaryExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["binaryExpr";"LLPAREN"],set ["rhsBlock"]
+  ["binaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["binaryExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["binaryExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["binaryExpr";"MATCH"],set ["matchExpr"]
+  ["binaryExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["binaryExpr";"["],set ["listExpr"]
   ["binaryExpr";"[";"."],set ["qualificationSuffix"]
   ["binaryExpr";"[|"],set ["arrayExpr"]
@@ -6515,7 +8875,9 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["bindingPattern";"LET"],set ["letBinding"]
   ["declExpr";"("],set ["parenExpr"]
   ["declExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
-  ["declExpr";"LLPAREN"],set ["rhsBlock"]
+  ["declExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["declExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["declExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["declExpr";"["],set ["listExpr"]
   ["declExpr";"[|"],set ["arrayExpr"]
   ["funType";"("],set ["atomType"]
@@ -6526,10 +8888,15 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["identExpr";"("],set ["parenExpr"]
   ["identExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["identExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["identExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["identExpr";"."],set ["qualificationSuffix"]
   ["identExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["identExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["identExpr";"LLPAREN"],set ["rhsBlock"]
+  ["identExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["identExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["identExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["identExpr";"MATCH"],set ["matchExpr"]
+  ["identExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["identExpr";"["],set ["listExpr"]
   ["identExpr";"[";"."],set ["qualificationSuffix"]
   ["identExpr";"[|"],set ["arrayExpr"]
@@ -6539,26 +8906,35 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["infix";"("],set ["atomicExpr"]
   ["infix";"revBinaryExpr"],set ["revBinaryExpr"]
   ["lambdaExpr";"("],set ["parenExpr"]
-  ["lambdaExpr";",";"revTupleExpr"],set ["tupleExpr"]
   ["lambdaExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["lambdaExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["lambdaExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["lambdaExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["lambdaExpr";"LLPAREN"],set ["rhsBlock"]
+  ["lambdaExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["lambdaExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["lambdaExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["lambdaExpr";"["],set ["listExpr"]
   ["lambdaExpr";"[|"],set ["arrayExpr"]
   ["letBinding";"("],set ["parenExpr"]
   ["letBinding";";";"revOpenOrLets"],set ["revOpenOrLets"]
   ["letBinding";";";"revSequentialExpr"],set ["revSequentialExpr"]
-  ["letBinding";"LLPAREN"],set ["rhsBlock"]
+  ["letBinding";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["letBinding";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["letBinding";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["letBinding";"["],set ["listExpr"]
   ["letBinding";"[|"],set ["arrayExpr"]
   ["letBinding";"longid";"MODULE"],set ["file"]
   ["listExpr";"("],set ["parenExpr"]
   ["listExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["listExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["listExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["listExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["listExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["listExpr";"LLPAREN"],set ["rhsBlock"]
+  ["listExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["listExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["listExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["listExpr";"MATCH"],set ["matchExpr"]
+  ["listExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["listExpr";"["],set ["listExpr"]
   ["listExpr";"[";"."],set ["qualificationSuffix"]
   ["listExpr";"[|"],set ["arrayExpr"]
@@ -6575,11 +8951,23 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["longid";"MODULE"],set ["file"]
   ["longid";"OPEN"],set ["openOrLet"]
   ["longid";"appType"],set ["appType"]
+  ["matchExpr";"("],set ["parenExpr"]
+  ["matchExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["matchExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["matchExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["matchExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["matchExpr";"["],set ["listExpr"]
+  ["matchExpr";"[|"],set ["arrayExpr"]
+  ["matchPattern";"opt_bar";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
+  ["matchPattern";"|";"revRuleClauses"],set ["revRuleClauses"]
   ["openOrLet";";";"revOpenOrLets"],set ["revOpenOrLets"]
   ["openOrLet";"longid";"MODULE"],set ["file"]
+  ["opt_bar";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
   ["opt_semicolon";"revOpenOrLets";"longid";"MODULE"],set ["file"]
   ["opt_semicolon";"revSequentialExpr";"("],set ["parenExpr"]
-  ["opt_semicolon";"revSequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  ["opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["opt_semicolon";"revSequentialExpr";"["],set ["listExpr"]
   ["opt_semicolon";"revSequentialExpr";"[|"],set ["arrayExpr"]
   ["parameterPattern";"("],set ["parameterPattern"]
@@ -6589,21 +8977,33 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["parenExpr";"("],set ["parenExpr"]
   ["parenExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["parenExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["parenExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["parenExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["parenExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["parenExpr";"LLPAREN"],set ["rhsBlock"]
+  ["parenExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["parenExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["parenExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["parenExpr";"MATCH"],set ["matchExpr"]
+  ["parenExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["parenExpr";"["],set ["listExpr"]
   ["parenExpr";"[";"."],set ["qualificationSuffix"]
   ["parenExpr";"[|"],set ["arrayExpr"]
   ["parenExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
   ["parenExpr";"prefix"],set ["unaryExpr"]
   ["parenExpr";"revAppExpr"],set ["revAppExpr"]
+  ["patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
+  ["patternAndGuard";"|";"revRuleClauses"],set ["revRuleClauses"]
   ["prefix";"("],set ["parenExpr"]
   ["prefix";",";"revTupleExpr"],set ["revTupleExpr"]
   ["prefix";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["prefix";"->";"patternAndGuard"],set ["ruleClause"]
   ["prefix";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["prefix";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["prefix";"LLPAREN"],set ["rhsBlock"]
+  ["prefix";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["prefix";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["prefix";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["prefix";"MATCH"],set ["matchExpr"]
+  ["prefix";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["prefix";"["],set ["listExpr"]
   ["prefix";"[";"."],set ["qualificationSuffix"]
   ["prefix";"[|"],set ["arrayExpr"]
@@ -6611,9 +9011,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["qualificationExpr";"("],set ["parenExpr"]
   ["qualificationExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["qualificationExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["qualificationExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["qualificationExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["qualificationExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["qualificationExpr";"LLPAREN"],set ["rhsBlock"]
+  ["qualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["qualificationExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["qualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["qualificationExpr";"MATCH"],set ["matchExpr"]
+  ["qualificationExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["qualificationExpr";"["],set ["listExpr"]
   ["qualificationExpr";"[";"."],set ["qualificationSuffix"]
   ["qualificationExpr";"[|"],set ["arrayExpr"]
@@ -6624,9 +9029,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["revAppExpr";"("],set ["parenExpr"]
   ["revAppExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["revAppExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revAppExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["revAppExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["revAppExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["revAppExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revAppExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["revAppExpr";"MATCH"],set ["matchExpr"]
+  ["revAppExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["revAppExpr";"["],set ["listExpr"]
   ["revAppExpr";"[";"."],set ["qualificationSuffix"]
   ["revAppExpr";"[|"],set ["arrayExpr"]
@@ -6635,9 +9045,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["revBinaryExpr";"("],set ["parenExpr"]
   ["revBinaryExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["revBinaryExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revBinaryExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["revBinaryExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["revBinaryExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["revBinaryExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revBinaryExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["revBinaryExpr";"MATCH"],set ["matchExpr"]
+  ["revBinaryExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["revBinaryExpr";"["],set ["listExpr"]
   ["revBinaryExpr";"[";"."],set ["qualificationSuffix"]
   ["revBinaryExpr";"[|"],set ["arrayExpr"]
@@ -6655,35 +9070,51 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["revQualificationExpr";"("],set ["parenExpr"]
   ["revQualificationExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["revQualificationExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revQualificationExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["revQualificationExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["revQualificationExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["revQualificationExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revQualificationExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["revQualificationExpr";"MATCH"],set ["matchExpr"]
+  ["revQualificationExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["revQualificationExpr";"["],set ["listExpr"]
   ["revQualificationExpr";"[";"."],set ["qualificationSuffix"]
   ["revQualificationExpr";"[|"],set ["arrayExpr"]
   ["revQualificationExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
   ["revQualificationExpr";"prefix"],set ["unaryExpr"]
   ["revQualificationExpr";"revAppExpr"],set ["revAppExpr"]
+  ["revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
   ["revSequentialExpr";"("],set ["parenExpr"]
-  ["revSequentialExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revSequentialExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revSequentialExpr";"["],set ["listExpr"]
   ["revSequentialExpr";"[|"],set ["arrayExpr"]
   ["revTupleExpr";"("],set ["parenExpr"]
   ["revTupleExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revTupleExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["revTupleExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["revTupleExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["revTupleExpr";"LLPAREN"],set ["rhsBlock"]
+  ["revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["revTupleExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["revTupleExpr";"MATCH"],set ["matchExpr"]
   ["revTupleExpr";"["],set ["listExpr"]
   ["revTupleExpr";"[";"."],set ["qualificationSuffix"]
   ["revTupleExpr";"[|"],set ["arrayExpr"]
-  ["rhsBlock";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
-  ["rhsBlock";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["ruleClause";"opt_bar";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
+  ["ruleClause";"|";"revRuleClauses"],set ["revRuleClauses"]
   ["suffixType";"appType"],set ["appType"]
   ["tupleExpr";"("],set ["parenExpr"]
   ["tupleExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["tupleExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["tupleExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["tupleExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["tupleExpr";"LLPAREN"],set ["rhsBlock"]
+  ["tupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["tupleExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["tupleExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["tupleExpr";"MATCH"],set ["matchExpr"]
   ["tupleExpr";"["],set ["listExpr"]
   ["tupleExpr";"[";"."],set ["qualificationSuffix"]
   ["tupleExpr";"[|"],set ["arrayExpr"]
@@ -6705,27 +9136,30 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["unaryExpr";"("],set ["parenExpr"]
   ["unaryExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["unaryExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["unaryExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["unaryExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["unaryExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["unaryExpr";"LLPAREN"],set ["rhsBlock"]
+  ["unaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["unaryExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["unaryExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["unaryExpr";"MATCH"],set ["matchExpr"]
+  ["unaryExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
   ["unaryExpr";"["],set ["listExpr"]
   ["unaryExpr";"[";"."],set ["qualificationSuffix"]
   ["unaryExpr";"[|"],set ["arrayExpr"]
   ["unaryExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
   ["valueExpr";"("],set ["parenExpr"]
   ["valueExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["valueExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["valueExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["valueExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["valueExpr";"LLPAREN"],set ["rhsBlock"]
+  ["valueExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["valueExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["valueExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["valueExpr";"["],set ["listExpr"]
   ["valueExpr";"[|"],set ["arrayExpr"]
+  ["|";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
+  ["|";"revRuleClauses"],set ["revRuleClauses"]
   ["|]";"[|"],set ["arrayExpr"]
   ["|]";"opt_semicolon";"revSequentialExpr";"[|"],set ["arrayExpr"]
 ]
-let follow_semicolon: string Set =
-  set ["!";"(";")";"+";"-";"ALWAYS_PREFIX";"EOF";"FUN";"IDENT";"LET";"LITERAL";"OPEN";"RRPAREN";"[";"[|";"]";"|]"]
-let precede_semicolon: string Set =
-  set [")";">";"IDENT";"LITERAL";"RHSEND";"RRPAREN";"]";"|]"]
-let precede_declExpr: string Set = set ["(";";";"LLPAREN";"[";"[|"]
-let first_declExpr: string Set = set ["!";"(";"+";"-";"ALWAYS_PREFIX";"FUN";"IDENT";"LET";"LITERAL";"[";"[|"]
-let first_valueExpr: string Set = set ["!";"(";"+";"-";"ALWAYS_PREFIX";"FUN";"IDENT";"LITERAL";"[";"[|"]

@@ -15,15 +15,15 @@ open FSharp.LexYacc
 open System
 open System.Diagnostics
 
-/// 依次的命名为：lead top gap la
+/// 
 let lex_filter (states: YaccState list) (newline: int option) (la: FSharpToken) =
     match states, newline, la with
-    | PEEK_NEWLINE_OPEN ls -> ls
-    | PEEK_EOF ls -> ls
+    | PEEK_BAR ls -> ls
+    | PEEK_NEWLINE_MODULE ls -> ls
+    | PEEK_SEMICOLON ls -> ls
     | PEEK_RPAREN ls -> ls
     | PEEK_RBRACK ls -> ls
-    | PEEK_SEMICOLON ls -> ls
-    | SEMICOLON_PEEK_NEWLINE ls -> ls
-    | PEEK_NEWLINE_APP ls -> ls
-
+    | PEEK_NEW_BLOCK ls -> ls
+    | PEEK_NEWLINE_NEW_DECL ls -> ls
+    | PEEK_EOF ls -> ls
     | _ -> [ newline, la ]

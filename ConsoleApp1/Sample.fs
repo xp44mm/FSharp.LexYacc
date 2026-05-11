@@ -1,8 +1,11 @@
 module FSharp.Substance.Sample
-open System;
-open FSharp.Idioms
-open FSharp.Idioms.Literal
-open FSharp.LexYacc
-open FSharp.LexYacc.Bootstrap
-open FSharp.Substance
 
+let src = 0
+
+let tgt =
+    [
+        "FSharp"
+        "Substance"
+        "Sample"
+    ],
+    [ LetBindingExpr(IdentPattern "src", [ LiteralExpr(INT32 0) ]) ]

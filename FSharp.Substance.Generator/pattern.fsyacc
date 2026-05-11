@@ -1,0 +1,54 @@
+parenPattern:
+  | parenPattern AS constrPattern      { }
+  | parenPattern "|" parenPattern  {  }
+  | tupleParenPatternElements      {  }
+  | conjParenPatternElements      {  }
+  | parenPattern ":" typeWithTypeConstraints   {  }
+  | parenPattern "::" parenPattern      {  }
+  | constrPattern { $1 }
+
+tupleParenPatternElements:
+  | tupleParenPatternElements "," parenPattern      {  }
+  | parenPattern "," parenPattern      {  }
+
+conjParenPatternElements:
+  | conjParenPatternElements "&" parenPattern      {  }
+  | parenPattern "&" parenPattern      {  }
+
+constrPattern:
+  | atomicPatternLongIdent explicitValTyparDecls      {  }
+  | atomicPatternLongIdent explicitValTyparDecls atomicPatsOrNamePatPairs     {  }
+  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs      {  }
+  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs      {  }
+  | atomicPatternLongIdent atomicPatsOrNamePatPairs       {  }
+  | atomicPatternLongIdent HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs      {  }
+  | atomicPatternLongIdent HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs      {  }
+  | atomicPattern      {  }
+
+atomicPattern:
+  | quoteExpr      {  }
+
+  | LBRACE recordPatternElementsAux rbrace      {  }
+
+
+  | UNDERSCORE      {          }
+
+  | QMARK ident      {  }
+
+  | atomicPatternLongIdent       {  }
+
+  | constant      {  }
+
+  | FALSE      {  }
+
+  | TRUE      {  }
+
+  | NULL      {  }
+
+  | LPAREN parenPatternBody rparen      {  }
+
+
+  | STRUCT LPAREN tupleParenPatternElements rparen      {  }
+
+
+      

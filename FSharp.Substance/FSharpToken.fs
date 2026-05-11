@@ -44,7 +44,7 @@ type FSharpToken =
     | FUN
     | GREATER
     | GREATER_GREATER
-    | HASH
+    //| HASH
     | IDENT of string
     | LARROW
     | LBRACE
@@ -95,37 +95,36 @@ module FSharpToken =
         | FSharpToken.FUN -> 13
         | FSharpToken.GREATER -> 14
         | FSharpToken.GREATER_GREATER -> 15
-        | FSharpToken.HASH -> 16
-        | FSharpToken.IDENT _ -> 17
-        | FSharpToken.LARROW -> 18
-        | FSharpToken.LBRACE -> 19
-        | FSharpToken.LBRACE_BAR -> 20
-        | FSharpToken.LBRACK -> 21
-        | FSharpToken.LBRACK_BAR -> 22
-        | FSharpToken.LESS -> 23
-        | FSharpToken.LESS_LESS -> 24
-        | FSharpToken.LET -> 25
-        | FSharpToken.LITERAL _ -> 26
-        | FSharpToken.LLPAREN -> 27
-        | FSharpToken.LPAREN -> 28
-        | FSharpToken.LPAREN_BAR -> 29
-        | FSharpToken.MATCH -> 30
-        | FSharpToken.MINUS -> 31
-        | FSharpToken.MODULE -> 32
-        | FSharpToken.NEW_LINE _ -> 33
-        | FSharpToken.OPEN -> 34
-        | FSharpToken.PLUS -> 35
-        | FSharpToken.RARROW -> 36
-        | FSharpToken.RBRACE -> 37
-        | FSharpToken.RBRACK -> 38
-        | FSharpToken.RHSEND -> 39
-        | FSharpToken.RPAREN -> 40
-        | FSharpToken.RRPAREN -> 41
-        | FSharpToken.SEMICOLON -> 42
-        | FSharpToken.STAR -> 43
-        | FSharpToken.TYPAR _ -> 44
-        | FSharpToken.WHITESPACE -> 45
-        | FSharpToken.WITH -> 46
+        | FSharpToken.IDENT _ -> 16
+        | FSharpToken.LARROW -> 17
+        | FSharpToken.LBRACE -> 18
+        | FSharpToken.LBRACE_BAR -> 19
+        | FSharpToken.LBRACK -> 20
+        | FSharpToken.LBRACK_BAR -> 21
+        | FSharpToken.LESS -> 22
+        | FSharpToken.LESS_LESS -> 23
+        | FSharpToken.LET -> 24
+        | FSharpToken.LITERAL _ -> 25
+        | FSharpToken.LLPAREN -> 26
+        | FSharpToken.LPAREN -> 27
+        | FSharpToken.LPAREN_BAR -> 28
+        | FSharpToken.MATCH -> 29
+        | FSharpToken.MINUS -> 30
+        | FSharpToken.MODULE -> 31
+        | FSharpToken.NEW_LINE _ -> 32
+        | FSharpToken.OPEN -> 33
+        | FSharpToken.PLUS -> 34
+        | FSharpToken.RARROW -> 35
+        | FSharpToken.RBRACE -> 36
+        | FSharpToken.RBRACK -> 37
+        | FSharpToken.RHSEND -> 38
+        | FSharpToken.RPAREN -> 39
+        | FSharpToken.RRPAREN -> 40
+        | FSharpToken.SEMICOLON -> 41
+        | FSharpToken.STAR -> 42
+        | FSharpToken.TYPAR _ -> 43
+        | FSharpToken.WHITESPACE -> 44
+        | FSharpToken.WITH -> 45
     let tag (tok:FSharpToken) =
         match tok with
         | FSharpToken.ALWAYS_INFIX _ -> "ALWAYS_INFIX"
@@ -144,7 +143,6 @@ module FSharpToken =
         | FSharpToken.FUN -> "FUN"
         | FSharpToken.GREATER -> ">"
         | FSharpToken.GREATER_GREATER -> ">>"
-        | FSharpToken.HASH -> "#"
         | FSharpToken.IDENT _ -> "IDENT"
         | FSharpToken.LARROW -> "<-"
         | FSharpToken.LBRACE -> "{"
@@ -193,37 +191,36 @@ module FSharpToken =
         | "FUN" -> 13
         | ">" -> 14
         | ">>" -> 15
-        | "#" -> 16
-        | "IDENT" -> 17
-        | "<-" -> 18
-        | "{" -> 19
-        | "{|" -> 20
-        | "[" -> 21
-        | "[|" -> 22
-        | "<" -> 23
-        | "<<" -> 24
-        | "LET" -> 25
-        | "LITERAL" -> 26
-        | "LLPAREN" -> 27
-        | "(" -> 28
-        | "(|" -> 29
-        | "MATCH" -> 30
-        | "-" -> 31
-        | "MODULE" -> 32
-        | "NEW_LINE" -> 33
-        | "OPEN" -> 34
-        | "+" -> 35
-        | "->" -> 36
-        | "}" -> 37
-        | "]" -> 38
-        | "RHSEND" -> 39
-        | ")" -> 40
-        | "RRPAREN" -> 41
-        | ";" -> 42
-        | "*" -> 43
-        | "TYPAR" -> 44
-        | "WHITESPACE" -> 45
-        | "WITH" -> 46
+        | "IDENT" -> 16
+        | "<-" -> 17
+        | "{" -> 18
+        | "{|" -> 19
+        | "[" -> 20
+        | "[|" -> 21
+        | "<" -> 22
+        | "<<" -> 23
+        | "LET" -> 24
+        | "LITERAL" -> 25
+        | "LLPAREN" -> 26
+        | "(" -> 27
+        | "(|" -> 28
+        | "MATCH" -> 29
+        | "-" -> 30
+        | "MODULE" -> 31
+        | "NEW_LINE" -> 32
+        | "OPEN" -> 33
+        | "+" -> 34
+        | "->" -> 35
+        | "}" -> 36
+        | "]" -> 37
+        | "RHSEND" -> 38
+        | ")" -> 39
+        | "RRPAREN" -> 40
+        | ";" -> 41
+        | "*" -> 42
+        | "TYPAR" -> 43
+        | "WHITESPACE" -> 44
+        | "WITH" -> 45
         | _ -> failwithf "unexpected tag:%s" tag
     let lexeme (tok:FSharpToken) =
         match tok with
@@ -243,7 +240,6 @@ module FSharpToken =
         | FSharpToken.FUN -> null
         | FSharpToken.GREATER -> null
         | FSharpToken.GREATER_GREATER -> null
-        | FSharpToken.HASH -> null
         | FSharpToken.IDENT x -> box x
         | FSharpToken.LARROW -> null
         | FSharpToken.LBRACE -> null

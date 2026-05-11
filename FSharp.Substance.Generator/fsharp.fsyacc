@@ -11,10 +11,6 @@ file:
         let ls = s2 |> List.rev |> List.map snd
         snd s1, ls
         }
-        
-opt_semicolon:
-    | ";" {s0}
-    | {None}
     
 revOpenOrLets:
     | revOpenOrLets ";" openOrLet  { s2::s0 }
@@ -40,18 +36,41 @@ revSequentialExpr:
 
 declExpr:
     | letBinding { s0 }
+    | matchExpr { s0 }
     | valueExpr { s0 }
 
-letBinding :
+letBinding:
     | LET bindingPattern "=" valueExpr RHSEND {
         s0, LetBindingExpr(snd s1, [snd s3])
         }
-    | LET bindingPattern "=" rhsBlock {
-        s0, LetBindingExpr(snd s1, snd s3)
+    | LET bindingPattern "=" LLPAREN revSequentialExpr opt_semicolon RRPAREN {
+        s0, LetBindingExpr(snd s1, snd(Expr.ofSequentialExpr s4))
         }
 
-rhsBlock:
-    | LLPAREN revSequentialExpr opt_semicolon RRPAREN { Expr.ofSequentialExpr s1 }
+matchExpr:
+  | MATCH tupleExpr WITH opt_bar revRuleClauses { 
+    let ruleClauses = s4 |> List.map snd |> List.rev
+    s0, MatchExpr(snd s1, ruleClauses)
+  }
+
+revRuleClauses:
+  | ruleClause { [s0] }
+  | revRuleClauses "|" ruleClause { s2::s0 }
+  
+ruleClause:
+  | patternAndGuard "->" valueExpr RHSEND { 
+    let i,p,g = s0
+    i, RuleClause.just p g [snd s2]
+    }
+  | patternAndGuard "->" LLPAREN revSequentialExpr opt_semicolon RRPAREN { 
+    let i,p,g = s0
+    let r = s3 |> List.map snd |> List.rev
+    i, RuleClause.just p g r
+    }
+
+patternAndGuard:
+  | matchPattern { fst s0,snd s0, None }
+  | matchPattern WHEN binaryExpr { fst s0,snd s0, Some(snd s2) }
 
 valueExpr :
     | lambdaExpr { s0 }
@@ -61,15 +80,12 @@ lambdaExpr:
     | FUN parameterPattern "->" valueExpr RHSEND {
             s0, LambdaExpr(snd s1, [snd s3])
         }
-    | FUN parameterPattern "->" rhsBlock {
-            s0, LambdaExpr(snd s1, snd s3)
+    | FUN parameterPattern "->" LLPAREN revSequentialExpr opt_semicolon RRPAREN {
+            s0, LambdaExpr(snd s1, snd(Expr.ofSequentialExpr s4))
         }
 
 tupleExpr:
     | revTupleExpr {Expr.ofTupleExpr s0}
-    | revTupleExpr "," lambdaExpr {
-        Expr.ofTupleLambdaExpr s0 s2
-        }
 
 revTupleExpr:
     | binaryExpr { [s0] }
@@ -141,15 +157,23 @@ arrayExpr:
 
 prefix:
     | ALWAYS_PREFIX {s0}
-    | "!" {s0, "!" }
     | "+" {s0, "+" }
     | "-" {s0, "-" }
 
 infix:
     | ALWAYS_INFIX {s0}
+    | "*" {s0, "*"}    
     | "=" {s0, "="}
     | "+" {s0, "+"}
     | "-" {s0, "-"}
+    
+opt_semicolon:
+    | ";" {s0}
+    | {None}
+    
+opt_bar:
+    | "|" {s0}    
+    | {None}
 
 bindingPattern:
   | tuplePattern { Pattern.ofTuplePattern s0 }
@@ -159,7 +183,8 @@ atomicPattern:
   | IDENT ":" typeArgument {
     fst s0, TypeAnnotationPattern(snd s0, snd s2)
     }
-
+    
+//用于fun parameterPattern ->
 parameterPattern:
   | IDENT { fst s0, IdentPattern(snd s0) }
   | "(" bindingPattern ")" { s0, snd s1 }
@@ -167,6 +192,10 @@ parameterPattern:
 tuplePattern:
     | atomicPattern { [s0] }
     | tuplePattern "," atomicPattern { s2::s0 }
+
+matchPattern:
+  | LITERAL { fst s0, LiteralPattern(snd s0) }
+  | IDENT { fst s0, IdentPattern(snd s0) }
 
 typeArgument:
     | funType { TypeArgument.ofFun s0 }
@@ -205,27 +234,26 @@ suffixType:
 typeArguments:
     | typeArgument { [s0] }
     | typeArguments "," typeArgument { s2::s0 }
-    
+
 %type<string list*Expr list> file
 %type<(option<int>*string) list> revLongid
 %type<option<int>*string list> longid
-%type<option<int>*Expr list> rhsBlock
 %type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr revOpenOrLets
-%type<option<int>*Expr> openOrLet declExpr letBinding valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr
+%type<option<int>*Expr> openOrLet declExpr letBinding matchExpr valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr 
+    appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr
 %type<option<int>*string> prefix infix
+%type<(option<int>*RuleClause) list> revRuleClauses
+%type<option<int>*RuleClause> ruleClause
 %type<((option<int>*string)*(option<int>*Expr)) list> revBinaryExpr
 %type<option<int>*string> IDENT TYPAR ALWAYS_INFIX ALWAYS_PREFIX
 %type<option<int>*Literal> LITERAL
-%type<option<int>> DO EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WHITESPACE WITH opt_semicolon
-    "!" "#" "(" "(|" ")" "+" "," "-" "->" "." ":" ";" "<" "<-" "=" ">" "[" "[|" "]" "{" "{|" "|" "|)" "|]" "|}" "}"
-    
-// TypeArgument
+%type<option<int>> DO EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WITH WHEN opt_semicolon opt_bar 
+    "(" "(|" ")" "+" "*" "," "-" "->" "." ":" ";" "<" "<-" "=" ">" "[" "[|" "]" "{" "|" "|)" "|]" "}"
 %type<option<int>*TypeArgument> typeArgument
 %type<(option<int>*TypeArgument)*((option<int> * SuffixType) list)> appType
 %type<(option<int>*TypeArgument) list> tupleType funType typeArguments
 %type<option<int>*SuffixType> suffixType
 %type<option<int>*TypeArgument> atomType
-
-// pattern
-%type<option<int>*Pattern> bindingPattern atomicPattern parameterPattern
+%type<option<int>*Pattern> bindingPattern atomicPattern parameterPattern matchPattern
 %type<(option<int>*Pattern)list> tuplePattern
+%type<option<int>*Pattern*Expr option> patternAndGuard

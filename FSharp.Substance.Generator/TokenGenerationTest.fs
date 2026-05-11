@@ -34,7 +34,7 @@ type TokenGenerationTest(output: ITestOutputHelper) =
         FSharpToken.GREATER, ">"
         FSharpToken.GREATER_GREATER, ">>"
         //FSharpToken.GREATER_GREATER_GREATER, ">>>"
-        FSharpToken.HASH, "#"
+        //FSharpToken.HASH, "#"
         FSharpToken.LARROW, "<-"
         FSharpToken.LBRACE, "{"
         FSharpToken.LBRACE_BAR, "{|"

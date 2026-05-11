@@ -3,58 +3,34 @@ module FSharp.Substance.TypeArgumentYacc
 open FSharp.LexYacc
 }
 
-typeArgument:
-    | funtype { TypeArgument.ofFun s0 }
+matchExpr:
+  | MATCH tupleExpr WITH opt_bar patternClauses  { }
 
-funtype :
-    | tupletype {
-        let s0 = TypeArgument.ofTuple s0
-        [s0]
-        }
-    | funtype "->" tupletype {
-        let s2 = TypeArgument.ofTuple s2
-        s2::s0
-        }
-    
-tupletype :
-    | apptype { [s0] }
-    | tupletype "*" apptype { s2::s0 }
-    
-apptype :
-    | atomtype {TypeArgument.ofApp(s0,[])}
-    | atomtype suffixTypes { TypeArgument.ofApp(s0,s1)  }
-    
-atomtype :
-    | TYPAR {fst s0, Typar(snd s0) }
-    | longid {fst s0, NamedType(snd s0)}
-    | longid "<" typeArguments ">" {
-            let s2 = s2 |> List.map snd |> List.rev
-            fst s0, GenericType(snd s0, s2 )
-        }
-    | "(" typeArgument ")" {fst s1, ParenType(snd s1)}
-        
-suffixTypes :
-    | suffixType {[s0]}    
-    | suffixTypes suffixType {s1::s0}
-    
-suffixType:
-    | longid {fst s0, IdentSuffix(snd s0)}
-    | "[" "]" {s0, ArrayTypeSuffix 0}
+patternClauses:
+  | patternClause {  }
+  | patternClauses "|" patternClause {  }
+  
+patternClause:
+  | parenPattern opt_guard "->" rarrow {  }
 
-typeArguments:
-    | typeArgument { [s0] }
-    | typeArguments "," typeArgument { s2::s0 }
+opt_guard:
+  | WHEN binaryExpr { }
+  | { }
+  
+rarrow:
+  | "->" valueExpr RHSEND {  }
+  | "->" rhsBlock {  }
 
+opt_bar:
+    | {}
+    | "|" {}
 
 %type<option<int> * TypeArgument> apptype typeArgument 
 %type<(option<int> * TypeArgument) list> tupletype funtype typeArguments
 %type<option<int>*string list> longid
 %type<option<int>*SuffixType> suffixType
 %type<(option<int>*SuffixType) list> suffixTypes
-%type<option<int> * TypeArgument>  atomtype
+%type<option<int> * TypeArgument> atomtype
 %type<option<int>*string> TYPAR
-
 %type<option<int>> "["
-
-
 

@@ -6,7 +6,7 @@ open FSharp.Idioms.Literal
 // symbol -> typeName
 let printDeclarations (declarations: Map<string, string>) =
     [
-        "let declarations = ["
+        "let declarations: (string*Type) list = ["
         for KeyValue(symbol, typename) in declarations do
             let typename = typename.Substring("%type".Length)
             $"    {stringify symbol}, typeof{typename}"

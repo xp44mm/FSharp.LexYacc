@@ -17,6 +17,14 @@
         <Compile Include="TokenGenerationTest.fs" />
         <Compile Include="SpliterTestTest.fs" />
         <Compile Include="FSharpLexerTailerTest.fs" />
+        <Compile Include="PEEK_BAR.fs" />
+        <Compile Include="PEEK_NEWLINE_MODULE.fs" />
+        <Compile Include="PEEK_SEMICOLON.fs" />
+        <Compile Include="PEEK_RPAREN.fs" />
+        <Compile Include="PEEK_RBRACK.fs" />
+        <Compile Include="PEEK_NEW_BLOCK.fs" />
+        <Compile Include="PEEK_NEWLINE_NEW_DECL.fs" />
+        <Compile Include="PEEK_EOF.fs" />
         <Compile Include="FSharpCompilerTest.fs" />
         <Compile Include="LightTest.fs" />
     </ItemGroup>

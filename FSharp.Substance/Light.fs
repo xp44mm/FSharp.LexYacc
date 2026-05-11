@@ -40,7 +40,6 @@ let offsideLexeme (spaces:int option) (tok:FSharpToken) =
     | FSharpToken.FUN -> box spaces
     | FSharpToken.GREATER -> box spaces
     | FSharpToken.GREATER_GREATER -> box spaces
-    | FSharpToken.HASH -> box spaces
     | FSharpToken.IDENT x -> box(spaces, x)
     | FSharpToken.LARROW -> box spaces
     | FSharpToken.LBRACE -> box spaces
@@ -71,7 +70,6 @@ let offsideLexeme (spaces:int option) (tok:FSharpToken) =
     | FSharpToken.TYPAR x -> box(spaces, x)
     | FSharpToken.WHITESPACE -> box spaces
     | FSharpToken.WITH -> box spaces
-
 
 let tokenRow indent tok : TokenRow<int option * FSharpToken> =
     {
