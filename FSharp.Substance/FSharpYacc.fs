@@ -490,7 +490,7 @@ let rules: list<string list*(obj list->obj)> = [
         let result:option<int>*RuleClause =
             let i,p,g = s0
             let r = s3 |> List.map snd |> List.rev
-            i, RuleClause.just p g r
+            i, RuleClause(p, g, r)
         box result)
     ["ruleClause";"patternAndGuard";"->";"valueExpr";"RHSEND"], (fun(ss:obj list)->
         let s0 = unbox<option<int>*Pattern*Expr option> ss.[0]
@@ -499,7 +499,7 @@ let rules: list<string list*(obj list->obj)> = [
         let s3 = unbox<option<int>> ss.[3]
         let result:option<int>*RuleClause =
             let i,p,g = s0
-            i, RuleClause.just p g [snd s2]
+            i, RuleClause(p, g, [snd s2])
         box result)
     ["suffixType";"[";"]"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]

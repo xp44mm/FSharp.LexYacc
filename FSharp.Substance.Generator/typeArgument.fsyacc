@@ -3,34 +3,14 @@ module FSharp.Substance.TypeArgumentYacc
 open FSharp.LexYacc
 }
 
-matchExpr:
-  | MATCH tupleExpr WITH opt_bar patternClauses  { }
+recdLiteralExpr:
+  | "{" fieldBindings opt_semicolon "}"  { }
 
-patternClauses:
-  | patternClause {  }
-  | patternClauses "|" patternClause {  }
+fieldBindings:
+  | fieldBinding {  }
+  | fieldBindings ";" fieldBinding {  }
   
-patternClause:
-  | parenPattern opt_guard "->" rarrow {  }
-
-opt_guard:
-  | WHEN binaryExpr { }
-  | { }
-  
-rarrow:
-  | "->" valueExpr RHSEND {  }
-  | "->" rhsBlock {  }
-
-opt_bar:
-    | {}
-    | "|" {}
-
-%type<option<int> * TypeArgument> apptype typeArgument 
-%type<(option<int> * TypeArgument) list> tupletype funtype typeArguments
-%type<option<int>*string list> longid
-%type<option<int>*SuffixType> suffixType
-%type<(option<int>*SuffixType) list> suffixTypes
-%type<option<int> * TypeArgument> atomtype
-%type<option<int>*string> TYPAR
-%type<option<int>> "["
+fieldBinding:
+  | IDENT "=" valueExpr RHSEND {  }
+  | IDENT "=" LLPAREN revSequentialExpr opt_semicolon RRPAREN {  }
 

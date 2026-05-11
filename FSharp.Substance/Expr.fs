@@ -2,14 +2,10 @@ namespace FSharp.Substance
 
 open System
 
-type RuleClause =
-    {
-        pattern: Pattern
-        guard: Expr option
-        result: Expr list
-    }
-
+type RuleClause = RuleClause of Pattern * guard: Expr option * result: Expr list
+and RecordFiledBinding = RecordFiledBinding of string * Expr list
 and Expr =
+    | RecordLiteralExpr of RecordFiledBinding list
     | OpenExpr of string list
     | OperatorSectionExpr of string
     | LetBindingExpr of Pattern * Expr list
@@ -29,20 +25,8 @@ and Expr =
     | QualificationExpr of Expr list
     | TypeApplicationExpr of string * TypeArgument list
 
-module RuleClause =
-    let just (pattern: Pattern) (guard: Expr option) (result: Expr list) =
-        {
-            pattern = pattern
-            guard = guard
-            result = result
-        }
-        
 module Expr =
     let ofSequentialExpr (revSequentialExpr: (option<int> * Expr) list) =
-        //let s0 =
-        //    match revSequentialExpr with
-        //    | (_, DummyExpr) :: tail -> tail
-        //    | _ -> revSequentialExpr
         let i, ls =
             revSequentialExpr
             |> List.rev

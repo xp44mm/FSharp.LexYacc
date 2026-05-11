@@ -60,12 +60,12 @@ revRuleClauses:
 ruleClause:
   | patternAndGuard "->" valueExpr RHSEND { 
     let i,p,g = s0
-    i, RuleClause.just p g [snd s2]
+    i, RuleClause(p, g, [snd s2])
     }
   | patternAndGuard "->" LLPAREN revSequentialExpr opt_semicolon RRPAREN { 
     let i,p,g = s0
     let r = s3 |> List.map snd |> List.rev
-    i, RuleClause.just p g r
+    i, RuleClause(p, g, r)
     }
 
 patternAndGuard:
@@ -117,7 +117,7 @@ revAppExpr:
 qualificationExpr:
     | revQualificationExpr { Expr.ofQualification(s0) }
     
-revQualificationExpr :
+revQualificationExpr:
     | atomicExpr { [s0] }
     | revQualificationExpr qualificationSuffix { s1::s0 }
 
@@ -132,12 +132,13 @@ atomicExpr:
     | parenExpr { s0 }
     | listExpr { s0 }
     | arrayExpr { s0 }
+    | recdLiteralExpr { s0 }
     
 identExpr:
     | IDENT { fst s0, IdentExpr(snd s0) }
-    | IDENT  "<" typeArguments ">"  { 
+    | IDENT "<" typeArguments ">" { 
         let targs = s2 |> List.map snd |> List.rev
-        fst s0, TypeApplicationExpr(snd s0,targs) 
+        fst s0, TypeApplicationExpr(snd s0,targs)
         }
     
 qualificationSuffix:
@@ -154,6 +155,24 @@ listExpr:
 arrayExpr:
     | "[|" "|]" { s0, ArrayExpr [] }
     | "[|" revSequentialExpr opt_semicolon "|]" { s0, ArrayExpr(snd (Expr.ofSequentialExpr s1)) }
+    
+recdLiteralExpr:
+  | "{" fieldBindings opt_semicolon "}"  { 
+        let ls = s1 |> List.map snd |> List.rev
+        fst s0, ls
+  }
+
+fieldBindings:
+  | fieldBinding { [s0] }
+  | fieldBindings ";" fieldBinding { s2::s0 }
+  
+fieldBinding:
+  | IDENT "=" valueExpr RHSEND {
+  fst s0, (snd s0, [snd s2])
+  }
+  | IDENT "=" LLPAREN revSequentialExpr opt_semicolon RRPAREN {  
+    fst s0, (snd s0, snd(Expr.ofSequentialExpr s3))  
+  }
 
 prefix:
     | ALWAYS_PREFIX {s0}
