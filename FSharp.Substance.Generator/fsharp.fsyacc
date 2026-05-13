@@ -156,24 +156,6 @@ arrayExpr:
     | "[|" "|]" { s0, ArrayExpr [] }
     | "[|" revSequentialExpr opt_semicolon "|]" { s0, ArrayExpr(snd (Expr.ofSequentialExpr s1)) }
     
-recdLiteralExpr:
-  | "{" fieldBindings opt_semicolon "}"  { 
-        let ls = s1 |> List.map snd |> List.rev
-        fst s0, ls
-  }
-
-fieldBindings:
-  | fieldBinding { [s0] }
-  | fieldBindings ";" fieldBinding { s2::s0 }
-  
-fieldBinding:
-  | IDENT "=" valueExpr RHSEND {
-  fst s0, (snd s0, [snd s2])
-  }
-  | IDENT "=" LLPAREN revSequentialExpr opt_semicolon RRPAREN {  
-    fst s0, (snd s0, snd(Expr.ofSequentialExpr s3))  
-  }
-
 prefix:
     | ALWAYS_PREFIX {s0}
     | "+" {s0, "+" }
@@ -203,7 +185,6 @@ atomicPattern:
     fst s0, TypeAnnotationPattern(snd s0, snd s2)
     }
     
-//用于fun parameterPattern ->
 parameterPattern:
   | IDENT { fst s0, IdentPattern(snd s0) }
   | "(" bindingPattern ")" { s0, snd s1 }
@@ -254,12 +235,33 @@ typeArguments:
     | typeArgument { [s0] }
     | typeArguments "," typeArgument { s2::s0 }
 
+recdLiteralExpr:
+  | "{" fieldBindings opt_semicolon "}"  {
+        let ls = s1 |> List.map snd |> List.rev
+        s0, RecordLiteralExpr ls
+  }
+
+fieldBindings:
+  | fieldBinding { [s0] }
+  | fieldBindings ";" fieldBinding { s2::s0 }
+  
+fieldBinding:
+  | IDENT "=" valueExpr RHSEND {
+    fst s0, RecordFiledBinding(snd s0, [snd s2])
+  }
+  | IDENT "=" LLPAREN revSequentialExpr opt_semicolon RRPAREN {
+    fst s0, RecordFiledBinding(snd s0, snd(Expr.ofSequentialExpr s3))
+  }
+
+%type<option<int>*RecordFiledBinding> fieldBinding
+%type<(option<int>*RecordFiledBinding) list> fieldBindings
+
 %type<string list*Expr list> file
 %type<(option<int>*string) list> revLongid
 %type<option<int>*string list> longid
 %type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr revOpenOrLets
 %type<option<int>*Expr> openOrLet declExpr letBinding matchExpr valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr 
-    appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr
+    appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr recdLiteralExpr
 %type<option<int>*string> prefix infix
 %type<(option<int>*RuleClause) list> revRuleClauses
 %type<option<int>*RuleClause> ruleClause

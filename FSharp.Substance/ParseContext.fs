@@ -19,16 +19,9 @@ open StackOps
 let offside_rrparen_or_rhsend (states: YaccState list) =
     let rec loop (currentStates: YaccState list) =
         [
-            match
-                lookahead_rhsend_rrparen
-                |> Seq.tryFind(fun (v, tok) -> v.prefix |> isPrefixOf currentStates)
-            with
-            | None -> ()
-            | Some(v, tok) ->
-                Debug.WriteLine(
-                    "offside_rrparen_or_rhsend:"
-                    + stringify v
-                )
+            match Punctuation.exists currentStates with
+            | SEMICOLON -> ()
+            | tok ->
                 yield None, tok
                 let nextStates = parser.shift currentStates (Light.tokenRow None tok)
                 yield! loop nextStates
@@ -59,8 +52,8 @@ let (|PEEK_NEWLINE_MODULE|_|) (states: YaccState list, newline: int option, la: 
                         newline, la
                     ]
             elif
-                lookaheads.[FSharpToken.tag LLPAREN]
-                |> Set.exists(fun v -> StackOps.isPrefixOf states v.prefix)
+                lookahead_llparen //此处需要分情况进一步查找栈底
+                |> Set.exists(fun prefix -> StackOps.isPrefixOf states prefix)
             then
                 Debug.WriteLine($"右手边开始，加LLPAREN")
                 Some
@@ -84,10 +77,9 @@ let (|PEEK_NEWLINE_MODULE|_|) (states: YaccState list, newline: int option, la: 
 /// 右括号之前
 let (|PEEK_RPAREN|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
     if la = RPAREN then
-        Debug.WriteLine("la = RPAREN")
         if
-            lookaheads.[FSharpToken.tag RPAREN]
-            |> Set.exists(fun v -> StackOps.isPrefixOf states v.prefix)
+            lookahead_rparen
+            |> Set.exists(fun v -> StackOps.isPrefixOf states v)
         then
             Some [ newline, la ]
         else
@@ -105,13 +97,13 @@ let (|PEEK_RPAREN|_|) (states: YaccState list, newline: int option, la: FSharpTo
 let (|PEEK_RBRACK|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
     if la = RBRACK then
         if
-            lookaheads.["]"]
-            |> Set.exists(fun v -> StackOps.isPrefixOf states v.prefix)
+            lookahead_rbrack
+            |> Set.exists(fun v -> StackOps.isPrefixOf states v)
         then
             Some [ newline, la ]
         else
             let i = StackOps.balanceLeft "[" "]" states
-            let inner = List.take i states
+            let inner = List.take (i + 1) states
             Some
                 [
                     yield! offside_rrparen_or_rhsend inner
@@ -150,35 +142,29 @@ let (|PEEK_SEMICOLON|_|) (states: YaccState list, newline: int option, la: FShar
     else
         let rec loop currentStates =
             [
-                match
-                    lookahead_rhsend_rrparen
-                    |> Seq.tryFind(fun (v, tok) -> v.prefix |> isPrefixOf currentStates)
-                with
-                | None -> ()
-                | Some(vp, tok) ->
+                match Punctuation.find currentStates with
+                | SEMICOLON, [] -> ()
+                | (tok, prefix) ->
                     yield None, tok
-                    let nolonger =
-                        if
-                            vp.head = "letBinding"
-                            || vp.head = "ruleClause"
-                        then
+                    let longer =
+                        match prefix.[prefix.Length - 1] with
+                        | "LET"
+                        | "|"
+                        | "{"
+                        | "fieldBindings" ->
                             //不能越过let _ =；不能越过match子句
-                            true
-                        elif vp.head = "lambdaExpr" then
-                            //越过fun关键字前面的
-                            let prevState = currentStates.[vp.prefix.Length]
-                            let prev = stateSymbols.[prevState.state]
-                            is_new_decl prev
-                        else
-                            failwith "never"
-                    if nolonger then
-                        ()
-                    else
-                        let rhsendStates = parser.shift currentStates (Light.tokenRow None RHSEND)
+                            false
+                        | "FUN" ->
+                            //检测前缀是否是独立的DECL
+                            let prevState = currentStates.[prefix.Length]
+                            stateSymbols.[prevState.state]
+                            |> Punctuation.is_new_decl
+                            |> not
+                        | _ -> failwith "never"
+                    if longer then
+                        let rhsendStates = parser.shift currentStates Light.None_RHSEND
                         yield! loop rhsendStates
-
             ]
-
         Some
             [
 
@@ -202,19 +188,16 @@ let (|PEEK_NEWLINE_NEW_DECL|_|) (states: YaccState list, newline: int option, la
         if follow_semicolon.Contains(la_tag) then
             let rec loop (currentStates: YaccState list) =
                 [
-                    match
-                        lookahead_rhsend_rrparen
-                        |> Seq.tryFind(fun (v, tok) -> v.prefix |> isPrefixOf currentStates)
-                    with
-                    | None -> ()
-                    | Some(vp, tok) ->
-                        let lead = currentStates.[vp.prefix.Length - 1]
+                    match Punctuation.find currentStates with
+                    | SEMICOLON, [] -> ()
+                    | right_tok, prefix ->
+                        let lead = currentStates.[prefix.Length - 1]
                         let info = YaccStateInfo.from lead
                         match info.position with
                         | Some j when i > j -> ()
                         | _ ->
-                            yield None, tok
-                            let next = parser.shift currentStates (Light.tokenRow None tok)
+                            yield None, right_tok
+                            let next = parser.shift currentStates (Light.tokenRow None right_tok)
                             yield! loop next
                 ]
 
@@ -233,19 +216,20 @@ let (|PEEK_BAR|_|) (states: YaccState list, newline: int option, la: FSharpToken
     match la with
     | BAR ->
         let vps =
-            lookaheads.[FSharpToken.tag BAR]
-            |> Set.filter(fun v ->
-                let top = v.prefix.[0]
+            lookahead_bar
+            |> Set.filter(fun prefix ->
+                let top = prefix.[0]
                 top = "WITH" || top = "FUNCTION"
-            ) // 排除rhsend,rrparen
-            |> Seq.tryFind(fun v -> v.prefix |> isPrefixOf states)
+            )
+            |> Seq.tryFind(isPrefixOf states)
+
         match vps with
-        | Some vp ->
+        | Some prefix ->
             let aligned =
                 match newline with
                 | None -> true
                 | Some i ->
-                    let lead = YaccStateInfo.from states.[vp.prefix.Length - 1]
+                    let lead = YaccStateInfo.from states.[prefix.Length - 1]
                     match lead.position with
                     | None -> false
                     | Some j -> i = j
@@ -257,16 +241,13 @@ let (|PEEK_BAR|_|) (states: YaccState list, newline: int option, la: FSharpToken
         | None ->
             let rec loop (currentStates: YaccState list) =
                 seq {
-                    match //miss currentStates
-                        lookahead_rhsend_rrparen
-                        |> Seq.tryFind(fun (v, tok) -> v.prefix |> isPrefixOf currentStates)
-                    with
-                    | None -> ()
-                    | Some(vp, virtual_tok) ->
+                    match Punctuation.find currentStates with
+                    | SEMICOLON, [] -> ()
+                    | virtual_tok, prefix ->
                         let ended =
-                            if vp.head = "ruleClause" then
+                            if prefix.[prefix.Length - 1] = "patternAndGuard" then
                                 //前面是bar / with / function领头
-                                let lead = YaccStateInfo.from currentStates.[vp.prefix.Length]
+                                let lead = YaccStateInfo.from currentStates.[prefix.Length]
                                 //需要对齐
                                 let aligned =
                                     match newline, lead.position with
@@ -291,3 +272,21 @@ let (|PEEK_BAR|_|) (states: YaccState list, newline: int option, la: FSharpToken
                 ]
 
     | _ -> None
+/// 右花括号之前
+let (|PEEK_RBRACE|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
+    if la = RBRACE then
+        if
+            lookahead_rbrace
+            |> Set.exists(StackOps.isPrefixOf states)
+        then
+            Some [ newline, la ]
+        else
+            let i = StackOps.balanceLeft "{" "}" states
+            let inner = List.take (i + 1) states
+            Some
+                [
+                    yield! offside_rrparen_or_rhsend inner
+                    yield newline, la
+                ]
+    else
+        None

@@ -1,29 +1,7 @@
 module FSharp.Substance.RightSententialForm
 open FSharp.LexYacc
 let lookaheads: Map<string, ViablePrefix Set> = Map [
-  "!",set [
-    {prefix=["("];head="parenExpr"}
-    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
-    {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["->";"patternAndGuard"];head="ruleClause"}
-    {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
-    {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
-    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
-    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
-    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
-    {prefix=["MATCH"];head="matchExpr"}
-    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
-    {prefix=["["];head="listExpr"}
-    {prefix=["[";"."];head="qualificationSuffix"}
-    {prefix=["[|"];head="arrayExpr"}
-  ]
   "(",set [
-    {prefix=["!"];head="unaryExpr"}
     {prefix=["("];head="atomType"}
     {prefix=["("];head="parameterPattern"}
     {prefix=["("];head="parenExpr"}
@@ -49,6 +27,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["<";"IDENT"];head="identExpr"}
     {prefix=["<";"longid"];head="atomType"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
@@ -67,6 +46,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["MATCH"];head="matchExpr"}
     {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
@@ -83,6 +63,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revAppExpr"}
   ]
   ")",set [
     {prefix=["("];head="atomicExpr"}
@@ -624,6 +606,38 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
   ]
   "*",set [
     {prefix=["("];head="atomicExpr"}
@@ -747,6 +761,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   "+",set [
     {prefix=["("];head="atomicExpr"}
@@ -782,6 +804,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
@@ -827,6 +850,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["MATCH"];head="matchExpr"}
     {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
@@ -873,6 +897,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   ",",set [
     {prefix=[")";"("];head="revTupleExpr"}
@@ -1215,6 +1247,22 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revTupleExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revTupleExpr"}
   ]
   "-",set [
     {prefix=["("];head="atomicExpr"}
@@ -1250,6 +1298,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revBinaryExpr"}
@@ -1295,6 +1344,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["MATCH"];head="matchExpr"}
     {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
@@ -1341,6 +1391,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   "->",set [
     {prefix=[")";"(";"WHEN";"matchPattern"];head="ruleClause"}
@@ -1483,6 +1541,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"WHEN";"matchPattern"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"WHEN";"matchPattern"];head="ruleClause"}
   ]
   ".",set [
     {prefix=[")";"("];head="revQualificationExpr"}
@@ -1500,6 +1566,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revQualificationExpr"}
     {prefix=["|]";"[|"];head="revQualificationExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revQualificationExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revQualificationExpr"}
   ]
   ":",set [
     {prefix=["IDENT"];head="atomicPattern"}
@@ -1513,11 +1580,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1525,11 +1594,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"["];head="listExpr"}
     {prefix=[")";"(";"[|"];head="arrayExpr"}
@@ -1541,11 +1612,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1553,11 +1626,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -1569,11 +1644,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1581,11 +1658,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"[|"];head="arrayExpr"}
@@ -1597,11 +1676,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1609,11 +1690,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -1625,11 +1708,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1637,11 +1722,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"[|"];head="arrayExpr"}
@@ -1653,11 +1740,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1665,11 +1754,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -1681,11 +1772,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1693,11 +1786,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -1709,11 +1804,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1721,11 +1818,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -1737,11 +1836,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1749,11 +1850,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"[|"];head="arrayExpr"}
@@ -1765,11 +1868,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1777,11 +1882,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -1793,11 +1900,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1805,11 +1914,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"[|"];head="arrayExpr"}
@@ -1821,11 +1932,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1833,11 +1946,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -1849,11 +1964,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1861,11 +1978,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"[|"];head="arrayExpr"}
@@ -1877,11 +1996,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1889,11 +2010,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -1905,11 +2028,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1917,11 +2042,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -1933,11 +2060,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1945,11 +2074,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -1961,11 +2092,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -1973,11 +2106,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"[|"];head="arrayExpr"}
@@ -1989,11 +2124,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2001,11 +2138,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2017,11 +2156,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2029,11 +2170,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"[|"];head="arrayExpr"}
@@ -2045,11 +2188,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2057,11 +2202,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2073,11 +2220,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2085,11 +2234,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"[|"];head="arrayExpr"}
@@ -2101,11 +2252,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2113,11 +2266,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2129,11 +2284,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2141,11 +2298,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -2157,11 +2316,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2169,11 +2330,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2185,11 +2348,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2201,11 +2366,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2213,11 +2380,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"[|"];head="arrayExpr"}
@@ -2229,11 +2398,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2241,11 +2412,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2257,11 +2430,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2269,11 +2444,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"[|"];head="arrayExpr"}
@@ -2285,11 +2462,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2297,11 +2476,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2313,11 +2494,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2325,11 +2508,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"[|"];head="arrayExpr"}
@@ -2341,11 +2526,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2353,11 +2540,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2369,11 +2558,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2381,11 +2572,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -2397,11 +2590,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2409,11 +2604,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2421,11 +2618,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"[|"];head="arrayExpr"}
@@ -2437,11 +2636,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2449,11 +2650,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2465,11 +2668,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2477,11 +2682,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"[|"];head="arrayExpr"}
@@ -2493,11 +2700,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2505,11 +2714,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2521,11 +2732,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2533,11 +2746,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"[|"];head="arrayExpr"}
@@ -2549,11 +2764,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2561,11 +2778,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2577,11 +2796,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2589,11 +2810,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -2605,11 +2828,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2617,11 +2842,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2633,11 +2860,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2653,11 +2882,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2665,11 +2896,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"[|"];head="arrayExpr"}
@@ -2681,11 +2914,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2693,11 +2928,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2709,11 +2946,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2721,11 +2960,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"[|"];head="arrayExpr"}
@@ -2737,11 +2978,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2749,11 +2992,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2765,11 +3010,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2777,11 +3024,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"[|"];head="arrayExpr"}
@@ -2793,11 +3042,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2805,11 +3056,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2821,11 +3074,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2833,11 +3088,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -2849,11 +3106,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2861,11 +3120,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2873,11 +3134,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"OPEN"];head="revOpenOrLets"}
     {prefix=["IDENT";"OPEN";";";"revOpenOrLets"];head="revOpenOrLets"}
@@ -2893,11 +3156,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2905,11 +3170,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2921,11 +3188,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2933,11 +3202,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"[|"];head="arrayExpr"}
@@ -2949,11 +3220,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2961,11 +3234,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -2977,11 +3252,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -2989,11 +3266,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"[|"];head="arrayExpr"}
@@ -3005,11 +3284,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3017,11 +3298,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3033,11 +3316,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3045,11 +3330,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -3061,11 +3348,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3073,11 +3362,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3089,11 +3380,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3101,11 +3394,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"["];head="listExpr"}
     {prefix=["LITERAL";"[|"];head="arrayExpr"}
@@ -3117,11 +3412,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3129,11 +3426,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3145,11 +3444,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3157,11 +3458,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"[|"];head="arrayExpr"}
@@ -3173,11 +3476,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3185,11 +3490,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3201,11 +3508,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3213,11 +3522,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"[|"];head="arrayExpr"}
@@ -3229,11 +3540,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3241,11 +3554,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3257,11 +3572,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3269,11 +3586,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -3285,11 +3604,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3297,11 +3618,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3311,11 +3634,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
@@ -3325,11 +3650,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
@@ -3339,14 +3666,20 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"IDENT"];head="fieldBindings"}
+    {prefix=["RHSEND";"valueExpr";"=";"IDENT";";";"fieldBindings"];head="fieldBindings"}
+    {prefix=["RHSEND";"valueExpr";"=";"IDENT";";";"fieldBindings";"{"];head="recdLiteralExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"IDENT";"{"];head="recdLiteralExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET"];head="revOpenOrLets"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET"];head="revSequentialExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"("];head="parenExpr"}
@@ -3356,11 +3689,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"["];head="listExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
@@ -3371,11 +3706,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"[|"];head="arrayExpr"}
@@ -3385,11 +3722,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
@@ -3399,14 +3738,20 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"[|"];head="arrayExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBindings"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"IDENT";";";"fieldBindings"];head="fieldBindings"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"IDENT";";";"fieldBindings";"{"];head="recdLiteralExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"IDENT";"{"];head="recdLiteralExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="revOpenOrLets"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="revSequentialExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"("];head="parenExpr"}
@@ -3416,11 +3761,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"["];head="listExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"[|"];head="arrayExpr"}
@@ -3433,11 +3780,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3445,11 +3794,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"["];head="listExpr"}
     {prefix=["]";"[";"[|"];head="arrayExpr"}
@@ -3461,11 +3812,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3473,11 +3826,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3489,11 +3844,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3501,11 +3858,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"[|"];head="arrayExpr"}
@@ -3517,11 +3876,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3529,11 +3890,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3545,11 +3908,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3557,11 +3922,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"[|"];head="arrayExpr"}
@@ -3573,11 +3940,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3585,11 +3954,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3601,11 +3972,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3613,11 +3986,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -3629,11 +4004,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3641,11 +4018,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3657,11 +4036,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3669,11 +4050,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"[|"];head="arrayExpr"}
@@ -3685,11 +4068,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3697,11 +4082,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3713,11 +4100,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3725,11 +4114,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"[|"];head="arrayExpr"}
@@ -3741,11 +4132,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3753,11 +4146,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3769,11 +4164,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3781,11 +4178,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"[|"];head="arrayExpr"}
@@ -3797,11 +4196,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3809,11 +4210,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3825,11 +4228,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3837,11 +4242,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -3853,11 +4260,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3865,11 +4274,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3881,11 +4292,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3893,11 +4306,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"[|"];head="arrayExpr"}
@@ -3909,11 +4324,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3921,11 +4338,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3937,11 +4356,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3949,11 +4370,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"[|"];head="arrayExpr"}
@@ -3965,11 +4388,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -3977,11 +4402,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -3993,11 +4420,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4005,11 +4434,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"[|"];head="arrayExpr"}
@@ -4021,11 +4452,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4033,11 +4466,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -4049,11 +4484,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4061,11 +4498,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -4077,11 +4516,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4089,11 +4530,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -4105,11 +4548,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4117,11 +4562,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"["];head="listExpr"}
     {prefix=["|]";"[|";"[|"];head="arrayExpr"}
@@ -4133,11 +4580,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4145,11 +4594,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -4161,11 +4612,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4173,11 +4626,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"[|"];head="arrayExpr"}
@@ -4189,11 +4644,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4201,11 +4658,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -4217,11 +4676,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4229,11 +4690,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"[|"];head="arrayExpr"}
@@ -4245,11 +4708,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4257,11 +4722,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -4273,11 +4740,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4285,11 +4754,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -4301,11 +4772,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4313,11 +4786,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -4329,11 +4804,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4341,11 +4818,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"[|"];head="arrayExpr"}
@@ -4357,11 +4836,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4369,11 +4850,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -4385,11 +4868,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4397,11 +4882,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"[|"];head="arrayExpr"}
@@ -4413,11 +4900,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4425,11 +4914,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -4441,11 +4932,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4453,11 +4946,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"[|"];head="arrayExpr"}
@@ -4469,11 +4964,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4481,11 +4978,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
@@ -4497,11 +4996,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4509,11 +5010,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
@@ -4525,11 +5028,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
@@ -4537,14 +5042,272 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"("];head="parenExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
   ]
   "<",set [
     {prefix=["IDENT"];head="atomType"}
@@ -4611,6 +5374,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[">";"typeArguments";"<";"longid";"->";"funType";":";"IDENT";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"longid";":";"IDENT";",";"tuplePattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"longid";":";"IDENT";"LET"];head="letBinding"}
+    {prefix=["IDENT"];head="fieldBinding"}
     {prefix=["IDENT"];head="revBinaryExpr"}
     {prefix=["IDENT";"*";"tupleType";"->";"funType";":";"IDENT";",";"tuplePattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"*";"tupleType";"->";"funType";":";"IDENT";"LET"];head="letBinding"}
@@ -4725,6 +5489,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   ">",set [
     {prefix=[")";"typeArgument";"(";"*";"tupleType";",";"typeArguments";"<";"IDENT"];head="identExpr"}
@@ -4962,6 +5734,14 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix"];head="revBinaryExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix"];head="revBinaryExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr"];head="revBinaryExpr"}
   ]
   "ALWAYS_PREFIX",set [
     {prefix=["("];head="parenExpr"}
@@ -4972,11 +5752,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["MATCH"];head="matchExpr"}
     {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
@@ -5002,15 +5784,16 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
   ]
   "IDENT",set [
-    {prefix=["!"];head="unaryExpr"}
     {prefix=["("];head="atomType"}
     {prefix=["("];head="parameterPattern"}
     {prefix=["("];head="parenExpr"}
@@ -5036,9 +5819,11 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["."];head="qualificationSuffix"}
     {prefix=[".";"revLongid"];head="revLongid"}
     {prefix=[":";"IDENT"];head="atomicPattern"}
+    {prefix=[";";"fieldBindings"];head="fieldBindings"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["<";"IDENT"];head="identExpr"}
     {prefix=["<";"longid"];head="atomType"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
@@ -5062,6 +5847,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["MATCH"];head="matchExpr"}
     {prefix=["MODULE"];head="file"}
@@ -5079,12 +5865,15 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revAppExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
+    {prefix=["{"];head="recdLiteralExpr"}
     {prefix=["|";"WITH";"tupleExpr";"MATCH"];head="matchExpr"}
     {prefix=["|";"revRuleClauses"];head="revRuleClauses"}
     {prefix=["|]";"[|"];head="revAppExpr"}
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revAppExpr"}
   ]
   "LET",set [
     {prefix=["("];head="parenExpr"}
@@ -5094,12 +5883,12 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["IDENT";"MODULE"];head="file"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
   ]
   "LITERAL",set [
-    {prefix=["!"];head="unaryExpr"}
     {prefix=["("];head="parenExpr"}
     {prefix=[")";"("];head="revAppExpr"}
     {prefix=[")";"(";"revAppExpr"];head="revAppExpr"}
@@ -5116,6 +5905,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
@@ -5132,6 +5922,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["MATCH"];head="matchExpr"}
     {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
@@ -5151,10 +5942,13 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revAppExpr"}
   ]
   "LLPAREN",set [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
   ]
   "MATCH",set [
@@ -5162,6 +5956,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["["];head="listExpr"}
     {prefix=["[|"];head="arrayExpr"}
@@ -5174,1935 +5969,2770 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
   "RHSEND",set [
     {prefix=[")";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"->";"patternAndGuard"];head="ruleClause"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["IDENT";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"=";"bindingPattern";"LET"];head="letBinding"}
   ]
   "RRPAREN",set [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"infix";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["IDENT";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LITERAL";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"parameterPattern";"FUN";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RHSEND";"valueExpr";"=";"bindingPattern";"LET";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
   ]
   "TYPAR",set [
     {prefix=["("];head="atomType"}
@@ -7326,9 +8956,24 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"MATCH"];head="matchExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"MATCH"];head="matchExpr"}
   ]
   "[",set [
-    {prefix=["!"];head="unaryExpr"}
     {prefix=["("];head="parenExpr"}
     {prefix=[")";"("];head="revAppExpr"}
     {prefix=[")";"(";"revAppExpr"];head="revAppExpr"}
@@ -7347,6 +8992,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=["."];head="qualificationSuffix"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
@@ -7368,6 +9014,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["MATCH"];head="matchExpr"}
     {prefix=["TYPAR"];head="appType"}
@@ -7386,9 +9033,10 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revAppExpr"}
   ]
   "[|",set [
-    {prefix=["!"];head="unaryExpr"}
     {prefix=["("];head="parenExpr"}
     {prefix=[")";"("];head="revAppExpr"}
     {prefix=[")";"(";"revAppExpr"];head="revAppExpr"}
@@ -7405,6 +9053,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["->";"patternAndGuard"];head="ruleClause"}
     {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
     {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
     {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
@@ -7421,6 +9070,7 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
     {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
     {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
     {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
     {prefix=["MATCH"];head="matchExpr"}
     {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
@@ -7437,6 +9087,8 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revAppExpr"}
   ]
   "]",set [
     {prefix=[")";"(";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
@@ -8082,6 +9734,108 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[";"."];head="qualificationSuffix"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"["];head="listExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[";"."];head="qualificationSuffix"}
+  ]
+  "{",set [
+    {prefix=["("];head="parenExpr"}
+    {prefix=[")";"("];head="revAppExpr"}
+    {prefix=[")";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=[")";"infix";"("];head="revAppExpr"}
+    {prefix=[")";"infix";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"("];head="revAppExpr"}
+    {prefix=[")";"opt_semicolon";"revSequentialExpr";"(";"revAppExpr"];head="revAppExpr"}
+    {prefix=["*";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["+"];head="unaryExpr"}
+    {prefix=["+";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[",";"revTupleExpr"];head="revTupleExpr"}
+    {prefix=["-"];head="unaryExpr"}
+    {prefix=["-";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["->";"patternAndGuard"];head="ruleClause"}
+    {prefix=[";";"revSequentialExpr"];head="revSequentialExpr"}
+    {prefix=["=";"IDENT"];head="fieldBinding"}
+    {prefix=["=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["=";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT"];head="revAppExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr"];head="revAppExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
+    {prefix=[">";"typeArguments";"<";"IDENT";"revAppExpr"];head="revAppExpr"}
+    {prefix=["ALWAYS_INFIX";"revBinaryExpr"];head="revBinaryExpr"}
+    {prefix=["ALWAYS_PREFIX"];head="unaryExpr"}
+    {prefix=["IDENT"];head="revAppExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr"];head="revAppExpr"}
+    {prefix=["IDENT";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
+    {prefix=["IDENT";"revAppExpr"];head="revAppExpr"}
+    {prefix=["LITERAL"];head="revAppExpr"}
+    {prefix=["LITERAL";"revAppExpr"];head="revAppExpr"}
+    {prefix=["LLPAREN";"->";"parameterPattern";"FUN"];head="lambdaExpr"}
+    {prefix=["LLPAREN";"->";"patternAndGuard"];head="ruleClause"}
+    {prefix=["LLPAREN";"=";"IDENT"];head="fieldBinding"}
+    {prefix=["LLPAREN";"=";"bindingPattern";"LET"];head="letBinding"}
+    {prefix=["MATCH"];head="matchExpr"}
+    {prefix=["WHEN";"matchPattern"];head="patternAndGuard"}
+    {prefix=["["];head="listExpr"}
+    {prefix=["[";"."];head="qualificationSuffix"}
+    {prefix=["[|"];head="arrayExpr"}
+    {prefix=["]";"["];head="revAppExpr"}
+    {prefix=["]";"[";"revAppExpr"];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"["];head="revAppExpr"}
+    {prefix=["]";"opt_semicolon";"revSequentialExpr";"[";"revAppExpr"];head="revAppExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr"];head="revAppExpr"}
+    {prefix=["]";"tupleExpr";"[";".";"revQualificationExpr";"revAppExpr"];head="revAppExpr"}
+    {prefix=["|]";"[|"];head="revAppExpr"}
+    {prefix=["|]";"[|";"revAppExpr"];head="revAppExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|"];head="revAppExpr"}
+    {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{"];head="revAppExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr"];head="revAppExpr"}
   ]
   "|",set [
     {prefix=["RHSEND";"valueExpr";"->";"patternAndGuard"];head="revRuleClauses"}
@@ -8525,24 +10279,48 @@ let lookaheads: Map<string, ViablePrefix Set> = Map [
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
     {prefix=["|]";"opt_semicolon";"revSequentialExpr";"[|";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";",";"revTupleExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";";";"revSequentialExpr";"[|"];head="arrayExpr"}
+    {prefix=["}";"opt_semicolon";"fieldBindings";"{";"revAppExpr";"prefix";"infix";"revBinaryExpr";"[|"];head="arrayExpr"}
+  ]
+  "}",set [
+    {prefix=[";";"fieldBindings";"{"];head="recdLiteralExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"IDENT";";";"fieldBindings";"{"];head="recdLiteralExpr"}
+    {prefix=["RHSEND";"valueExpr";"=";"IDENT";"{"];head="recdLiteralExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"IDENT";";";"fieldBindings";"{"];head="recdLiteralExpr"}
+    {prefix=["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"IDENT";"{"];head="recdLiteralExpr"}
   ]
 ]
 let top_prefixes: Map<string list, string Set> = Map [
-  ["!";"("],set ["parenExpr"]
-  ["!";",";"revTupleExpr"],set ["revTupleExpr"]
-  ["!";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
-  ["!";"->";"patternAndGuard"],set ["ruleClause"]
-  ["!";";";"revSequentialExpr"],set ["revSequentialExpr"]
-  ["!";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["!";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
-  ["!";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
-  ["!";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
-  ["!";"MATCH"],set ["matchExpr"]
-  ["!";"WHEN";"matchPattern"],set ["patternAndGuard"]
-  ["!";"["],set ["listExpr"]
-  ["!";"[";"."],set ["qualificationSuffix"]
-  ["!";"[|"],set ["arrayExpr"]
-  ["!";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
   ["(";"("],set ["atomType";"parameterPattern";"parenExpr"]
   ["(";"*";"tupleType"],set ["tupleType"]
   ["(";",";"revTupleExpr"],set ["revTupleExpr"]
@@ -8555,11 +10333,13 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["(";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["(";"<";"IDENT"],set ["identExpr"]
   ["(";"<";"longid"],set ["atomType"]
+  ["(";"=";"IDENT"],set ["fieldBinding"]
   ["(";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["(";"FUN"],set ["lambdaExpr"]
   ["(";"LET"],set ["letBinding"]
   ["(";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["(";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["(";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["(";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["(";"MATCH"],set ["matchExpr"]
   ["(";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8582,9 +10362,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["+";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["+";"->";"patternAndGuard"],set ["ruleClause"]
   ["+";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["+";"=";"IDENT"],set ["fieldBinding"]
   ["+";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["+";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["+";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["+";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["+";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["+";"MATCH"],set ["matchExpr"]
   ["+";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8601,9 +10383,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["-";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["-";"->";"patternAndGuard"],set ["ruleClause"]
   ["-";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["-";"=";"IDENT"],set ["fieldBinding"]
   ["-";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["-";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["-";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["-";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["-";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["-";"MATCH"],set ["matchExpr"]
   ["-";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8618,18 +10402,22 @@ let top_prefixes: Map<string list, string Set> = Map [
   [".";"revLongid"],set ["revLongid"]
   [".";"revQualificationExpr"],set ["revQualificationExpr"]
   [":";"IDENT"],set ["atomicPattern"]
+  [";";"fieldBindings"],set ["fieldBindings"]
+  [";";"fieldBindings";"{"],set ["recdLiteralExpr"]
   [";";"revOpenOrLets"],set ["revOpenOrLets"]
   [";";"revOpenOrLets";"longid";"MODULE"],set ["file"]
   [";";"revSequentialExpr"],set ["revSequentialExpr"]
   [";";"revSequentialExpr";"("],set ["parenExpr"]
   [";";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   [";";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  [";";"revSequentialExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   [";";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   [";";"revSequentialExpr";"["],set ["listExpr"]
   [";";"revSequentialExpr";"[|"],set ["arrayExpr"]
   ["<";"IDENT"],set ["identExpr"]
   ["<";"longid"],set ["atomType"]
   ["=";"("],set ["atomicExpr"]
+  ["=";"IDENT"],set ["fieldBinding"]
   ["=";"bindingPattern";"LET"],set ["letBinding"]
   ["=";"revBinaryExpr"],set ["revBinaryExpr"]
   [">";"typeArguments";"<";"IDENT"],set ["identExpr"]
@@ -8641,9 +10429,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["ALWAYS_PREFIX";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["ALWAYS_PREFIX";"->";"patternAndGuard"],set ["ruleClause"]
   ["ALWAYS_PREFIX";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["ALWAYS_PREFIX";"=";"IDENT"],set ["fieldBinding"]
   ["ALWAYS_PREFIX";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["ALWAYS_PREFIX";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["ALWAYS_PREFIX";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["ALWAYS_PREFIX";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["ALWAYS_PREFIX";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["ALWAYS_PREFIX";"MATCH"],set ["matchExpr"]
   ["ALWAYS_PREFIX";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8657,9 +10447,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["FUN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["FUN";"->";"patternAndGuard"],set ["ruleClause"]
   ["FUN";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["FUN";"=";"IDENT"],set ["fieldBinding"]
   ["FUN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["FUN";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["FUN";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["FUN";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["FUN";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["FUN";"["],set ["listExpr"]
   ["FUN";"[|"],set ["arrayExpr"]
@@ -8674,14 +10466,17 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["IDENT";"."],set ["qualificationSuffix"]
   ["IDENT";".";"revLongid"],set ["revLongid"]
   ["IDENT";":";"IDENT"],set ["atomicPattern"]
+  ["IDENT";";";"fieldBindings"],set ["fieldBindings"]
   ["IDENT";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["IDENT";"<";"IDENT"],set ["identExpr"]
   ["IDENT";"<";"longid"],set ["atomType"]
+  ["IDENT";"=";"IDENT"],set ["fieldBinding"]
   ["IDENT";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["IDENT";"FUN"],set ["lambdaExpr"]
   ["IDENT";"LET"],set ["letBinding"]
   ["IDENT";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["IDENT";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["IDENT";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["IDENT";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["IDENT";"MATCH"],set ["matchExpr"]
   ["IDENT";"MODULE"],set ["file"]
@@ -8695,12 +10490,14 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["IDENT";"opt_bar";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
   ["IDENT";"prefix"],set ["unaryExpr"]
   ["IDENT";"revAppExpr"],set ["revAppExpr"]
+  ["IDENT";"{"],set ["recdLiteralExpr"]
   ["IDENT";"|";"revRuleClauses"],set ["revRuleClauses"]
   ["LET";"("],set ["parenExpr"]
   ["LET";";";"revOpenOrLets"],set ["revOpenOrLets"]
   ["LET";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["LET";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["LET";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["LET";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["LET";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["LET";"["],set ["listExpr"]
   ["LET";"[|"],set ["arrayExpr"]
@@ -8710,9 +10507,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["LITERAL";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["LITERAL";"->";"patternAndGuard"],set ["ruleClause"]
   ["LITERAL";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["LITERAL";"=";"IDENT"],set ["fieldBinding"]
   ["LITERAL";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["LITERAL";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["LITERAL";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["LITERAL";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["LITERAL";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["LITERAL";"MATCH"],set ["matchExpr"]
   ["LITERAL";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8726,11 +10525,13 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["LITERAL";"|";"revRuleClauses"],set ["revRuleClauses"]
   ["LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["MATCH";"("],set ["parenExpr"]
   ["MATCH";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["MATCH";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["MATCH";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["MATCH";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["MATCH";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["MATCH";"["],set ["listExpr"]
   ["MATCH";"[|"],set ["arrayExpr"]
@@ -8738,9 +10539,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["OPEN";"longid";"MODULE"],set ["file"]
   ["RHSEND";"valueExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["RHSEND";"valueExpr";"->";"patternAndGuard"],set ["ruleClause"]
+  ["RHSEND";"valueExpr";"=";"IDENT"],set ["fieldBinding"]
   ["RHSEND";"valueExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["RRPAREN";"opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["TYPAR";"("],set ["atomType"]
   ["TYPAR";"*";"tupleType"],set ["tupleType"]
@@ -8757,9 +10560,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["[";"->";"patternAndGuard"],set ["ruleClause"]
   ["[";"."],set ["qualificationSuffix"]
   ["[";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["[";"=";"IDENT"],set ["fieldBinding"]
   ["[";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["[";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["[";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["[";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["[";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["[";"MATCH"],set ["matchExpr"]
   ["[";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8775,9 +10580,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["[|";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["[|";"->";"patternAndGuard"],set ["ruleClause"]
   ["[|";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["[|";"=";"IDENT"],set ["fieldBinding"]
   ["[|";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["[|";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["[|";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["[|";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["[|";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["[|";"MATCH"],set ["matchExpr"]
   ["[|";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8795,9 +10602,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["appExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["appExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["appExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["appExpr";"=";"IDENT"],set ["fieldBinding"]
   ["appExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["appExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["appExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["appExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["appExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["appExpr";"MATCH"],set ["matchExpr"]
   ["appExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8818,9 +10627,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["arrayExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["arrayExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["arrayExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["arrayExpr";"=";"IDENT"],set ["fieldBinding"]
   ["arrayExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["arrayExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["arrayExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["arrayExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["arrayExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["arrayExpr";"MATCH"],set ["matchExpr"]
   ["arrayExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8842,9 +10653,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["atomicExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["atomicExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["atomicExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["atomicExpr";"=";"IDENT"],set ["fieldBinding"]
   ["atomicExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["atomicExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["atomicExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["atomicExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["atomicExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["atomicExpr";"MATCH"],set ["matchExpr"]
   ["atomicExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8862,9 +10675,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["binaryExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["binaryExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["binaryExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["binaryExpr";"=";"IDENT"],set ["fieldBinding"]
   ["binaryExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["binaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["binaryExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["binaryExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["binaryExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["binaryExpr";"MATCH"],set ["matchExpr"]
   ["binaryExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8877,9 +10692,13 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["declExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["declExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["declExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["declExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["declExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["declExpr";"["],set ["listExpr"]
   ["declExpr";"[|"],set ["arrayExpr"]
+  ["fieldBinding";";";"fieldBindings"],set ["fieldBindings"]
+  ["fieldBinding";"{"],set ["recdLiteralExpr"]
+  ["fieldBindings";"{"],set ["recdLiteralExpr"]
   ["funType";"("],set ["atomType"]
   ["funType";",";"typeArguments"],set ["typeArguments"]
   ["funType";":";"IDENT"],set ["atomicPattern"]
@@ -8891,9 +10710,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["identExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["identExpr";"."],set ["qualificationSuffix"]
   ["identExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["identExpr";"=";"IDENT"],set ["fieldBinding"]
   ["identExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["identExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["identExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["identExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["identExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["identExpr";"MATCH"],set ["matchExpr"]
   ["identExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8909,9 +10730,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["lambdaExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["lambdaExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["lambdaExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["lambdaExpr";"=";"IDENT"],set ["fieldBinding"]
   ["lambdaExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["lambdaExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["lambdaExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["lambdaExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["lambdaExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["lambdaExpr";"["],set ["listExpr"]
   ["lambdaExpr";"[|"],set ["arrayExpr"]
@@ -8920,6 +10743,7 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["letBinding";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["letBinding";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["letBinding";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["letBinding";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["letBinding";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["letBinding";"["],set ["listExpr"]
   ["letBinding";"[|"],set ["arrayExpr"]
@@ -8929,9 +10753,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["listExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["listExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["listExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["listExpr";"=";"IDENT"],set ["fieldBinding"]
   ["listExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["listExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["listExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["listExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["listExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["listExpr";"MATCH"],set ["matchExpr"]
   ["listExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8955,6 +10781,7 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["matchExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
   ["matchExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["matchExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["matchExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["matchExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["matchExpr";"["],set ["listExpr"]
   ["matchExpr";"[|"],set ["arrayExpr"]
@@ -8963,10 +10790,12 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["openOrLet";";";"revOpenOrLets"],set ["revOpenOrLets"]
   ["openOrLet";"longid";"MODULE"],set ["file"]
   ["opt_bar";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
+  ["opt_semicolon";"fieldBindings";"{"],set ["recdLiteralExpr"]
   ["opt_semicolon";"revOpenOrLets";"longid";"MODULE"],set ["file"]
   ["opt_semicolon";"revSequentialExpr";"("],set ["parenExpr"]
   ["opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["opt_semicolon";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["opt_semicolon";"revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["opt_semicolon";"revSequentialExpr";"["],set ["listExpr"]
   ["opt_semicolon";"revSequentialExpr";"[|"],set ["arrayExpr"]
@@ -8979,9 +10808,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["parenExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["parenExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["parenExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["parenExpr";"=";"IDENT"],set ["fieldBinding"]
   ["parenExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["parenExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["parenExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["parenExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["parenExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["parenExpr";"MATCH"],set ["matchExpr"]
   ["parenExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -8998,9 +10829,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["prefix";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["prefix";"->";"patternAndGuard"],set ["ruleClause"]
   ["prefix";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["prefix";"=";"IDENT"],set ["fieldBinding"]
   ["prefix";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["prefix";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["prefix";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["prefix";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["prefix";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["prefix";"MATCH"],set ["matchExpr"]
   ["prefix";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -9013,9 +10846,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["qualificationExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["qualificationExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["qualificationExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["qualificationExpr";"=";"IDENT"],set ["fieldBinding"]
   ["qualificationExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["qualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["qualificationExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["qualificationExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["qualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["qualificationExpr";"MATCH"],set ["matchExpr"]
   ["qualificationExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -9026,14 +10861,35 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["qualificationExpr";"prefix"],set ["unaryExpr"]
   ["qualificationExpr";"revAppExpr"],set ["revAppExpr"]
   ["qualificationSuffix";"revQualificationExpr"],set ["revQualificationExpr"]
+  ["recdLiteralExpr";"("],set ["parenExpr"]
+  ["recdLiteralExpr";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["recdLiteralExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["recdLiteralExpr";"->";"patternAndGuard"],set ["ruleClause"]
+  ["recdLiteralExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["recdLiteralExpr";"=";"IDENT"],set ["fieldBinding"]
+  ["recdLiteralExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["recdLiteralExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["recdLiteralExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["recdLiteralExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
+  ["recdLiteralExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["recdLiteralExpr";"MATCH"],set ["matchExpr"]
+  ["recdLiteralExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
+  ["recdLiteralExpr";"["],set ["listExpr"]
+  ["recdLiteralExpr";"[";"."],set ["qualificationSuffix"]
+  ["recdLiteralExpr";"[|"],set ["arrayExpr"]
+  ["recdLiteralExpr";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["recdLiteralExpr";"prefix"],set ["unaryExpr"]
+  ["recdLiteralExpr";"revAppExpr"],set ["revAppExpr"]
   ["revAppExpr";"("],set ["parenExpr"]
   ["revAppExpr";",";"revTupleExpr"],set ["revTupleExpr"]
   ["revAppExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["revAppExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["revAppExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["revAppExpr";"=";"IDENT"],set ["fieldBinding"]
   ["revAppExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revAppExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["revAppExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revAppExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["revAppExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revAppExpr";"MATCH"],set ["matchExpr"]
   ["revAppExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -9047,9 +10903,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["revBinaryExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["revBinaryExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["revBinaryExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["revBinaryExpr";"=";"IDENT"],set ["fieldBinding"]
   ["revBinaryExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revBinaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["revBinaryExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revBinaryExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["revBinaryExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revBinaryExpr";"MATCH"],set ["matchExpr"]
   ["revBinaryExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -9072,9 +10930,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["revQualificationExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["revQualificationExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["revQualificationExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["revQualificationExpr";"=";"IDENT"],set ["fieldBinding"]
   ["revQualificationExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revQualificationExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["revQualificationExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revQualificationExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["revQualificationExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revQualificationExpr";"MATCH"],set ["matchExpr"]
   ["revQualificationExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -9088,6 +10948,7 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["revSequentialExpr";"("],set ["parenExpr"]
   ["revSequentialExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["revSequentialExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revSequentialExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["revSequentialExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revSequentialExpr";"["],set ["listExpr"]
   ["revSequentialExpr";"[|"],set ["arrayExpr"]
@@ -9095,9 +10956,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["revTupleExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["revTupleExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["revTupleExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["revTupleExpr";"=";"IDENT"],set ["fieldBinding"]
   ["revTupleExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revTupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["revTupleExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["revTupleExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["revTupleExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["revTupleExpr";"MATCH"],set ["matchExpr"]
   ["revTupleExpr";"["],set ["listExpr"]
@@ -9110,9 +10973,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["tupleExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["tupleExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["tupleExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["tupleExpr";"=";"IDENT"],set ["fieldBinding"]
   ["tupleExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["tupleExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["tupleExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["tupleExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["tupleExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["tupleExpr";"MATCH"],set ["matchExpr"]
   ["tupleExpr";"["],set ["listExpr"]
@@ -9138,9 +11003,11 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["unaryExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["unaryExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["unaryExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["unaryExpr";"=";"IDENT"],set ["fieldBinding"]
   ["unaryExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["unaryExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["unaryExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["unaryExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["unaryExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["unaryExpr";"MATCH"],set ["matchExpr"]
   ["unaryExpr";"WHEN";"matchPattern"],set ["patternAndGuard"]
@@ -9152,14 +11019,36 @@ let top_prefixes: Map<string list, string Set> = Map [
   ["valueExpr";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["valueExpr";"->";"patternAndGuard"],set ["ruleClause"]
   ["valueExpr";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["valueExpr";"=";"IDENT"],set ["fieldBinding"]
   ["valueExpr";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["valueExpr";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
   ["valueExpr";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["valueExpr";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
   ["valueExpr";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
   ["valueExpr";"["],set ["listExpr"]
   ["valueExpr";"[|"],set ["arrayExpr"]
+  ["{";"("],set ["parenExpr"]
+  ["{";",";"revTupleExpr"],set ["revTupleExpr"]
+  ["{";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["{";"->";"patternAndGuard"],set ["ruleClause"]
+  ["{";";";"revSequentialExpr"],set ["revSequentialExpr"]
+  ["{";"=";"IDENT"],set ["fieldBinding"]
+  ["{";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["{";"LLPAREN";"->";"parameterPattern";"FUN"],set ["lambdaExpr"]
+  ["{";"LLPAREN";"->";"patternAndGuard"],set ["ruleClause"]
+  ["{";"LLPAREN";"=";"IDENT"],set ["fieldBinding"]
+  ["{";"LLPAREN";"=";"bindingPattern";"LET"],set ["letBinding"]
+  ["{";"MATCH"],set ["matchExpr"]
+  ["{";"WHEN";"matchPattern"],set ["patternAndGuard"]
+  ["{";"["],set ["listExpr"]
+  ["{";"[";"."],set ["qualificationSuffix"]
+  ["{";"[|"],set ["arrayExpr"]
+  ["{";"infix";"revBinaryExpr"],set ["revBinaryExpr"]
+  ["{";"prefix"],set ["unaryExpr"]
+  ["{";"revAppExpr"],set ["revAppExpr"]
   ["|";"WITH";"tupleExpr";"MATCH"],set ["matchExpr"]
   ["|";"revRuleClauses"],set ["revRuleClauses"]
   ["|]";"[|"],set ["arrayExpr"]
   ["|]";"opt_semicolon";"revSequentialExpr";"[|"],set ["arrayExpr"]
+  ["}";"opt_semicolon";"fieldBindings";"{"],set ["recdLiteralExpr"]
 ]

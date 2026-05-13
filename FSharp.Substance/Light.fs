@@ -78,8 +78,8 @@ let tokenRow indent tok : TokenRow<int option * FSharpToken> =
         lexeme = offsideLexeme indent tok
     }
 
-///// 用于lookahead判断
-//let semicolon_may_follow (tok: FSharpToken) =
-//    tok
-//    |> FSharpToken.tag
-//    |> RightSententialForm.follow_semicolon.Contains
+let none = tokenRow None
+
+let None_RRPAREN = tokenRow None RRPAREN
+let None_RHSEND = tokenRow None RHSEND
+let None_SEMICOLON = tokenRow None SEMICOLON

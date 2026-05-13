@@ -2,6 +2,7 @@ module FSharp.Substance.StackOps
 
 open FSharp.Substance.FSharpYacc
 open FSharp.Substance.RightSententialForm
+open FSharp.Substance.ViablePrefix
 
 open FSharp.Idioms
 open FSharp.Idioms.Literal
@@ -10,7 +11,6 @@ open FSharp.LexYacc
 
 open System
 open System.Diagnostics
-
 
 let getSymbols (states: YaccState list) =
     states
@@ -37,56 +37,6 @@ let equals (states: YaccState list) (symbols: string list) =
             sym = stateSymbols.[st.state]
             && loop restStates restSymbols
     loop states symbols
-
-
-///栈顶
-//let (|STACK_TOP|) (states: YaccState list) =
-//    let top = stateSymbols.[states.[0].state]
-//    let ls =
-//        top_prefixes
-//        |> Map.filter(fun prefix _ -> prefix |> isPrefixOf states)
-
-//    if ls.IsEmpty then
-//        Console.WriteLine("// 栈顶形状不匹配")
-//        Console.WriteLine("let 可能的栈顶 = " + stringify ls)
-//        Console.WriteLine(
-//            "let 此栈的形状 = "
-//            + stringify(getSymbols states)
-//        )
-//        failwith "notImpl"
-//    else
-//        ls
-
-//let (|TOP_RRPAREN|_|) (states: YaccState list) =
-//    top_prefixes
-//    |> Seq.tryFind(fun kvp -> isPrefixOf states kvp.Key)
-
-//let (|TOP_RHSEND|_|) (states: YaccState list) =
-//    top_prefixes
-//    |> Seq.tryFind(fun kvp -> isPrefixOf states kvp.Key)
-
-//let (|TOP_SEMICOLON|_|) (states: YaccState list) =
-//    top_prefixes
-//    |> Seq.tryFind(fun kvp -> isPrefixOf states kvp.Key)
-
-let (|LOOKAHEAD_LLPAREN|_|) (states: YaccState list) =
-    RightSententialForm.lookaheads.["LLPAREN"]
-    |> Seq.tryFind(fun vp -> vp.prefix |> isPrefixOf states)
-
-let (|LOOKAHEAD_RRPAREN|_|) (states: YaccState list) =
-    lookaheads.["RRPAREN"]
-    |> Seq.tryFind(fun vp -> vp.prefix |> isPrefixOf states)
-
-let (|LOOKAHEAD_RHSEND|_|) (states: YaccState list) =
-    lookaheads.["RHSEND"]
-    |> Seq.tryFind(fun vp -> vp.prefix |> isPrefixOf states)
-
-let (|LOOKAHEAD_SEMICOLON|_|) (states: YaccState list) =
-    let m =
-        RightSententialForm.lookaheads.[";"]
-        |> Set.filter(fun vp -> vp.prefix |> isPrefixOf states)
-
-    if m.IsEmpty then None else Some m
 
 ///向前看见一个右括号，向栈内找配对的左括号
 let balanceLeft (left: string) (right: string) (states: YaccState list) =
@@ -130,3 +80,4 @@ let getLatestLine (states: YaccState list) =
             info.position.IsSome
         )
     states.[..i]
+

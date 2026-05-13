@@ -18,13 +18,6 @@ let heads () =
     for g in groups do
         Console.WriteLine($"每组第一行：{g.[0]}")
 
-    //let bds = Pen.getBindings lines
-    //Console.WriteLine($"绑定数字：{bds.Length}")
-    //for (lhs, rhs) in bds do
-    //    //output.WriteLine($"{lhs}")
-    //    Console.WriteLine($"左手边：{lhs}；右手边：{rhs}")
-
-
 let smoke () =
     let text = File.ReadAllText(path, Encoding.UTF8)
 
@@ -43,12 +36,11 @@ let test () =
     let nodes = FSharpCompiler.compile src
     Console.WriteLine("let tgt = "+stringify nodes)
 
-    Debug.Assert((nodes = Sample.tgt))
 
-test()
+smoke()
 
 //let lookaheads =
-//    lookaheads.[";"]
+//    lookaheads
 //    |> Set.filter(fun v -> v.head = "revSequentialExpr")
 
 //Console.WriteLine(stringify lookaheads)

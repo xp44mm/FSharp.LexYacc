@@ -10,6 +10,9 @@
         <Compile Include="Dir.fs" />
         <None Include="fsharp.fslex" />
         <Compile Include="FSharpLexerTest.fs" />
+        <Compile Include="Deeper.fs" />
+        <Compile Include="ViablePrefixes.fs" />
+        <Compile Include="FsYaccData.fs" />
         <None Include="fsharp.fsyacc" />
         <Compile Include="FSharpYaccTest.fs" />
         <None Include="typeArgument.fsyacc" />

@@ -82,134 +82,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         ()
 
     [<Fact>]
-    member _.``viable prefix``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        // precedes key可以是终结符号，也可以是非终结符号
-        output.WriteLine("let follow_semicolon: string Set =")
-        let follow_semicolon = bnf.follows.[";"]
-        output.WriteLine("  " + stringify follow_semicolon)
-
-        output.WriteLine("let precede_semicolon: string Set =")
-        let precede_semicolon = bnf.precedes.[";"]
-        output.WriteLine("  " + stringify precede_semicolon)
-
-        // precedes key是任意符号，
-        let precede_declExpr: string Set = bnf.precedes.["declExpr"]
-        output.WriteLine(
-            "let precede_declExpr: string Set = "
-            + stringify precede_declExpr
-        )
-
-        let first_declExpr: string Set = bnf.firsts.["declExpr"]
-        output.WriteLine(
-            "let first_declExpr: string Set = "
-            + stringify first_declExpr
-        )
-
-        let first_valueExpr: string Set = bnf.firsts.["valueExpr"]
-        output.WriteLine(
-            "let first_valueExpr: string Set = "
-            + stringify first_valueExpr
-        )
-
-        let appExprSymbol = "appExpr"
-        let f = bnf.firsts.[appExprSymbol]
-        let l = bnf.lasts.[appExprSymbol]
-
-        output.WriteLine($"let first_appExpr = {stringify f}")
-        output.WriteLine($"let last_appExpr = {stringify l}")
-
-        output.WriteLine("let module_statement: string list Set = set [")
-        let module_statement =
-            BnfUtils.derive
-                bnf
-                [
-                    "longid"
-                    "MODULE"
-                ]
-        for prefix in module_statement do
-            //let prefix = List.rev prefix
-            output.WriteLine($"  {stringify prefix}")
-        output.WriteLine("]")
-
-        output.WriteLine("let open_statement: string list Set = set [")
-        let open_statement =
-            BnfUtils.derive
-                bnf
-                [
-                    "longid"
-                    "OPEN"
-                ]
-        for prefix in open_statement do
-            output.WriteLine($"  {stringify prefix}")
-        output.WriteLine("]")
-
-        let lookaheads: Map<string, ViablePrefix Set> =
-            ViablePrefix.lookahead bnf
-            |> Seq.groupBy snd
-            |> Seq.map(fun (tok, sq) ->
-                let ls = sq |> Seq.map fst |> Set.ofSeq
-                tok, ls
-            )
-            |> Map.ofSeq
-
-        let lookahead_rhsend_rrparen: Set<ViablePrefix * FSharpToken> =
-            let rhs =
-                lookaheads.[FSharpToken.tag RHSEND]
-                |> Set.map(fun v -> v, RHSEND)
-            let rr =
-                lookaheads.[FSharpToken.tag RRPAREN]
-                |> Set.map(fun v -> v, RRPAREN)
-            rhs + rr
-
-        output.WriteLine("let lookahead_rhsend_rrparen: Set<ViablePrefix * FSharpToken> = set [")
-        for item in lookahead_rhsend_rrparen do
-            output.WriteLine($"  {stringify item}")
-        output.WriteLine("]")
-
-    [<Fact>]
-    member _.``RightSententialForm``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let lookaheads: Map<string, ViablePrefix Set> =
-            ViablePrefix.lookahead bnf
-            |> Seq.groupBy snd
-            |> Seq.map(fun (tok, sq) ->
-                let ls = sq |> Seq.map fst |> Set.ofSeq
-                tok, ls
-            )
-            |> Map.ofSeq
-
-        output.WriteLine("let lookaheads: Map<string, ViablePrefix Set> = Map [")
-        for KeyValue(tok, ls) in lookaheads do
-            output.WriteLine(Line.indent 2 $"{stringify tok},set [")
-            for vp in ls do
-                output.WriteLine(Line.indent 4 (stringify vp))
-            output.WriteLine(Line.indent 2 "]")
-        output.WriteLine("]")
-
-        let top_prefixes: Map<string list, string Set> =
-            ViablePrefix.top bnf
-            |> Seq.groupBy(fun v -> v.prefix)
-            |> Seq.map(fun (prefix, sq) ->
-                let heads = sq |> Seq.map(fun v -> v.head)
-                prefix, set heads
-            )
-            |> Map.ofSeq
-
-        output.WriteLine("let top_prefixes: Map<string list, string Set> = Map [")
-        for KeyValue(prefix, heads) in top_prefixes do
-            output.WriteLine($"  {stringify prefix},{stringify heads}")
-        output.WriteLine("]")
-
-    [<Fact>]
     member _.``declarations``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
@@ -356,7 +228,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
                 ]
 
         let decls =
-            ViablePrefix.declarations
+            FsYaccData.declarations
             |> List.groupBy snd
             |> List.map(fun (typ, ls) ->
                 let symbols = ls |> List.map fst |> List.sort
@@ -372,9 +244,223 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
     member _.``规范化bnf``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-    
+
         let analysis = BnfAnalysisRecord.Create(flatFsyacc)
+
+        output.WriteLine(
+            $"let orphan_bnf = "
+            + stringify analysis.OrphanBnf
+        )
+        output.WriteLine(
+            $"let absence_decl = "
+            + stringify analysis.AbsenceDecl
+        )
+        output.WriteLine(
+            $"let orphan_decl = "
+            + stringify analysis.OrphanDecl
+        )
     
-        output.WriteLine($"let orphan_bnf = " + stringify analysis.OrphanBnf)
-        output.WriteLine($"let absence_decl = " + stringify analysis.AbsenceDecl)
-        output.WriteLine($"let orphan_decl = " + stringify analysis.OrphanDecl)
+    [<Fact>]
+    member _.``RightSententialForm``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
+
+        let lookaheads: Map<string, ViablePrefix Set> =
+            ViablePrefix.lookahead bnf
+            |> Seq.groupBy snd
+            |> Seq.map(fun (tok, sq) ->
+                let ls = sq |> Seq.map fst |> Set.ofSeq
+                tok, ls
+            )
+            |> Map.ofSeq
+
+        output.WriteLine("let lookaheads: Map<string, ViablePrefix Set> = Map [")
+        for KeyValue(tok, ls) in lookaheads do
+            output.WriteLine(Line.indent 2 $"{stringify tok},set [")
+            for vp in ls do
+                output.WriteLine(Line.indent 4 (stringify vp))
+            output.WriteLine(Line.indent 2 "]")
+        output.WriteLine("]")
+
+        let top_prefixes: Map<string list, string Set> =
+            ViablePrefix.top bnf
+            |> Seq.groupBy(fun v -> v.prefix)
+            |> Seq.map(fun (prefix, sq) ->
+                let heads = sq |> Seq.map(fun v -> v.head)
+                prefix, set heads
+            )
+            |> Map.ofSeq
+
+        output.WriteLine("let top_prefixes: Map<string list, string Set> = Map [")
+        for KeyValue(prefix, heads) in top_prefixes do
+            output.WriteLine($"  {stringify prefix},{stringify heads}")
+        output.WriteLine("]")
+
+    [<Fact>]
+    member _.``viable prefix``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
+
+        // precedes key可以是终结符号，也可以是非终结符号
+        output.WriteLine("let follow_semicolon: string Set =")
+        let follow_semicolon = bnf.follows.[";"]
+        output.WriteLine("  " + stringify follow_semicolon)
+
+        output.WriteLine("let precede_semicolon: string Set =")
+        let precede_semicolon = bnf.precedes.[";"]
+        output.WriteLine("  " + stringify precede_semicolon)
+
+        let precede_declExpr: string Set = bnf.precedes.["declExpr"]
+        output.WriteLine(
+            "let precede_declExpr: string Set = "
+            + stringify precede_declExpr
+        )
+
+        let first_declExpr: string Set = bnf.firsts.["declExpr"]
+        output.WriteLine(
+            "let first_declExpr: string Set = "
+            + stringify first_declExpr
+        )
+
+        let first_valueExpr: string Set = bnf.firsts.["valueExpr"]
+        output.WriteLine(
+            "let first_valueExpr: string Set = "
+            + stringify first_valueExpr
+        )
+
+        let appExprSymbol = "appExpr"
+        let f = bnf.firsts.[appExprSymbol]
+        let l = bnf.lasts.[appExprSymbol]
+
+        output.WriteLine($"let first_appExpr = {stringify f}")
+        output.WriteLine($"let last_appExpr = {stringify l}")
+
+        output.WriteLine("let module_statement: string list Set = set [")
+        let module_statement =
+            BnfUtils.derive
+                bnf
+                [
+                    "longid"
+                    "MODULE"
+                ]
+        for prefix in module_statement do
+            output.WriteLine($"  {stringify prefix}")
+        output.WriteLine("]")
+
+        output.WriteLine("let open_statement: string list Set = set [")
+        let open_statement =
+            BnfUtils.derive
+                bnf
+                [
+                    "longid"
+                    "OPEN"
+                ]
+        for prefix in open_statement do
+            output.WriteLine($"  {stringify prefix}")
+        output.WriteLine("]")
+
+
+        //下面是前缀部分
+
+        let tops: Map<string list, string Set> =
+            ViablePrefix.top bnf
+            |> Seq.groupBy(fun v -> v.prefix)
+            |> Seq.map(fun (prefix, sq) ->
+                let heads = sq |> Seq.map(fun v -> v.head)
+                prefix, set heads
+            )
+            |> Map.ofSeq
+
+        let lookaheads: Map<string, ViablePrefix Set> =
+            ViablePrefix.lookahead bnf
+            |> Seq.groupBy snd
+            |> Seq.map(fun (tok, sq) ->
+                let ls = sq |> Seq.map fst |> Set.ofSeq
+                tok, ls
+            )
+            |> Map.ofSeq
+
+        let lookahead_rparen: Set<string list> =
+            lookaheads.[FSharpToken.tag RPAREN]
+            |> Set.map(fun v -> v.prefix)
+        output.WriteLine("let lookahead_rparen: Set<string list> = set [")
+        for item in lookahead_rparen do
+            output.WriteLine($"  {stringify item}")
+        output.WriteLine("]")
+
+        let lookahead_rbrack: Set<string list> =
+            lookaheads.[FSharpToken.tag RBRACK]
+            |> Set.map(fun v -> v.prefix)
+
+        output.WriteLine("let lookahead_rbrack: Set<string list> = set [")
+        for item in lookahead_rbrack do
+            output.WriteLine($"  {stringify item}")
+        output.WriteLine("]")
+
+        let lookahead_bar_rbrack: Set<string list> =
+            lookaheads.[FSharpToken.tag BAR_RBRACK]
+            |> Set.map(fun v -> v.prefix)
+
+        output.WriteLine("let lookahead_bar_rbrack: Set<string list> = set [")
+        for item in lookahead_bar_rbrack do
+            output.WriteLine($"  {stringify item}")
+        output.WriteLine("]")
+
+        let lookahead_rbrace: Set<string list> =
+            lookaheads.[FSharpToken.tag RBRACE]
+            |> Set.map(fun v -> v.prefix)
+
+        output.WriteLine("let lookahead_rbrace: Set<string list> = set [")
+        for item in lookahead_rbrace do
+            output.WriteLine($"  {stringify item}")
+        output.WriteLine("]")
+
+        let lookahead_bar: Set<string list> = 
+            lookaheads.[FSharpToken.tag BAR]
+            |> Set.map(fun v -> v.prefix)
+
+        output.WriteLine("let lookahead_bar: Set<string list> = set [")
+        for item in lookahead_bar do
+            output.WriteLine($"  {stringify item}")
+        output.WriteLine("]")
+
+        //下面是需要拼接的栈顶前缀
+        let tops = 
+            ["fieldBinding"]
+            |> List.map(fun top -> Deeper.top_entry tops top)
+            |> Map.ofList
+
+        let lookahead_llparen: Set<string list> =
+            ViablePrefixes.cons(lookaheads.[FSharpToken.tag LLPAREN], tops)
+            |> Set.map(fun v -> v.prefix)
+
+        output.WriteLine("let lookahead_llparen: Set<string list> = set [")
+        for vp in lookahead_llparen do
+            output.WriteLine(Line.indent 2 (stringify vp))
+        output.WriteLine("]")
+
+        let lookahead_rhsend: Set<string list> =
+            ViablePrefixes.cons(lookaheads.[FSharpToken.tag RHSEND], tops)
+            |> Set.map(fun v -> v.prefix)
+
+        output.WriteLine("let lookahead_rhsend: Set<string list> = set [")
+        for vp in lookahead_rhsend do
+            output.WriteLine(Line.indent 2 (stringify vp))
+        output.WriteLine("]")
+
+        let lookahead_rrparen: Set<string list> =
+            ViablePrefixes.cons(lookaheads.[FSharpToken.tag RRPAREN], tops)
+            |> Set.map(fun v -> v.prefix)
+
+        output.WriteLine("let lookahead_rrparen: Set<string list> = set [")
+        for vp in lookahead_rrparen do
+            output.WriteLine(Line.indent 2 (stringify vp))
+        output.WriteLine("]")
+
+
+
+
