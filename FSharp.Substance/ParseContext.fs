@@ -144,23 +144,26 @@ let (|PEEK_SEMICOLON|_|) (states: YaccState list, newline: int option, la: FShar
             [
                 match Punctuation.find currentStates with
                 | SEMICOLON, [] -> ()
-                | (tok, prefix) ->
-                    yield None, tok
+                | tok, prefix ->
+                    let lead = YaccStateInfo.from currentStates.[prefix.Length - 1]
+
                     let longer =
-                        match prefix.[prefix.Length - 1] with
-                        | "LET"
-                        | "|"
-                        | "{"
-                        | "fieldBindings" ->
-                            //不能越过let _ =；不能越过match子句
-                            false
+                        match lead.tag with
                         | "FUN" ->
                             //检测前缀是否是独立的DECL
                             let prevState = currentStates.[prefix.Length]
                             stateSymbols.[prevState.state]
                             |> Punctuation.is_new_decl
                             |> not
+                        | "LET"
+                        | "patternAndGuard"
+                        | "{"
+                        | "fieldBindings" ->
+                            //不能越过let _ =；不能越过match子句
+                            false
                         | _ -> failwith "never"
+
+                    yield None, tok
                     if longer then
                         let rhsendStates = parser.shift currentStates Light.None_RHSEND
                         yield! loop rhsendStates
@@ -180,7 +183,7 @@ let (|PEEK_SEMICOLON|_|) (states: YaccState list, newline: int option, la: FShar
                     yield None, la
             ]
 
-let (|PEEK_NEWLINE_NEW_DECL|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
+let (|PEEK_NEWLINE_VIRTUAL|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
     match newline with
     | None -> None
     | Some i ->
@@ -190,15 +193,42 @@ let (|PEEK_NEWLINE_NEW_DECL|_|) (states: YaccState list, newline: int option, la
                 [
                     match Punctuation.find currentStates with
                     | SEMICOLON, [] -> ()
-                    | right_tok, prefix ->
-                        let lead = currentStates.[prefix.Length - 1]
-                        let info = YaccStateInfo.from lead
-                        match info.position with
-                        | Some j when i > j -> ()
-                        | _ ->
-                            yield None, right_tok
-                            let next = parser.shift currentStates (Light.tokenRow None right_tok)
-                            yield! loop next
+                    | tok, prefix ->
+                        let lead = YaccStateInfo.from currentStates.[prefix.Length - 1]
+                        //不能越过缩进线
+                        let longer =
+                            match lead.tag with
+                            | "LET" ->
+                                match lead.position with
+                                | None -> failwith "必须行首"
+                                | Some j -> j <= i
+
+                            | "patternAndGuard" ->
+                                failwith "继续向前找到match/function的位置"
+
+                            | "{" ->
+                                let ident = YaccStateInfo.from currentStates.[prefix.Length - 2]
+                                match ident.position with
+                                | None -> failwith "必须行首"
+                                | Some j -> j <= i
+
+                            | "fieldBindings" ->
+                                let ident = YaccStateInfo.from currentStates.[prefix.Length - 3]
+                                match ident.position with
+                                | None -> failwith "必须行首"
+                                | Some j -> j <= i
+
+                            | "FUN" ->
+                                match lead.position with
+                                | None -> failwith "notImpl"
+                                | Some j -> j <= i
+
+                            | _ -> failwith "never"
+
+                        yield None, tok
+                        if longer then
+                            let nextStates = parser.shift currentStates (Light.none tok)
+                            yield! loop nextStates
                 ]
 
             Some
@@ -207,10 +237,10 @@ let (|PEEK_NEWLINE_NEW_DECL|_|) (states: YaccState list, newline: int option, la
                     None, SEMICOLON
                     newline, la
                 ]
-
         else
             None
 
+/// mmatch语句内部的对齐
 let (|PEEK_BAR|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
     // 问题：bar不总是子句的引导，模式中的bar，可区分联合的bar,还有香蕉夹
     match la with
@@ -272,6 +302,7 @@ let (|PEEK_BAR|_|) (states: YaccState list, newline: int option, la: FSharpToken
                 ]
 
     | _ -> None
+
 /// 右花括号之前
 let (|PEEK_RBRACE|_|) (states: YaccState list, newline: int option, la: FSharpToken) =
     if la = RBRACE then

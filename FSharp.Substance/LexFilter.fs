@@ -26,6 +26,6 @@ let lex_filter (states: YaccState list) (newline: int option) (la: FSharpToken) 
     | PEEK_RBRACE ls -> ls
 
     | PEEK_NEW_BLOCK ls -> ls
-    | PEEK_NEWLINE_NEW_DECL ls -> ls
+    | PEEK_NEWLINE_VIRTUAL ls -> ls
     | PEEK_EOF ls -> ls
     | _ -> [ newline, la ]

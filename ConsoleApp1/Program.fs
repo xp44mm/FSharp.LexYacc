@@ -22,22 +22,25 @@ let smoke () =
     let text = File.ReadAllText(path, Encoding.UTF8)
 
     let nodes = FSharpCompiler.compile text
+    //Debug.Assert((snd nodes = expected))
     Console.WriteLine(stringify nodes)
 
 let test () =
     let lines = File.ReadAllLines(path, Encoding.UTF8)
     let groups = Pen.getTopLevels lines
     let len = groups.Length
-    let src = 
-        groups.[..len-2]
+    let src =
+        groups.[.. len - 2]
         |> List.concat
         |> String.concat "\n"
 
     let nodes = FSharpCompiler.compile src
-    Console.WriteLine("let tgt = "+stringify nodes)
+    Console.WriteLine("let tgt = " + stringify nodes)
 
+//smoke()
 
-smoke()
+Console.WriteLine(nameof FSharpToken.BAR)
+Console.WriteLine(nameof FSharpToken.ALWAYS_INFIX)
 
 //let lookaheads =
 //    lookaheads

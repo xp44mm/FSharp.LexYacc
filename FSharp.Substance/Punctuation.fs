@@ -1,23 +1,17 @@
 module FSharp.Substance.Punctuation
 
 open System
-
-open FSharp.LexYacc
-open FSharp.Substance
-open FSharp.Substance.RightSententialForm
-
-open FSharp.Substance.FSharpYacc
-open FSharp.Substance.RightSententialForm
-open FSharp.Substance.ViablePrefix
+open System.Diagnostics
 
 open FSharp.Idioms
 open FSharp.Idioms.Literal
-
 open FSharp.LexYacc
 
-open System
-open System.Diagnostics
-open StackOps
+open FSharp.Substance
+open FSharp.Substance.RightSententialForm
+open FSharp.Substance.FSharpYacc
+open FSharp.Substance.ViablePrefix
+open FSharp.Substance.StackOps
 
 /// 是否是decl的开始，前面是分界符号
 let is_new_decl =

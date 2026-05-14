@@ -39,7 +39,7 @@ let compile (input: string) =
         LexFilter.lex_filter states spaces tok
     )
     |> Seq.map(fun (i, tok) ->
-        //Console.WriteLine(stringify(i, tok))
+        Console.WriteLine(stringify(i, tok))
         Light.tokenRow i tok
     )
     |> Seq.iter(fun tok -> states <- parser.shift states tok

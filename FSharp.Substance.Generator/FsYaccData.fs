@@ -1,10 +1,9 @@
 module FSharp.Substance.FsYaccData
 
 open System
+open FSharp.LexYacc
 
 let declarations: (string*Type) list = [
-    "!", typeof<option<int>>
-    "#", typeof<option<int>>
     "(", typeof<option<int>>
     "(|", typeof<option<int>>
     ")", typeof<option<int>>
@@ -36,7 +35,6 @@ let declarations: (string*Type) list = [
     "RRPAREN", typeof<option<int>>
     "TYPAR", typeof<option<int>*string>
     "WHEN", typeof<option<int>>
-    "WHITESPACE", typeof<option<int>>
     "WITH", typeof<option<int>>
     "[", typeof<option<int>>
     "[|", typeof<option<int>>
@@ -50,6 +48,8 @@ let declarations: (string*Type) list = [
     "binaryExpr", typeof<option<int>*Expr>
     "bindingPattern", typeof<option<int>*Pattern>
     "declExpr", typeof<option<int>*Expr>
+    "fieldBinding", typeof<option<int>*RecordFiledBinding>
+    "fieldBindings", typeof<(option<int>*RecordFiledBinding) list>
     "file", typeof<string list*Expr list>
     "funType", typeof<(option<int>*TypeArgument) list>
     "identExpr", typeof<option<int>*Expr>
@@ -69,6 +69,7 @@ let declarations: (string*Type) list = [
     "prefix", typeof<option<int>*string>
     "qualificationExpr", typeof<option<int>*Expr>
     "qualificationSuffix", typeof<option<int>*Expr>
+    "recdLiteralExpr", typeof<option<int>*Expr>
     "revAppExpr", typeof<(option<int>*Expr) list>
     "revBinaryExpr", typeof<((option<int>*string)*(option<int>*Expr)) list>
     "revLongid", typeof<(option<int>*string) list>
@@ -87,10 +88,9 @@ let declarations: (string*Type) list = [
     "unaryExpr", typeof<option<int>*Expr>
     "valueExpr", typeof<option<int>*Expr>
     "{", typeof<option<int>>
-    "{|", typeof<option<int>>
     "|", typeof<option<int>>
     "|)", typeof<option<int>>
     "|]", typeof<option<int>>
-    "|}", typeof<option<int>>
     "}", typeof<option<int>>
 ]
+

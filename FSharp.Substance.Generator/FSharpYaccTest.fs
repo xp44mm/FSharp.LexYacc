@@ -93,7 +93,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         output.WriteLine(declarations)
 
     [<Fact>]
-    member _.``generateYaccStateInfo``() =
+    member _.``generate YaccStateInfo``() =
         let isPairAndFirstIsIntOption (t: Type) =
             if FSharpType.IsTuple t then
                 let elements = FSharpType.GetTupleElements t
@@ -110,12 +110,10 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             else
                 false
 
-        // 检测是否为 F# 列表类型
         let isListType (t: Type) =
             t.IsGenericType
             && t.GetGenericTypeDefinition() = typedefof<list<_>>
 
-        // 检测是否为列表，且元素类型符合 isPairAndFirstIsIntOption
         let isListOfPairAndFirstIsIntOption (t: Type) =
             if isListType t then
                 let elementType = t.GetGenericArguments().[0]
@@ -259,44 +257,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             $"let orphan_decl = "
             + stringify analysis.OrphanDecl
         )
-    
-    [<Fact>]
-    member _.``RightSententialForm``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let lookaheads: Map<string, ViablePrefix Set> =
-            ViablePrefix.lookahead bnf
-            |> Seq.groupBy snd
-            |> Seq.map(fun (tok, sq) ->
-                let ls = sq |> Seq.map fst |> Set.ofSeq
-                tok, ls
-            )
-            |> Map.ofSeq
-
-        output.WriteLine("let lookaheads: Map<string, ViablePrefix Set> = Map [")
-        for KeyValue(tok, ls) in lookaheads do
-            output.WriteLine(Line.indent 2 $"{stringify tok},set [")
-            for vp in ls do
-                output.WriteLine(Line.indent 4 (stringify vp))
-            output.WriteLine(Line.indent 2 "]")
-        output.WriteLine("]")
-
-        let top_prefixes: Map<string list, string Set> =
-            ViablePrefix.top bnf
-            |> Seq.groupBy(fun v -> v.prefix)
-            |> Seq.map(fun (prefix, sq) ->
-                let heads = sq |> Seq.map(fun v -> v.head)
-                prefix, set heads
-            )
-            |> Map.ofSeq
-
-        output.WriteLine("let top_prefixes: Map<string list, string Set> = Map [")
-        for KeyValue(prefix, heads) in top_prefixes do
-            output.WriteLine($"  {stringify prefix},{stringify heads}")
-        output.WriteLine("]")
 
     [<Fact>]
     member _.``viable prefix``() =
@@ -363,7 +323,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             output.WriteLine($"  {stringify prefix}")
         output.WriteLine("]")
 
-
         //下面是前缀部分
 
         let tops: Map<string list, string Set> =
@@ -419,7 +378,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             output.WriteLine($"  {stringify item}")
         output.WriteLine("]")
 
-        let lookahead_bar: Set<string list> = 
+        let lookahead_bar: Set<string list> =
             lookaheads.[FSharpToken.tag BAR]
             |> Set.map(fun v -> v.prefix)
 
@@ -429,8 +388,8 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         output.WriteLine("]")
 
         //下面是需要拼接的栈顶前缀
-        let tops = 
-            ["fieldBinding"]
+        let tops =
+            [ "fieldBinding" ]
             |> List.map(fun top -> Deeper.top_entry tops top)
             |> Map.ofList
 
@@ -461,6 +420,130 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             output.WriteLine(Line.indent 2 (stringify vp))
         output.WriteLine("]")
 
+    [<Fact>]
+    member _.``LookaheadConfig``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
 
+        let lookaheads: list<string Set * string * string list> =
+            bnf
+            |> ViablePrefix.lookahead
+            |> Seq.map(fun (v, la) ->
+                let hd = v.head
+                let px = v.prefix
+                hd, la, px
+            )
+            |> Seq.groupBy(fun (hd, la, px) -> la, px)
+            |> Seq.map(fun ((la, px), sq) ->
+                let hds =
+                    sq
+                    |> Seq.map(fun (hd, la, px) -> hd)
+                    |> Set.ofSeq
+                hds, la, px
+            )
+            |> Seq.toList
 
+        let groups =
+            lookaheads
+            |> List.groupBy(fun (hds, la, px) -> la)
+            |> List.map(fun (la, ls) ->
+                let ls: (string list * string Set) list =
+                    ls
+                    |> List.map(fun (hds, la, px) -> px, hds)
+                la, ls
+            )
+        let names = FSharpTokenData.nameofsymbols
 
+        // 指定输出文件路径
+        let filePath = Path.Combine(Dir.main, "LookaheadConfig.fs")
+        use writer = new StreamWriter(filePath, false, Encoding.UTF8)
+
+        writer.WriteLine("module FSharp.Substance.LookaheadConfig")
+        for la, ls in groups do
+            let ident =
+                if names.ContainsKey la then
+                    names.[la]
+                else
+                    la
+            writer.WriteLine($"let {ident}: list<string list * string Set> = [")
+            for item in ls do
+                writer.WriteLine(Line.indent 2 (stringify item))
+            writer.WriteLine("]")
+
+        writer.WriteLine($"let catalog: Map<string, _ > = Map [")
+        for la, ls in groups do
+            let ident =
+                if names.ContainsKey la then
+                    names.[la]
+                else
+                    la
+            writer.WriteLine(Line.indent 2 $"{stringify ident}, {ident}")
+        writer.WriteLine("]")
+        output.WriteLine($"output:\r\n{filePath}")
+
+    [<Fact>]
+    member _.``TopConfig``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
+
+        let tops: list<string Set * string * string list> =
+            bnf
+            |> ViablePrefix.top
+
+            |> Seq.map(fun v ->
+                let hd = v.head
+                let top = v.prefix.[0]
+                let px = v.prefix.Tail
+                hd, top, px
+            )
+            |> Seq.groupBy(fun (hd, tp, px) -> tp, px)
+            |> Seq.map(fun ((tp, px), sq) ->
+                let hds =
+                    sq
+                    |> Seq.map(fun (hd, tp, px) -> hd)
+                    |> Set.ofSeq
+                hds, tp, px
+            )
+            |> Seq.toList
+
+        let groups =
+            tops
+            |> List.groupBy(fun (hds, tp, px) -> tp)
+            |> List.map(fun (tp, ls) ->
+                let ls: (string list * string Set) list =
+                    ls
+                    |> List.map(fun (hds, tp, px) -> px, hds)
+                tp, ls
+            )
+        let names = FSharpTokenData.nameofsymbols
+
+        // 指定输出文件路径
+        let filePath = Path.Combine(Dir.main, "TopConfig.fs")
+        use writer = new StreamWriter(filePath, false, Encoding.UTF8)
+
+        writer.WriteLine("module FSharp.Substance.TopConfig")
+        for tp, ls in groups do
+            let ident =
+                if names.ContainsKey tp then
+                    names.[tp]
+                else
+                    tp
+            writer.WriteLine($"let {ident}: list<string list * string Set> = [")
+            for item in ls do
+                writer.WriteLine(Line.indent 2 (stringify item))
+            writer.WriteLine("]")
+
+        writer.WriteLine($"let catalog: Map<string, _ > = Map [")
+        for tp, ls in groups do
+            let ident =
+                if names.ContainsKey tp then
+                    names.[tp]
+                else
+                    tp
+            writer.WriteLine(Line.indent 2 $"{stringify ident}, {ident}")
+        writer.WriteLine("]")
+        output.WriteLine($"output:\r\n{filePath}")

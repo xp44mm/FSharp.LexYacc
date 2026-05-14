@@ -10,6 +10,8 @@
         <Compile Include="Dir.fs" />
         <None Include="fsharp.fslex" />
         <Compile Include="FSharpLexerTest.fs" />
+        <Compile Include="FSharpTokenData.fs" />
+        <Compile Include="TokenGenerationTest.fs" />
         <Compile Include="Deeper.fs" />
         <Compile Include="ViablePrefixes.fs" />
         <Compile Include="FsYaccData.fs" />
@@ -17,7 +19,6 @@
         <Compile Include="FSharpYaccTest.fs" />
         <None Include="typeArgument.fsyacc" />
         <Compile Include="TypeArgumentYaccTest.fs" />
-        <Compile Include="TokenGenerationTest.fs" />
         <Compile Include="SpliterTestTest.fs" />
         <Compile Include="FSharpLexerTailerTest.fs" />
         <Compile Include="PEEK_BAR.fs" />
@@ -28,6 +29,7 @@
         <Compile Include="PEEK_NEW_BLOCK.fs" />
         <Compile Include="PEEK_NEWLINE_NEW_DECL.fs" />
         <Compile Include="PEEK_EOF.fs" />
+        <Compile Include="RecordLiteralExpr.fs" />
         <Compile Include="FSharpCompilerTest.fs" />
         <Compile Include="LightTest.fs" />
     </ItemGroup>
@@ -42,6 +44,10 @@
         <ProjectReference Include="..\FSharp.LexYacc.ToolBox\FSharp.LexYacc.ToolBox.fsproj" />
         <ProjectReference Include="..\FSharp.LexYacc\FSharp.LexYacc.fsproj" />
         <ProjectReference Include="..\FSharp.Substance\FSharp.Substance.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Update="FSharp.Core" Version="10.1.300" />
     </ItemGroup>
 
 </Project>

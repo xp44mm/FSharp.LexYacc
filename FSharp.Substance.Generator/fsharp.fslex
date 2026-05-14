@@ -70,6 +70,7 @@ rule : char list -> FSharpToken list =
 '&' '&' '&' { [ALWAYS_INFIX "&&&"] }
 '~' '~' '~' { [ALWAYS_PREFIX "~~~"] }
 
+'(' ')' { [LITERAL(Literal.UNIT)] }
 '(' '|' { [LPAREN_BAR] }
 '*' '*' { [ALWAYS_INFIX "**"] }
 '-' '>' { [RARROW] }

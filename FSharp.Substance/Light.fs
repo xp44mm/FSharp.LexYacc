@@ -2,6 +2,7 @@ module FSharp.Substance.Light
 
 open FSharp.Idioms
 open FSharp.LexYacc
+open Microsoft.FSharp.Reflection
 
 ///合并缩进到行首的token
 let transform (tokens: FSharpToken seq) =
@@ -83,3 +84,9 @@ let none = tokenRow None
 let None_RRPAREN = tokenRow None RRPAREN
 let None_RHSEND = tokenRow None RHSEND
 let None_SEMICOLON = tokenRow None SEMICOLON
+
+let unionType = typeof<FSharpToken>
+let getTag (tok: FSharpToken) =
+    let caseInfo, _ = FSharpValue.GetUnionFields(tok, unionType)
+    caseInfo.Name
+

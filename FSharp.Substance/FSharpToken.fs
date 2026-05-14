@@ -27,6 +27,7 @@ type FSharpToken =
     //| RPIPE
     //| STAR_STAR
     //| TILDE_TILDE_TILDE
+    //| HASH
 
     | ALWAYS_INFIX of string
     | ALWAYS_PREFIX of string
@@ -44,7 +45,6 @@ type FSharpToken =
     | FUN
     | GREATER
     | GREATER_GREATER
-    //| HASH
     | IDENT of string
     | LARROW
     | LBRACE

@@ -1,46 +1,51 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="PrimitiveType.fs" />
-    <Compile Include="ParseInteger.fs" />
-    <Compile Include="PrimitiveParser.fs" />
-    <Compile Include="Pen.fs" />
-    <Compile Include="Lookup.fs" />
-    <Compile Include="Literal.fs" />
-    <Compile Include="FSharpToken.fs" />
-    <Compile Include="Light.fs" />
-    <Compile Include="TypeArgument.fs" />
-    <Compile Include="Pattern.fs" />
-    <Compile Include="Expr.fs" />
-    <Compile Include="FSharpLexer.fs" />
-    <Compile Include="FSharpLexerTailer.fs" />
-    <Compile Include="FSharpYacc.fs" />
-    <Compile Include="RightSententialForm.fs" />
-    <Compile Include="ViablePrefix.fs" />
-    <Compile Include="YaccStateInfo.fs" />
-    <Compile Include="StackOps.fs" />
-    <Compile Include="Punctuation.fs" />
-    <Compile Include="ParseContext.fs" />
-    <Compile Include="LexFilter.fs" />
-    <Compile Include="FSharpCompiler.fs" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Include="PrimitiveType.fs" />
+        <Compile Include="ParseInteger.fs" />
+        <Compile Include="PrimitiveParser.fs" />
+        <Compile Include="Pen.fs" />
+        <Compile Include="Lookup.fs" />
+        <Compile Include="Literal.fs" />
+        <Compile Include="FSharpToken.fs" />
+        <Compile Include="Light.fs" />
+        <Compile Include="TypeArgument.fs" />
+        <Compile Include="Pattern.fs" />
+        <Compile Include="Expr.fs" />
+        <Compile Include="FSharpLexer.fs" />
+        <Compile Include="FSharpLexerTailer.fs" />
+        <Compile Include="FSharpYacc.fs" />
+        <Compile Include="LookaheadConfig.fs" />
+        <Compile Include="RightSententialForm.fs" />
+        <Compile Include="ViablePrefix.fs" />
+        <Compile Include="YaccStateInfo.fs" />
+        <Compile Include="StackOps.fs" />
+        <Compile Include="Punctuation.fs" />
+        <Compile Include="ParseContext.fs" />
+        <Compile Include="LexFilter.fs" />
+        <Compile Include="FSharpCompiler.fs" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Include="readme.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
+    <ItemGroup>
+        <None Include="readme.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\FSharp.LexYacc.ToolBox\FSharp.LexYacc.ToolBox.fsproj" />
-    <ProjectReference Include="..\FSharp.LexYacc\FSharp.LexYacc.fsproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\FSharp.LexYacc.ToolBox\FSharp.LexYacc.ToolBox.fsproj" />
+        <ProjectReference Include="..\FSharp.LexYacc\FSharp.LexYacc.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Update="FSharp.Core" Version="10.1.300" />
+    </ItemGroup>
 
 </Project>

@@ -25,6 +25,28 @@ let tgt =
                         MatchExpr(
                             IdentExpr "x",
                             [
+                                RuleClause(
+                                    LiteralPattern(INT32 0),
+                                    None,
+                                    [ LiteralExpr(STRING "zero") ]
+                                )
+                                RuleClause(
+                                    LiteralPattern(INT32 1),
+                                    None,
+                                    [
+                                        BinaryExpr(
+                                            ListExpr [],
+                                            [
+                                                "|>",
+                                                AppExpr
+                                                    [
+                                                        IdentExpr "ignore"
+                                                        LiteralExpr(STRING "one")
+                                                    ]
+                                            ]
+                                        )
+                                    ]
+                                )
                                 RuleClause(IdentPattern "_", None, [ LiteralExpr(STRING "other") ])
                             ]
                         )

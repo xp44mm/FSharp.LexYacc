@@ -36,7 +36,6 @@ revSequentialExpr:
 
 declExpr:
     | letBinding { s0 }
-    | matchExpr { s0 }
     | valueExpr { s0 }
 
 letBinding:
@@ -47,6 +46,11 @@ letBinding:
         s0, LetBindingExpr(snd s1, snd(Expr.ofSequentialExpr s4))
         }
 
+valueExpr :
+    | matchExpr { s0 }
+    | lambdaExpr { s0 }
+    | tupleExpr { s0 }
+    
 matchExpr:
   | MATCH tupleExpr WITH opt_bar revRuleClauses { 
     let ruleClauses = s4 |> List.map snd |> List.rev
@@ -71,10 +75,6 @@ ruleClause:
 patternAndGuard:
   | matchPattern { fst s0,snd s0, None }
   | matchPattern WHEN binaryExpr { fst s0,snd s0, Some(snd s2) }
-
-valueExpr :
-    | lambdaExpr { s0 }
-    | tupleExpr { s0 }
 
 lambdaExpr:
     | FUN parameterPattern "->" valueExpr RHSEND {
@@ -127,7 +127,6 @@ atomicExpr:
         i,LiteralExpr v
         }
     | identExpr { s0 }
-    | "(" ")" { s0, LiteralExpr Literal.UNIT }
     | "(" infix ")" { s0, OperatorSectionExpr(snd s1) }
     | parenExpr { s0 }
     | listExpr { s0 }
