@@ -42,11 +42,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         let productions2 = rules |> List.map fst
         Should.equal productions1 productions2
 
-        // todo: header 比较
-        // todo: actions 比较
-
-        ()
-
     [<Fact>] //(Skip = "不必重复生成")
     member _.``生成``() =
         let rawFsyacc = FsyaccCompiler.compile text
@@ -60,7 +55,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         let path = Path.Combine(Dir.main, name + "Yacc.fs")
         File.WriteAllText(path, src, Encoding.UTF8)
         output.WriteLine($"output:\r\n{path}")
-        ()
 
     [<Fact>]
     member _.``conflicted productions``() =
@@ -214,7 +208,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
                     Line.indent 4 "let i = ls |> Seq.map(fun (a, _) -> fst a) |> Seq.head"
                     Line.indent 4 "let data = ls |> List.map(fun (a, b) -> snd a, snd b)"
                     Line.indent 4 "i, stringify data"
-
                 ]
 
             | _, t ->
@@ -239,7 +232,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             |> List.iter(fun l -> output.WriteLine(l))
 
     [<Fact>]
-    member _.``规范化bnf``() =
+    member _.``check bnf``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
 
@@ -259,35 +252,64 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         )
 
     [<Fact>]
-    member _.``viable prefix``() =
+    member _.``LookaheadConfig and TopConfig``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
+        let names = Light.nameofsymbols
+
+        let comp =
+            bnf.terminals
+            - Light.important
+            - Light.famous
+        let sq =
+            [
+                Light.important
+                Light.famous
+                comp
+            ]
+
+        //output.WriteLine(stringify impr)
+        //output.WriteLine(stringify comp)
+
+        Configuration.generateAllConfigs_many bnf names sq Dir.main
+        output.WriteLine("ok! 成功")
+
+    [<Fact>]
+    member _.``Grammar Data``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
         let yacc = flatFsyacc.getYacc()
         let bnf: BNF = yacc.bnf
 
-        // precedes key可以是终结符号，也可以是非终结符号
-        output.WriteLine("let follow_semicolon: string Set =")
-        let follow_semicolon = bnf.follows.[";"]
-        output.WriteLine("  " + stringify follow_semicolon)
+        let outputPath = Path.Combine(Dir.main, "GrammarData.fs")
+        use writer = new StreamWriter(outputPath, false, Encoding.UTF8)
+        writer.WriteLine("module FSharp.Substance.GrammarData")
 
-        output.WriteLine("let precede_semicolon: string Set =")
+        // precedes key可以是终结符号，也可以是非终结符号
+        writer.WriteLine("let follow_semicolon: string Set =")
+        let follow_semicolon = bnf.follows.[";"]
+        writer.WriteLine("  " + stringify follow_semicolon)
+
+        writer.WriteLine("let precede_semicolon: string Set =")
         let precede_semicolon = bnf.precedes.[";"]
-        output.WriteLine("  " + stringify precede_semicolon)
+        writer.WriteLine("  " + stringify precede_semicolon)
 
         let precede_declExpr: string Set = bnf.precedes.["declExpr"]
-        output.WriteLine(
+        writer.WriteLine(
             "let precede_declExpr: string Set = "
             + stringify precede_declExpr
         )
 
         let first_declExpr: string Set = bnf.firsts.["declExpr"]
-        output.WriteLine(
+        writer.WriteLine(
             "let first_declExpr: string Set = "
             + stringify first_declExpr
         )
 
         let first_valueExpr: string Set = bnf.firsts.["valueExpr"]
-        output.WriteLine(
+        writer.WriteLine(
             "let first_valueExpr: string Set = "
             + stringify first_valueExpr
         )
@@ -296,10 +318,21 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         let f = bnf.firsts.[appExprSymbol]
         let l = bnf.lasts.[appExprSymbol]
 
-        output.WriteLine($"let first_appExpr = {stringify f}")
-        output.WriteLine($"let last_appExpr = {stringify l}")
+        writer.WriteLine($"let first_appExpr = {stringify f}")
+        writer.WriteLine($"let last_appExpr = {stringify l}")
 
-        output.WriteLine("let module_statement: string list Set = set [")
+    [<Fact>]
+    member _.``viable prefix``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
+
+        let outputPath = Path.Combine(Dir.main, "ViablePrefix.fs")
+        use writer = new StreamWriter(outputPath, false, Encoding.UTF8)
+
+        writer.WriteLine("module FSharp.Substance.ViablePrefix")
+        writer.WriteLine("let module_statement: string list Set = set [")
         let module_statement =
             BnfUtils.derive
                 bnf
@@ -308,242 +341,29 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
                     "MODULE"
                 ]
         for prefix in module_statement do
-            output.WriteLine($"  {stringify prefix}")
-        output.WriteLine("]")
-
-        output.WriteLine("let open_statement: string list Set = set [")
-        let open_statement =
-            BnfUtils.derive
-                bnf
-                [
-                    "longid"
-                    "OPEN"
-                ]
-        for prefix in open_statement do
-            output.WriteLine($"  {stringify prefix}")
-        output.WriteLine("]")
-
-        //下面是前缀部分
-
-        let tops: Map<string list, string Set> =
-            ViablePrefix.top bnf
-            |> Seq.groupBy(fun v -> v.prefix)
-            |> Seq.map(fun (prefix, sq) ->
-                let heads = sq |> Seq.map(fun v -> v.head)
-                prefix, set heads
-            )
-            |> Map.ofSeq
-
-        let lookaheads: Map<string, ViablePrefix Set> =
-            ViablePrefix.lookahead bnf
-            |> Seq.groupBy snd
-            |> Seq.map(fun (tok, sq) ->
-                let ls = sq |> Seq.map fst |> Set.ofSeq
-                tok, ls
-            )
-            |> Map.ofSeq
-
-        let lookahead_rparen: Set<string list> =
-            lookaheads.[FSharpToken.tag RPAREN]
-            |> Set.map(fun v -> v.prefix)
-        output.WriteLine("let lookahead_rparen: Set<string list> = set [")
-        for item in lookahead_rparen do
-            output.WriteLine($"  {stringify item}")
-        output.WriteLine("]")
-
-        let lookahead_rbrack: Set<string list> =
-            lookaheads.[FSharpToken.tag RBRACK]
-            |> Set.map(fun v -> v.prefix)
-
-        output.WriteLine("let lookahead_rbrack: Set<string list> = set [")
-        for item in lookahead_rbrack do
-            output.WriteLine($"  {stringify item}")
-        output.WriteLine("]")
-
-        let lookahead_bar_rbrack: Set<string list> =
-            lookaheads.[FSharpToken.tag BAR_RBRACK]
-            |> Set.map(fun v -> v.prefix)
-
-        output.WriteLine("let lookahead_bar_rbrack: Set<string list> = set [")
-        for item in lookahead_bar_rbrack do
-            output.WriteLine($"  {stringify item}")
-        output.WriteLine("]")
-
-        let lookahead_rbrace: Set<string list> =
-            lookaheads.[FSharpToken.tag RBRACE]
-            |> Set.map(fun v -> v.prefix)
-
-        output.WriteLine("let lookahead_rbrace: Set<string list> = set [")
-        for item in lookahead_rbrace do
-            output.WriteLine($"  {stringify item}")
-        output.WriteLine("]")
-
-        let lookahead_bar: Set<string list> =
-            lookaheads.[FSharpToken.tag BAR]
-            |> Set.map(fun v -> v.prefix)
-
-        output.WriteLine("let lookahead_bar: Set<string list> = set [")
-        for item in lookahead_bar do
-            output.WriteLine($"  {stringify item}")
-        output.WriteLine("]")
-
-        //下面是需要拼接的栈顶前缀
-        let tops =
-            [ "fieldBinding" ]
-            |> List.map(fun top -> Deeper.top_entry tops top)
-            |> Map.ofList
-
-        let lookahead_llparen: Set<string list> =
-            ViablePrefixes.cons(lookaheads.[FSharpToken.tag LLPAREN], tops)
-            |> Set.map(fun v -> v.prefix)
-
-        output.WriteLine("let lookahead_llparen: Set<string list> = set [")
-        for vp in lookahead_llparen do
-            output.WriteLine(Line.indent 2 (stringify vp))
-        output.WriteLine("]")
-
-        let lookahead_rhsend: Set<string list> =
-            ViablePrefixes.cons(lookaheads.[FSharpToken.tag RHSEND], tops)
-            |> Set.map(fun v -> v.prefix)
-
-        output.WriteLine("let lookahead_rhsend: Set<string list> = set [")
-        for vp in lookahead_rhsend do
-            output.WriteLine(Line.indent 2 (stringify vp))
-        output.WriteLine("]")
-
-        let lookahead_rrparen: Set<string list> =
-            ViablePrefixes.cons(lookaheads.[FSharpToken.tag RRPAREN], tops)
-            |> Set.map(fun v -> v.prefix)
-
-        output.WriteLine("let lookahead_rrparen: Set<string list> = set [")
-        for vp in lookahead_rrparen do
-            output.WriteLine(Line.indent 2 (stringify vp))
-        output.WriteLine("]")
-
-    [<Fact>]
-    member _.``LookaheadConfig``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let lookaheads: list<string Set * string * string list> =
-            bnf
-            |> ViablePrefix.lookahead
-            |> Seq.map(fun (v, la) ->
-                let hd = v.head
-                let px = v.prefix
-                hd, la, px
-            )
-            |> Seq.groupBy(fun (hd, la, px) -> la, px)
-            |> Seq.map(fun ((la, px), sq) ->
-                let hds =
-                    sq
-                    |> Seq.map(fun (hd, la, px) -> hd)
-                    |> Set.ofSeq
-                hds, la, px
-            )
-            |> Seq.toList
-
-        let groups =
-            lookaheads
-            |> List.groupBy(fun (hds, la, px) -> la)
-            |> List.map(fun (la, ls) ->
-                let ls: (string list * string Set) list =
-                    ls
-                    |> List.map(fun (hds, la, px) -> px, hds)
-                la, ls
-            )
-        let names = FSharpTokenData.nameofsymbols
-
-        // 指定输出文件路径
-        let filePath = Path.Combine(Dir.main, "LookaheadConfig.fs")
-        use writer = new StreamWriter(filePath, false, Encoding.UTF8)
-
-        writer.WriteLine("module FSharp.Substance.LookaheadConfig")
-        for la, ls in groups do
-            let ident =
-                if names.ContainsKey la then
-                    names.[la]
-                else
-                    la
-            writer.WriteLine($"let {ident}: list<string list * string Set> = [")
-            for item in ls do
-                writer.WriteLine(Line.indent 2 (stringify item))
-            writer.WriteLine("]")
-
-        writer.WriteLine($"let catalog: Map<string, _ > = Map [")
-        for la, ls in groups do
-            let ident =
-                if names.ContainsKey la then
-                    names.[la]
-                else
-                    la
-            writer.WriteLine(Line.indent 2 $"{stringify ident}, {ident}")
+            writer.WriteLine($"  {stringify prefix}")
         writer.WriteLine("]")
-        output.WriteLine($"output:\r\n{filePath}")
 
-    [<Fact>]
-    member _.``TopConfig``() =
-        let rawFsyacc = FsyaccCompiler.compile text
-        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
-
-        let tops: list<string Set * string * string list> =
-            bnf
-            |> ViablePrefix.top
-
-            |> Seq.map(fun v ->
-                let hd = v.head
-                let top = v.prefix.[0]
-                let px = v.prefix.Tail
-                hd, top, px
-            )
-            |> Seq.groupBy(fun (hd, tp, px) -> tp, px)
-            |> Seq.map(fun ((tp, px), sq) ->
-                let hds =
-                    sq
-                    |> Seq.map(fun (hd, tp, px) -> hd)
-                    |> Set.ofSeq
-                hds, tp, px
-            )
-            |> Seq.toList
-
-        let groups =
-            tops
-            |> List.groupBy(fun (hds, tp, px) -> tp)
-            |> List.map(fun (tp, ls) ->
-                let ls: (string list * string Set) list =
-                    ls
-                    |> List.map(fun (hds, tp, px) -> px, hds)
-                tp, ls
-            )
-        let names = FSharpTokenData.nameofsymbols
-
-        // 指定输出文件路径
-        let filePath = Path.Combine(Dir.main, "TopConfig.fs")
-        use writer = new StreamWriter(filePath, false, Encoding.UTF8)
-
-        writer.WriteLine("module FSharp.Substance.TopConfig")
-        for tp, ls in groups do
-            let ident =
-                if names.ContainsKey tp then
-                    names.[tp]
-                else
-                    tp
-            writer.WriteLine($"let {ident}: list<string list * string Set> = [")
-            for item in ls do
-                writer.WriteLine(Line.indent 2 (stringify item))
-            writer.WriteLine("]")
-
-        writer.WriteLine($"let catalog: Map<string, _ > = Map [")
-        for tp, ls in groups do
-            let ident =
-                if names.ContainsKey tp then
-                    names.[tp]
-                else
-                    tp
-            writer.WriteLine(Line.indent 2 $"{stringify ident}, {ident}")
+        writer.WriteLine("let atomicExpr: string list Set = set [")
+        let atomicExpr = BnfUtils.derive bnf [ "atomicExpr" ]
+        for prefix in atomicExpr do
+            writer.WriteLine($"  {stringify prefix}")
         writer.WriteLine("]")
-        output.WriteLine($"output:\r\n{filePath}")
+
+        writer.WriteLine("let tupleExpr: string list Set = set [")
+        let tupleExpr = BnfUtils.derive bnf [ "tupleExpr" ]
+        for prefix in tupleExpr do
+            writer.WriteLine($"  {stringify prefix}")
+        writer.WriteLine("]")
+
+        writer.WriteLine("let valueExpr: string list Set = set [")
+        let valueExpr = BnfUtils.derive bnf [ "valueExpr" ]
+        for prefix in valueExpr do
+            writer.WriteLine($"  {stringify prefix}")
+        writer.WriteLine("]")
+
+        writer.WriteLine("let declExpr: string list Set = set [")
+        let declExpr = BnfUtils.derive bnf [ "declExpr" ]
+        for prefix in declExpr do
+            writer.WriteLine($"  {stringify prefix}")
+        writer.WriteLine("]")

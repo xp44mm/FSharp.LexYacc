@@ -200,7 +200,6 @@ let lexeme_offside<'u> =
         $"let offsideLexeme (spaces:int option) (tok:{unionType.Name}) ="
         yield! rhs |> List.map(Line.indent 4)
     ]
-    |> String.concat "\r\n"
 
 
 ///定义yacc中的token类型，带缩进信息
@@ -252,3 +251,29 @@ let percent_type_offside_group<'u> (symbols: ('u * string) list) =
         + tags
     )
     |> String.concat "\r\n"
+
+let symbol_entries<'u> (symbols: ('u * string) list) =
+    let unionType = typeof<'u>
+    let cases = tagedUnionCases symbols
+    let rhs =
+        [
+            yield!
+                cases
+                |> Array.filter(fun (i, name, tag, fields) ->
+                    symbols
+                    |> Seq.exists(fun (_,symbol_tag) -> symbol_tag = tag)
+                )
+                |> Array.map(fun (i, name, tag, fields) ->
+                    if fields.Length = 0 then
+                        $"{unionType.Name}.{name}, {stringify tag}"
+                    else
+                        $"没有实现带参数的：{stringify (i, name)}"
+                )
+        ]
+
+    [
+        "/// 只需列出与 union case name 不同的符号名称"
+        "let symbols = ["
+        yield! rhs |> List.map(Line.indent 4)
+        "]"
+    ]

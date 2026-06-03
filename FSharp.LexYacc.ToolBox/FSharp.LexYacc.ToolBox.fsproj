@@ -26,8 +26,9 @@
 		<Compile Include="DiscriminatedUnions.fs" />
 		<Compile Include="BnfUtils.fs" />
 		<Compile Include="FlatFsyaccFileUtils.fs" />
-		<Compile Include="ViablePrefix.fs" />
 		<Compile Include="BnfAnalysisRecord.fs" />
+		<Compile Include="ViablePrefixData.fs" />
+		<Compile Include="Configuration.fs" />
 	</ItemGroup>
 
 	<ItemGroup>

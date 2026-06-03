@@ -1,5 +1,6 @@
 namespace FSharp.LexYacc
 
+///检测bnf是否有不可达到的符号，是否有缺少，或多余的类型声明
 type BnfAnalysisRecord =
     {
         OrphanBnf: Set<string>

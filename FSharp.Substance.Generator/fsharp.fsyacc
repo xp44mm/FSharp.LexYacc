@@ -1,13 +1,15 @@
 {
 module FSharp.Substance.FSharpYacc
 open FSharp.LexYacc
+open FSharp.Idioms
+
 }
 
 file:
     | MODULE longid EOF {
         snd s1, []
         }
-    | MODULE longid revOpenOrLets opt_semicolon EOF {
+    | MODULE longid revOpenOrLets EOF {
         let ls = s2 |> List.rev |> List.map snd
         snd s1, ls
         }
@@ -26,33 +28,34 @@ longid:
         i.[0], ls
         }
 
-revLongid :
+revLongid:
     | IDENT { [s0] }
     | revLongid "." IDENT { s2 :: s0 }
 
 revSequentialExpr:
-    | revSequentialExpr ";" declExpr  { s2::s0 }
     | declExpr { [s0] }
+    | revSequentialExpr ";" declExpr  { s2::s0 }
 
 declExpr:
     | letBinding { s0 }
     | valueExpr { s0 }
 
 letBinding:
-    | LET bindingPattern "=" valueExpr RHSEND {
-        s0, LetBindingExpr(snd s1, [snd s3])
-        }
-    | LET bindingPattern "=" LLPAREN revSequentialExpr opt_semicolon RRPAREN {
-        s0, LetBindingExpr(snd s1, snd(Expr.ofSequentialExpr s4))
+    | LET bindingPattern "=" valueRhs {
+        s0, LetBindingExpr(snd s1, snd(Expr.ofSequentialExpr s3))
         }
 
-valueExpr :
+valueRhs:
+    | valueExpr { [s0] }
+    | LLPAREN revSequentialExpr RRPAREN { s1 }
+
+valueExpr:
     | matchExpr { s0 }
     | lambdaExpr { s0 }
     | tupleExpr { s0 }
     
 matchExpr:
-  | MATCH tupleExpr WITH opt_bar revRuleClauses { 
+  | MATCH tupleExpr WITH opt_bar revRuleClauses RHSEND { 
     let ruleClauses = s4 |> List.map snd |> List.rev
     s0, MatchExpr(snd s1, ruleClauses)
   }
@@ -62,26 +65,23 @@ revRuleClauses:
   | revRuleClauses "|" ruleClause { s2::s0 }
   
 ruleClause:
-  | patternAndGuard "->" valueExpr RHSEND { 
+  | patternAndGuard "->" tupleRhs {
     let i,p,g = s0
-    i, RuleClause(p, g, [snd s2])
+    i, RuleClause(p, g, snd(Expr.ofSequentialExpr s2))
     }
-  | patternAndGuard "->" LLPAREN revSequentialExpr opt_semicolon RRPAREN { 
-    let i,p,g = s0
-    let r = s3 |> List.map snd |> List.rev
-    i, RuleClause(p, g, r)
-    }
+
+tupleRhs:
+    | tupleExpr { [s0] }
+    | LLPAREN revSequentialExpr RRPAREN { s1 }
+
 
 patternAndGuard:
   | matchPattern { fst s0,snd s0, None }
   | matchPattern WHEN binaryExpr { fst s0,snd s0, Some(snd s2) }
 
 lambdaExpr:
-    | FUN parameterPattern "->" valueExpr RHSEND {
-            s0, LambdaExpr(snd s1, [snd s3])
-        }
-    | FUN parameterPattern "->" LLPAREN revSequentialExpr opt_semicolon RRPAREN {
-            s0, LambdaExpr(snd s1, snd(Expr.ofSequentialExpr s4))
+    | FUN parameterPattern "->" tupleRhs {
+            s0, LambdaExpr(snd s1, snd(Expr.ofSequentialExpr s3))
         }
 
 tupleExpr:
@@ -95,13 +95,16 @@ binaryExpr:
     | revBinaryExpr { Expr.ofBinaryExpr s0 }
 
 revBinaryExpr:
-    | unaryExpr { [(None,""),s0] }
-    | revBinaryExpr infix unaryExpr { (s1,s2)::s0 }
+    | unaryExpr { [fst s0, Right(snd s0)] }
+    | revBinaryExpr infix unaryExpr {
+        let s1 = fst s1,Left(snd s1)
+        let s2 = fst s2,Right(snd s2)
+        s2::s1::s0
+        }
 
 unaryExpr:
     | prefix appExpr {
-        let indent, op = s0
-        indent, UnaryExpr(op, snd s1)
+        fst s0, UnaryExpr(snd s0, snd s1)
     }
     | appExpr {s0}
 
@@ -123,8 +126,7 @@ revQualificationExpr:
 
 atomicExpr:
     | LITERAL {
-        let i,v = s0
-        i,LiteralExpr v
+        fst s0, LiteralExpr(snd s0)
         }
     | identExpr { s0 }
     | "(" infix ")" { s0, OperatorSectionExpr(snd s1) }
@@ -145,15 +147,15 @@ qualificationSuffix:
     | "." "[" tupleExpr "]" { s2 }
       
 parenExpr:
-    | "(" revSequentialExpr opt_semicolon ")" { s0, ParenExpr(snd (Expr.ofSequentialExpr s1)) }
+    | "(" revSequentialExpr ")" { s0, ParenExpr(snd (Expr.ofSequentialExpr s1)) }
 
 listExpr:
     | "[" "]" { s0, ListExpr [] }
-    | "[" revSequentialExpr opt_semicolon "]" { s0, ListExpr(snd (Expr.ofSequentialExpr s1)) }
+    | "[" revSequentialExpr "]" { s0, ListExpr(snd (Expr.ofSequentialExpr s1)) }
 
 arrayExpr:
     | "[|" "|]" { s0, ArrayExpr [] }
-    | "[|" revSequentialExpr opt_semicolon "|]" { s0, ArrayExpr(snd (Expr.ofSequentialExpr s1)) }
+    | "[|" revSequentialExpr "|]" { s0, ArrayExpr(snd (Expr.ofSequentialExpr s1)) }
     
 prefix:
     | ALWAYS_PREFIX {s0}
@@ -162,18 +164,14 @@ prefix:
 
 infix:
     | ALWAYS_INFIX {s0}
-    | "*" {s0, "*"}    
+    | "*" {s0, "*"}
     | "=" {s0, "="}
     | "+" {s0, "+"}
     | "-" {s0, "-"}
     
-opt_semicolon:
-    | ";" {s0}
-    | {None}
-    
 opt_bar:
-    | "|" {s0}    
     | {None}
+    | "|" {s0}
 
 bindingPattern:
   | tuplePattern { Pattern.ofTuplePattern s0 }
@@ -199,7 +197,7 @@ matchPattern:
 typeArgument:
     | funType { TypeArgument.ofFun s0 }
 
-funType :
+funType:
     | tupleType {
         let s0 = TypeArgument.ofTuple s0
         [s0]
@@ -209,15 +207,15 @@ funType :
         s2::s0
         }
     
-tupleType :
+tupleType:
     | appType { [TypeArgument.ofApp s0] }
     | tupleType "*" appType { TypeArgument.ofApp s2::s0 }
     
-appType :
+appType:
     | atomType {s0,[]}
     | appType suffixType { fst s0, s1::snd s0 }
         
-atomType :
+atomType:
     | TYPAR {fst s0, Typar(snd s0) }
     | longid {fst s0, NamedType(snd s0)}
     | longid "<" typeArguments ">" {
@@ -235,9 +233,9 @@ typeArguments:
     | typeArguments "," typeArgument { s2::s0 }
 
 recdLiteralExpr:
-  | "{" fieldBindings opt_semicolon "}"  {
-        let ls = s1 |> List.map snd |> List.rev
-        s0, RecordLiteralExpr ls
+  | "{" fieldBindings "}"  {
+    let ls = s1 |> List.map snd |> List.rev
+    s0, RecordLiteralExpr ls
   }
 
 fieldBindings:
@@ -245,30 +243,26 @@ fieldBindings:
   | fieldBindings ";" fieldBinding { s2::s0 }
   
 fieldBinding:
-  | IDENT "=" valueExpr RHSEND {
-    fst s0, RecordFiledBinding(snd s0, [snd s2])
+  | IDENT "=" valueRhs {
+    fst s0, RecordFiledBinding(snd s0, snd(Expr.ofSequentialExpr s2))
   }
-  | IDENT "=" LLPAREN revSequentialExpr opt_semicolon RRPAREN {
-    fst s0, RecordFiledBinding(snd s0, snd(Expr.ofSequentialExpr s3))
-  }
-
-%type<option<int>*RecordFiledBinding> fieldBinding
-%type<(option<int>*RecordFiledBinding) list> fieldBindings
 
 %type<string list*Expr list> file
+%type<option<int>*RecordFiledBinding> fieldBinding
+%type<(option<int>*RecordFiledBinding) list> fieldBindings
 %type<(option<int>*string) list> revLongid
 %type<option<int>*string list> longid
-%type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr revOpenOrLets
+%type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr revOpenOrLets valueRhs tupleRhs
 %type<option<int>*Expr> openOrLet declExpr letBinding matchExpr valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr 
     appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr recdLiteralExpr
 %type<option<int>*string> prefix infix
 %type<(option<int>*RuleClause) list> revRuleClauses
 %type<option<int>*RuleClause> ruleClause
-%type<((option<int>*string)*(option<int>*Expr)) list> revBinaryExpr
 %type<option<int>*string> IDENT TYPAR ALWAYS_INFIX ALWAYS_PREFIX
 %type<option<int>*Literal> LITERAL
-%type<option<int>> DO EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WITH WHEN opt_semicolon opt_bar 
+%type<option<int>> DO EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WITH WHEN opt_bar 
     "(" "(|" ")" "+" "*" "," "-" "->" "." ":" ";" "<" "<-" "=" ">" "[" "[|" "]" "{" "|" "|)" "|]" "}"
+%type<(option<int> * Either<string, Expr>) list> revBinaryExpr
 %type<option<int>*TypeArgument> typeArgument
 %type<(option<int>*TypeArgument)*((option<int> * SuffixType) list)> appType
 %type<(option<int>*TypeArgument) list> tupleType funType typeArguments

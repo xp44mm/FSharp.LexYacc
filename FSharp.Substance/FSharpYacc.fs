@@ -1,7 +1,8 @@
 ﻿module FSharp.Substance.FSharpYacc
 open FSharp.LexYacc
-let stateSymbols: string[] = [|"";"file";"revAppExpr";"appType";"appType";"suffixType";"atomType";"[|";"revSequentialExpr";"opt_semicolon";"|]";"|]";"(";"typeArgument";")";"TYPAR";"longid";"<";"typeArguments";">";"(";"infix";")";"LITERAL";"arrayExpr";"identExpr";"listExpr";"parenExpr";"recdLiteralExpr";"IDENT";":";"typeArgument";"parameterPattern";"revBinaryExpr";"tuplePattern";"letBinding";"valueExpr";"IDENT";"=";"LLPAREN";"revSequentialExpr";"opt_semicolon";"RRPAREN";"valueExpr";"RHSEND";"fieldBinding";"fieldBindings";";";"fieldBinding";"MODULE";"longid";"EOF";"revOpenOrLets";"opt_semicolon";"EOF";"funType";"->";"tupleType";"tupleType";"IDENT";"<";"typeArguments";">";"*";"+";"+";"-";"-";"=";"ALWAYS_INFIX";"FUN";"parameterPattern";"->";"LLPAREN";"revSequentialExpr";"opt_semicolon";"RRPAREN";"valueExpr";"RHSEND";"LET";"bindingPattern";"=";"LLPAREN";"revSequentialExpr";"opt_semicolon";"RRPAREN";"valueExpr";"RHSEND";"[";"]";"revSequentialExpr";"opt_semicolon";"]";"revLongid";"MATCH";"tupleExpr";"WITH";"opt_bar";"revRuleClauses";"IDENT";"LITERAL";"OPEN";"longid";"letBinding";"|";";";";";"(";"bindingPattern";")";"IDENT";"revSequentialExpr";"opt_semicolon";")";"matchPattern";"WHEN";"binaryExpr";"+";"-";"ALWAYS_PREFIX";"revQualificationExpr";".";"[";"tupleExpr";"]";"identExpr";"{";"opt_semicolon";"}";"qualificationExpr";"qualificationExpr";"infix";"unaryExpr";"unaryExpr";"IDENT";".";"IDENT";"openOrLet";"openOrLet";"atomicExpr";"qualificationSuffix";"|";"ruleClause";"ruleClause";"declExpr";"revSequentialExpr";"declExpr";"binaryExpr";"revTupleExpr";",";"binaryExpr";"patternAndGuard";"->";"LLPAREN";"opt_semicolon";"RRPAREN";"valueExpr";"RHSEND";"[";"]";"longid";"atomicPattern";",";"atomicPattern";"*";"typeArgument";",";"typeArgument";"appExpr";"prefix";"appExpr";"lambdaExpr";"matchExpr";"tupleExpr"|]
-let actions: (string * int) list list = [["MODULE",49;"file",1];["",0];["(",20;")",-1;"*",-1;"+",-1;",",-1;"-",-1;"->",-1;";",-1;"=",-1;"ALWAYS_INFIX",-1;"IDENT",59;"LITERAL",23;"RHSEND",-1;"RRPAREN",-1;"WITH",-1;"[",88;"[|",7;"]",-1;"arrayExpr",24;"atomicExpr",139;"identExpr",25;"listExpr",26;"parenExpr",27;"qualificationExpr",130;"recdLiteralExpr",28;"revQualificationExpr",120;"{",126;"|]",-1];[")",-89;"*",-89;",",-89;"->",-89;"=",-89;">",-89;"IDENT",134;"[",158;"longid",160;"revLongid",93;"suffixType",5];[")",-90;"*",-90;",",-90;"->",-90;"=",-90;">",-90;"IDENT",134;"[",158;"longid",160;"revLongid",93;"suffixType",5];[")",-2;"*",-2;",",-2;"->",-2;"=",-2;">",-2;"IDENT",-2;"[",-2];[")",-3;"*",-3;",",-3;"->",-3;"=",-3;">",-3;"IDENT",-3;"[",-3];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LET",79;"LITERAL",23;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"declExpr",144;"identExpr",25;"lambdaExpr",171;"letBinding",35;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revSequentialExpr",8;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",36;"{",126;"|]",11];[";",106;"opt_semicolon",9;"|]",-52];["|]",10];["(",-4;")",-4;"*",-4;"+",-4;",",-4;"-",-4;"->",-4;".",-4;";",-4;"=",-4;"ALWAYS_INFIX",-4;"IDENT",-4;"LITERAL",-4;"RHSEND",-4;"RRPAREN",-4;"WITH",-4;"[",-4;"[|",-4;"]",-4;"{",-4;"|]",-4];["(",-5;")",-5;"*",-5;"+",-5;",",-5;"-",-5;"->",-5;".",-5;";",-5;"=",-5;"ALWAYS_INFIX",-5;"IDENT",-5;"LITERAL",-5;"RHSEND",-5;"RRPAREN",-5;"WITH",-5;"[",-5;"[|",-5;"]",-5;"{",-5;"|]",-5];["(",12;"IDENT",134;"TYPAR",15;"appType",3;"atomType",6;"funType",55;"longid",16;"revLongid",93;"tupleType",58;"typeArgument",13];[")",14];[")",-6;"*",-6;",",-6;"->",-6;"=",-6;">",-6;"IDENT",-6;"[",-6];[")",-7;"*",-7;",",-7;"->",-7;"=",-7;">",-7;"IDENT",-7;"[",-7];[")",-8;"*",-8;",",-8;"->",-8;"<",17;"=",-8;">",-8;"IDENT",-8;"[",-8];["(",12;"IDENT",134;"TYPAR",15;"appType",3;"atomType",6;"funType",55;"longid",16;"revLongid",93;"tupleType",58;"typeArgument",165;"typeArguments",18];[",",166;">",19];[")",-9;"*",-9;",",-9;"->",-9;"=",-9;">",-9;"IDENT",-9;"[",-9];["(",20;"*",63;"+",65;"-",67;"=",68;"ALWAYS_INFIX",69;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LET",79;"LITERAL",23;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"declExpr",144;"identExpr",25;"infix",21;"lambdaExpr",171;"letBinding",35;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revSequentialExpr",111;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",36;"{",126];[")",22];["(",-10;")",-10;"*",-10;"+",-10;",",-10;"-",-10;"->",-10;".",-10;";",-10;"=",-10;"ALWAYS_INFIX",-10;"IDENT",-10;"LITERAL",-10;"RHSEND",-10;"RRPAREN",-10;"WITH",-10;"[",-10;"[|",-10;"]",-10;"{",-10;"|]",-10];["(",-11;")",-11;"*",-11;"+",-11;",",-11;"-",-11;"->",-11;".",-11;";",-11;"=",-11;"ALWAYS_INFIX",-11;"IDENT",-11;"LITERAL",-11;"RHSEND",-11;"RRPAREN",-11;"WITH",-11;"[",-11;"[|",-11;"]",-11;"{",-11;"|]",-11];["(",-12;")",-12;"*",-12;"+",-12;",",-12;"-",-12;"->",-12;".",-12;";",-12;"=",-12;"ALWAYS_INFIX",-12;"IDENT",-12;"LITERAL",-12;"RHSEND",-12;"RRPAREN",-12;"WITH",-12;"[",-12;"[|",-12;"]",-12;"{",-12;"|]",-12];["(",-13;")",-13;"*",-13;"+",-13;",",-13;"-",-13;"->",-13;".",-13;";",-13;"=",-13;"ALWAYS_INFIX",-13;"IDENT",-13;"LITERAL",-13;"RHSEND",-13;"RRPAREN",-13;"WITH",-13;"[",-13;"[|",-13;"]",-13;"{",-13;"|]",-13];["(",-14;")",-14;"*",-14;"+",-14;",",-14;"-",-14;"->",-14;".",-14;";",-14;"=",-14;"ALWAYS_INFIX",-14;"IDENT",-14;"LITERAL",-14;"RHSEND",-14;"RRPAREN",-14;"WITH",-14;"[",-14;"[|",-14;"]",-14;"{",-14;"|]",-14];["(",-15;")",-15;"*",-15;"+",-15;",",-15;"-",-15;"->",-15;".",-15;";",-15;"=",-15;"ALWAYS_INFIX",-15;"IDENT",-15;"LITERAL",-15;"RHSEND",-15;"RRPAREN",-15;"WITH",-15;"[",-15;"[|",-15;"]",-15;"{",-15;"|]",-15];["(",-16;")",-16;"*",-16;"+",-16;",",-16;"-",-16;"->",-16;".",-16;";",-16;"=",-16;"ALWAYS_INFIX",-16;"IDENT",-16;"LITERAL",-16;"RHSEND",-16;"RRPAREN",-16;"WITH",-16;"[",-16;"[|",-16;"]",-16;"{",-16;"|]",-16];[")",-55;",",-55;":",30;"=",-55];["(",12;"IDENT",134;"TYPAR",15;"appType",3;"atomType",6;"funType",55;"longid",16;"revLongid",93;"tupleType",58;"typeArgument",31];[")",-17;",",-17;"=",-17];[")",-18;",",-18;"=",-18];[")",-19;"*",63;"+",64;",",-19;"-",66;"->",-19;";",-19;"=",68;"ALWAYS_INFIX",69;"RHSEND",-19;"RRPAREN",-19;"WITH",-19;"]",-19;"infix",131;"|]",-19];[")",-20;",",162;"=",-20];[")",-21;";",-21;"RRPAREN",-21;"]",-21;"|]",-21];[")",-22;";",-22;"RRPAREN",-22;"]",-22;"|]",-22];["=",38];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LITERAL",23;"LLPAREN",39;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"identExpr",25;"lambdaExpr",171;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",43;"{",126];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LET",79;"LITERAL",23;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"declExpr",144;"identExpr",25;"lambdaExpr",171;"letBinding",35;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revSequentialExpr",40;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",36;"{",126];[";",106;"RRPAREN",-52;"opt_semicolon",41];["RRPAREN",42];[";",-23;"}",-23];["RHSEND",44];[";",-24;"}",-24];[";",-25;"}",-25];[";",47;"opt_semicolon",127;"}",-52];["IDENT",37;"fieldBinding",48;"}",-53];[";",-26;"}",-26];["IDENT",134;"longid",50;"revLongid",93];["EOF",51;"LET",79;"OPEN",101;"letBinding",103;"openOrLet",137;"revOpenOrLets",52];["",-27];[";",105;"EOF",-52;"opt_semicolon",53];["EOF",54];["",-28];[")",-91;",",-91;"->",56;"=",-91;">",-91];["(",12;"IDENT",134;"TYPAR",15;"appType",3;"atomType",6;"longid",16;"revLongid",93;"tupleType",57];[")",-29;"*",164;",",-29;"->",-29;"=",-29;">",-29];[")",-30;"*",164;",",-30;"->",-30;"=",-30;">",-30];["(",-31;")",-31;"*",-31;"+",-31;",",-31;"-",-31;"->",-31;".",-31;";",-31;"<",60;"=",-31;"ALWAYS_INFIX",-31;"IDENT",-31;"LITERAL",-31;"RHSEND",-31;"RRPAREN",-31;"WITH",-31;"[",-31;"[|",-31;"]",-31;"{",-31;"|]",-31];["(",12;"IDENT",134;"TYPAR",15;"appType",3;"atomType",6;"funType",55;"longid",16;"revLongid",93;"tupleType",58;"typeArgument",165;"typeArguments",61];[",",166;">",62];["(",-32;")",-32;"*",-32;"+",-32;",",-32;"-",-32;"->",-32;".",-32;";",-32;"=",-32;"ALWAYS_INFIX",-32;"IDENT",-32;"LITERAL",-32;"RHSEND",-32;"RRPAREN",-32;"WITH",-32;"[",-32;"[|",-32;"]",-32;"{",-32;"|]",-32];["(",-33;")",-33;"+",-33;"-",-33;"ALWAYS_PREFIX",-33;"IDENT",-33;"LITERAL",-33;"[",-33;"[|",-33;"{",-33];["(",-34;"+",-34;"-",-34;"ALWAYS_PREFIX",-34;"IDENT",-34;"LITERAL",-34;"[",-34;"[|",-34;"{",-34];["(",-59;")",-34;"IDENT",-59;"LITERAL",-59;"[",-59;"[|",-59;"{",-59];["(",-35;"+",-35;"-",-35;"ALWAYS_PREFIX",-35;"IDENT",-35;"LITERAL",-35;"[",-35;"[|",-35;"{",-35];["(",-60;")",-35;"IDENT",-60;"LITERAL",-60;"[",-60;"[|",-60;"{",-60];["(",-36;")",-36;"+",-36;"-",-36;"ALWAYS_PREFIX",-36;"IDENT",-36;"LITERAL",-36;"[",-36;"[|",-36;"{",-36];["(",-37;")",-37;"+",-37;"-",-37;"ALWAYS_PREFIX",-37;"IDENT",-37;"LITERAL",-37;"[",-37;"[|",-37;"{",-37];["(",107;"IDENT",110;"parameterPattern",71];["->",72];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LITERAL",23;"LLPAREN",73;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"identExpr",25;"lambdaExpr",171;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",77;"{",126];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LET",79;"LITERAL",23;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"declExpr",144;"identExpr",25;"lambdaExpr",171;"letBinding",35;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revSequentialExpr",74;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",36;"{",126];[";",106;"RRPAREN",-52;"opt_semicolon",75];["RRPAREN",76];[")",-38;";",-38;"RHSEND",-38;"RRPAREN",-38;"]",-38;"|]",-38];["RHSEND",78];[")",-39;";",-39;"RHSEND",-39;"RRPAREN",-39;"]",-39;"|]",-39];["(",107;"IDENT",29;"atomicPattern",161;"bindingPattern",80;"parameterPattern",32;"tuplePattern",34];["=",81];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LITERAL",23;"LLPAREN",82;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"identExpr",25;"lambdaExpr",171;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",86;"{",126];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LET",79;"LITERAL",23;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"declExpr",144;"identExpr",25;"lambdaExpr",171;"letBinding",35;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revSequentialExpr",83;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",36;"{",126];[";",106;"RRPAREN",-52;"opt_semicolon",84];["RRPAREN",85];[")",-40;";",-40;"EOF",-40;"RRPAREN",-40;"]",-40;"|]",-40];["RHSEND",87];[")",-41;";",-41;"EOF",-41;"RRPAREN",-41;"]",-41;"|]",-41];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LET",79;"LITERAL",23;"MATCH",94;"[",88;"[|",7;"]",89;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"declExpr",144;"identExpr",25;"lambdaExpr",171;"letBinding",35;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revSequentialExpr",90;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",36;"{",126];["(",-42;")",-42;"*",-42;"+",-42;",",-42;"-",-42;"->",-42;".",-42;";",-42;"=",-42;"ALWAYS_INFIX",-42;"IDENT",-42;"LITERAL",-42;"RHSEND",-42;"RRPAREN",-42;"WITH",-42;"[",-42;"[|",-42;"]",-42;"{",-42;"|]",-42];[";",106;"]",-52;"opt_semicolon",91];["]",92];["(",-43;")",-43;"*",-43;"+",-43;",",-43;"-",-43;"->",-43;".",-43;";",-43;"=",-43;"ALWAYS_INFIX",-43;"IDENT",-43;"LITERAL",-43;"RHSEND",-43;"RRPAREN",-43;"WITH",-43;"[",-43;"[|",-43;"]",-43;"{",-43;"|]",-43];[")",-44;"*",-44;",",-44;"->",-44;".",135;";",-44;"<",-44;"=",-44;">",-44;"EOF",-44;"IDENT",-44;"LET",-44;"OPEN",-44;"[",-44];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"IDENT",59;"LITERAL",23;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"identExpr",25;"listExpr",26;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revTupleExpr",148;"tupleExpr",95;"unaryExpr",133;"{",126];["WITH",96];["IDENT",-50;"LITERAL",-50;"opt_bar",97;"|",104];["IDENT",99;"LITERAL",100;"matchPattern",114;"patternAndGuard",151;"revRuleClauses",98;"ruleClause",143];[")",-45;";",-45;"RHSEND",-45;"RRPAREN",-45;"]",-45;"|",141;"|]",-45];["->",-46;"WHEN",-46];["->",-47;"WHEN",-47];["IDENT",134;"longid",102;"revLongid",93];[";",-48;"EOF",-48];[";",-49;"EOF",-49];["IDENT",-51;"LITERAL",-51];["EOF",-53;"LET",79;"OPEN",101;"letBinding",103;"openOrLet",138];["(",20;")",-53;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LET",79;"LITERAL",23;"MATCH",94;"RRPAREN",-53;"[",88;"[|",7;"]",-53;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"declExpr",146;"identExpr",25;"lambdaExpr",171;"letBinding",35;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",36;"{",126;"|]",-53];["(",107;"IDENT",29;"atomicPattern",161;"bindingPattern",108;"parameterPattern",32;"tuplePattern",34];[")",109];[")",-54;",",-54;"->",-54;"=",-54];["->",-55];[")",-52;";",106;"opt_semicolon",112];[")",113];["(",-56;")",-56;"*",-56;"+",-56;",",-56;"-",-56;"->",-56;".",-56;";",-56;"=",-56;"ALWAYS_INFIX",-56;"IDENT",-56;"LITERAL",-56;"RHSEND",-56;"RRPAREN",-56;"WITH",-56;"[",-56;"[|",-56;"]",-56;"{",-56;"|]",-56];["->",-57;"WHEN",115];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"IDENT",59;"LITERAL",23;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",116;"identExpr",25;"listExpr",26;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"unaryExpr",133;"{",126];["->",-58];["(",-59;"IDENT",-59;"LITERAL",-59;"[",-59;"[|",-59;"{",-59];["(",-60;"IDENT",-60;"LITERAL",-60;"[",-60;"[|",-60;"{",-60];["(",-61;"IDENT",-61;"LITERAL",-61;"[",-61;"[|",-61;"{",-61];["(",-62;")",-62;"*",-62;"+",-62;",",-62;"-",-62;"->",-62;".",121;";",-62;"=",-62;"ALWAYS_INFIX",-62;"IDENT",-62;"LITERAL",-62;"RHSEND",-62;"RRPAREN",-62;"WITH",-62;"[",-62;"[|",-62;"]",-62;"qualificationSuffix",140;"{",-62;"|]",-62];["IDENT",59;"[",122;"identExpr",125];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"IDENT",59;"LITERAL",23;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"identExpr",25;"listExpr",26;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revTupleExpr",148;"tupleExpr",123;"unaryExpr",133;"{",126];["]",124];["(",-63;")",-63;"*",-63;"+",-63;",",-63;"-",-63;"->",-63;".",-63;";",-63;"=",-63;"ALWAYS_INFIX",-63;"IDENT",-63;"LITERAL",-63;"RHSEND",-63;"RRPAREN",-63;"WITH",-63;"[",-63;"[|",-63;"]",-63;"{",-63;"|]",-63];["(",-64;")",-64;"*",-64;"+",-64;",",-64;"-",-64;"->",-64;".",-64;";",-64;"=",-64;"ALWAYS_INFIX",-64;"IDENT",-64;"LITERAL",-64;"RHSEND",-64;"RRPAREN",-64;"WITH",-64;"[",-64;"[|",-64;"]",-64;"{",-64;"|]",-64];["IDENT",37;"fieldBinding",45;"fieldBindings",46];["}",128];["(",-65;")",-65;"*",-65;"+",-65;",",-65;"-",-65;"->",-65;".",-65;";",-65;"=",-65;"ALWAYS_INFIX",-65;"IDENT",-65;"LITERAL",-65;"RHSEND",-65;"RRPAREN",-65;"WITH",-65;"[",-65;"[|",-65;"]",-65;"{",-65;"|]",-65];["(",-66;")",-66;"*",-66;"+",-66;",",-66;"-",-66;"->",-66;";",-66;"=",-66;"ALWAYS_INFIX",-66;"IDENT",-66;"LITERAL",-66;"RHSEND",-66;"RRPAREN",-66;"WITH",-66;"[",-66;"[|",-66;"]",-66;"{",-66;"|]",-66];["(",-67;")",-67;"*",-67;"+",-67;",",-67;"-",-67;"->",-67;";",-67;"=",-67;"ALWAYS_INFIX",-67;"IDENT",-67;"LITERAL",-67;"RHSEND",-67;"RRPAREN",-67;"WITH",-67;"[",-67;"[|",-67;"]",-67;"{",-67;"|]",-67];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"IDENT",59;"LITERAL",23;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"identExpr",25;"listExpr",26;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revQualificationExpr",120;"unaryExpr",132;"{",126];[")",-68;"*",-68;"+",-68;",",-68;"-",-68;"->",-68;";",-68;"=",-68;"ALWAYS_INFIX",-68;"RHSEND",-68;"RRPAREN",-68;"WITH",-68;"]",-68;"|]",-68];[")",-69;"*",-69;"+",-69;",",-69;"-",-69;"->",-69;";",-69;"=",-69;"ALWAYS_INFIX",-69;"RHSEND",-69;"RRPAREN",-69;"WITH",-69;"]",-69;"|]",-69];[")",-70;"*",-70;",",-70;"->",-70;".",-70;";",-70;"<",-70;"=",-70;">",-70;"EOF",-70;"IDENT",-70;"LET",-70;"OPEN",-70;"[",-70];["IDENT",136];[")",-71;"*",-71;",",-71;"->",-71;".",-71;";",-71;"<",-71;"=",-71;">",-71;"EOF",-71;"IDENT",-71;"LET",-71;"OPEN",-71;"[",-71];[";",-72;"EOF",-72];[";",-73;"EOF",-73];["(",-74;")",-74;"*",-74;"+",-74;",",-74;"-",-74;"->",-74;".",-74;";",-74;"=",-74;"ALWAYS_INFIX",-74;"IDENT",-74;"LITERAL",-74;"RHSEND",-74;"RRPAREN",-74;"WITH",-74;"[",-74;"[|",-74;"]",-74;"{",-74;"|]",-74];["(",-75;")",-75;"*",-75;"+",-75;",",-75;"-",-75;"->",-75;".",-75;";",-75;"=",-75;"ALWAYS_INFIX",-75;"IDENT",-75;"LITERAL",-75;"RHSEND",-75;"RRPAREN",-75;"WITH",-75;"[",-75;"[|",-75;"]",-75;"{",-75;"|]",-75];["IDENT",99;"LITERAL",100;"matchPattern",114;"patternAndGuard",151;"ruleClause",142];[")",-76;";",-76;"RHSEND",-76;"RRPAREN",-76;"]",-76;"|",-76;"|]",-76];[")",-77;";",-77;"RHSEND",-77;"RRPAREN",-77;"]",-77;"|",-77;"|]",-77];[")",-78;";",-78;"RRPAREN",-78;"]",-78;"|]",-78];[";",106;"RRPAREN",-52;"opt_semicolon",154];[")",-79;";",-79;"RRPAREN",-79;"]",-79;"|]",-79];[")",-80;",",-80;";",-80;"RHSEND",-80;"RRPAREN",-80;"WITH",-80;"]",-80;"|]",-80];[")",-86;",",149;";",-86;"RHSEND",-86;"RRPAREN",-86;"WITH",-86;"]",-86;"|]",-86];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"IDENT",59;"LITERAL",23;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",150;"identExpr",25;"listExpr",26;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"unaryExpr",133;"{",126];[")",-81;",",-81;";",-81;"RHSEND",-81;"RRPAREN",-81;"WITH",-81;"]",-81;"|]",-81];["->",152];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LITERAL",23;"LLPAREN",153;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"identExpr",25;"lambdaExpr",171;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",156;"{",126];["(",20;"+",117;"-",118;"ALWAYS_PREFIX",119;"FUN",70;"IDENT",59;"LET",79;"LITERAL",23;"MATCH",94;"[",88;"[|",7;"appExpr",168;"arrayExpr",24;"atomicExpr",139;"binaryExpr",147;"declExpr",144;"identExpr",25;"lambdaExpr",171;"letBinding",35;"listExpr",26;"matchExpr",172;"parenExpr",27;"prefix",169;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revBinaryExpr",33;"revQualificationExpr",120;"revSequentialExpr",145;"revTupleExpr",148;"tupleExpr",173;"unaryExpr",133;"valueExpr",36;"{",126];["RRPAREN",155];[")",-82;";",-82;"RHSEND",-82;"RRPAREN",-82;"]",-82;"|",-82;"|]",-82];["RHSEND",157];[")",-83;";",-83;"RHSEND",-83;"RRPAREN",-83;"]",-83;"|",-83;"|]",-83];["]",159];[")",-84;"*",-84;",",-84;"->",-84;"=",-84;">",-84;"IDENT",-84;"[",-84];[")",-85;"*",-85;",",-85;"->",-85;"=",-85;">",-85;"IDENT",-85;"[",-85];[")",-87;",",-87;"=",-87];["(",107;"IDENT",29;"atomicPattern",163;"parameterPattern",32];[")",-88;",",-88;"=",-88];["(",12;"IDENT",134;"TYPAR",15;"appType",4;"atomType",6;"longid",16;"revLongid",93];[",",-92;">",-92];["(",12;"IDENT",134;"TYPAR",15;"appType",3;"atomType",6;"funType",55;"longid",16;"revLongid",93;"tupleType",58;"typeArgument",167];[",",-93;">",-93];[")",-94;"*",-94;"+",-94;",",-94;"-",-94;"->",-94;";",-94;"=",-94;"ALWAYS_INFIX",-94;"RHSEND",-94;"RRPAREN",-94;"WITH",-94;"]",-94;"|]",-94];["(",20;"IDENT",59;"LITERAL",23;"[",88;"[|",7;"appExpr",170;"arrayExpr",24;"atomicExpr",139;"identExpr",25;"listExpr",26;"parenExpr",27;"qualificationExpr",129;"recdLiteralExpr",28;"revAppExpr",2;"revQualificationExpr",120;"{",126];[")",-95;"*",-95;"+",-95;",",-95;"-",-95;"->",-95;";",-95;"=",-95;"ALWAYS_INFIX",-95;"RHSEND",-95;"RRPAREN",-95;"WITH",-95;"]",-95;"|]",-95];[")",-96;";",-96;"RHSEND",-96;"RRPAREN",-96;"]",-96;"|]",-96];[")",-97;";",-97;"RHSEND",-97;"RRPAREN",-97;"]",-97;"|]",-97];[")",-98;";",-98;"RHSEND",-98;"RRPAREN",-98;"]",-98;"|]",-98]]
+open FSharp.Idioms
+let stateSymbols: string[] = [|"";"file";"revAppExpr";"appType";"appType";"suffixType";"atomType";"[|";"revSequentialExpr";"|]";"|]";"(";"typeArgument";")";"TYPAR";"longid";"<";"typeArguments";">";"(";"infix";")";"LITERAL";"arrayExpr";"identExpr";"listExpr";"parenExpr";"recdLiteralExpr";"IDENT";":";"typeArgument";"parameterPattern";"revBinaryExpr";"tuplePattern";"letBinding";"valueExpr";"IDENT";"=";"valueRhs";"fieldBinding";"fieldBindings";";";"fieldBinding";"MODULE";"longid";"EOF";"revOpenOrLets";"EOF";"funType";"->";"tupleType";"tupleType";"IDENT";"<";"typeArguments";">";"*";"+";"+";"-";"-";"=";"ALWAYS_INFIX";"FUN";"parameterPattern";"->";"tupleRhs";"LET";"bindingPattern";"=";"valueRhs";"[";"]";"revSequentialExpr";"]";"revLongid";"MATCH";"tupleExpr";"WITH";"opt_bar";"revRuleClauses";"RHSEND";"IDENT";"LITERAL";"OPEN";"longid";"letBinding";"|";"(";"bindingPattern";")";"IDENT";"revSequentialExpr";")";"matchPattern";"WHEN";"binaryExpr";"+";"-";"ALWAYS_PREFIX";"revQualificationExpr";".";"[";"tupleExpr";"]";"identExpr";"{";"}";"qualificationExpr";"qualificationExpr";"infix";"unaryExpr";"unaryExpr";"IDENT";".";"IDENT";"openOrLet";";";"openOrLet";"atomicExpr";"qualificationSuffix";"|";"ruleClause";"ruleClause";"declExpr";"revSequentialExpr";"revSequentialExpr";";";"declExpr";"binaryExpr";"revTupleExpr";",";"binaryExpr";"patternAndGuard";"->";"tupleRhs";"[";"]";"longid";"atomicPattern";",";"atomicPattern";"LLPAREN";"RRPAREN";"tupleExpr";"*";"typeArgument";",";"typeArgument";"appExpr";"prefix";"appExpr";"lambdaExpr";"matchExpr";"tupleExpr";"LLPAREN";"RRPAREN";"valueExpr"|]
+let actions: (string * int) list list = [["MODULE",43;"file",1];["",0];["(",19;")",-1;"*",-1;"+",-1;",",-1;"-",-1;"->",-1;";",-1;"=",-1;"ALWAYS_INFIX",-1;"EOF",-1;"IDENT",52;"LITERAL",22;"RHSEND",-1;"RRPAREN",-1;"WITH",-1;"[",71;"[|",7;"]",-1;"arrayExpr",23;"atomicExpr",119;"identExpr",24;"listExpr",25;"parenExpr",26;"qualificationExpr",109;"recdLiteralExpr",27;"revQualificationExpr",100;"{",106;"|",-1;"|]",-1;"}",-1];[")",-85;"*",-85;",",-85;"->",-85;"=",-85;">",-85;"IDENT",113;"[",136;"longid",138;"revLongid",75;"suffixType",5];[")",-86;"*",-86;",",-86;"->",-86;"=",-86;">",-86;"IDENT",113;"[",136;"longid",138;"revLongid",75;"suffixType",5];[")",-2;"*",-2;",",-2;"->",-2;"=",-2;">",-2;"IDENT",-2;"[",-2];[")",-3;"*",-3;",",-3;"->",-3;"=",-3;">",-3;"IDENT",-3;"[",-3];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"FUN",63;"IDENT",52;"LET",67;"LITERAL",22;"MATCH",76;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"declExpr",124;"identExpr",24;"lambdaExpr",152;"letBinding",34;"listExpr",25;"matchExpr",153;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revSequentialExpr",8;"revTupleExpr",130;"tupleExpr",154;"unaryExpr",112;"valueExpr",35;"{",106;"|]",10];[";",127;"|]",9];["(",-4;")",-4;"*",-4;"+",-4;",",-4;"-",-4;"->",-4;".",-4;";",-4;"=",-4;"ALWAYS_INFIX",-4;"EOF",-4;"IDENT",-4;"LITERAL",-4;"RHSEND",-4;"RRPAREN",-4;"WITH",-4;"[",-4;"[|",-4;"]",-4;"{",-4;"|",-4;"|]",-4;"}",-4];["(",-5;")",-5;"*",-5;"+",-5;",",-5;"-",-5;"->",-5;".",-5;";",-5;"=",-5;"ALWAYS_INFIX",-5;"EOF",-5;"IDENT",-5;"LITERAL",-5;"RHSEND",-5;"RRPAREN",-5;"WITH",-5;"[",-5;"[|",-5;"]",-5;"{",-5;"|",-5;"|]",-5;"}",-5];["(",11;"IDENT",113;"TYPAR",14;"appType",3;"atomType",6;"funType",48;"longid",15;"revLongid",75;"tupleType",51;"typeArgument",12];[")",13];[")",-6;"*",-6;",",-6;"->",-6;"=",-6;">",-6;"IDENT",-6;"[",-6];[")",-7;"*",-7;",",-7;"->",-7;"=",-7;">",-7;"IDENT",-7;"[",-7];[")",-8;"*",-8;",",-8;"->",-8;"<",16;"=",-8;">",-8;"IDENT",-8;"[",-8];["(",11;"IDENT",113;"TYPAR",14;"appType",3;"atomType",6;"funType",48;"longid",15;"revLongid",75;"tupleType",51;"typeArgument",146;"typeArguments",17];[",",147;">",18];[")",-9;"*",-9;",",-9;"->",-9;"=",-9;">",-9;"IDENT",-9;"[",-9];["(",19;"*",56;"+",58;"-",60;"=",61;"ALWAYS_INFIX",62;"ALWAYS_PREFIX",99;"FUN",63;"IDENT",52;"LET",67;"LITERAL",22;"MATCH",76;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"declExpr",124;"identExpr",24;"infix",20;"lambdaExpr",152;"letBinding",34;"listExpr",25;"matchExpr",153;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revSequentialExpr",92;"revTupleExpr",130;"tupleExpr",154;"unaryExpr",112;"valueExpr",35;"{",106];[")",21];["(",-10;")",-10;"*",-10;"+",-10;",",-10;"-",-10;"->",-10;".",-10;";",-10;"=",-10;"ALWAYS_INFIX",-10;"EOF",-10;"IDENT",-10;"LITERAL",-10;"RHSEND",-10;"RRPAREN",-10;"WITH",-10;"[",-10;"[|",-10;"]",-10;"{",-10;"|",-10;"|]",-10;"}",-10];["(",-11;")",-11;"*",-11;"+",-11;",",-11;"-",-11;"->",-11;".",-11;";",-11;"=",-11;"ALWAYS_INFIX",-11;"EOF",-11;"IDENT",-11;"LITERAL",-11;"RHSEND",-11;"RRPAREN",-11;"WITH",-11;"[",-11;"[|",-11;"]",-11;"{",-11;"|",-11;"|]",-11;"}",-11];["(",-12;")",-12;"*",-12;"+",-12;",",-12;"-",-12;"->",-12;".",-12;";",-12;"=",-12;"ALWAYS_INFIX",-12;"EOF",-12;"IDENT",-12;"LITERAL",-12;"RHSEND",-12;"RRPAREN",-12;"WITH",-12;"[",-12;"[|",-12;"]",-12;"{",-12;"|",-12;"|]",-12;"}",-12];["(",-13;")",-13;"*",-13;"+",-13;",",-13;"-",-13;"->",-13;".",-13;";",-13;"=",-13;"ALWAYS_INFIX",-13;"EOF",-13;"IDENT",-13;"LITERAL",-13;"RHSEND",-13;"RRPAREN",-13;"WITH",-13;"[",-13;"[|",-13;"]",-13;"{",-13;"|",-13;"|]",-13;"}",-13];["(",-14;")",-14;"*",-14;"+",-14;",",-14;"-",-14;"->",-14;".",-14;";",-14;"=",-14;"ALWAYS_INFIX",-14;"EOF",-14;"IDENT",-14;"LITERAL",-14;"RHSEND",-14;"RRPAREN",-14;"WITH",-14;"[",-14;"[|",-14;"]",-14;"{",-14;"|",-14;"|]",-14;"}",-14];["(",-15;")",-15;"*",-15;"+",-15;",",-15;"-",-15;"->",-15;".",-15;";",-15;"=",-15;"ALWAYS_INFIX",-15;"EOF",-15;"IDENT",-15;"LITERAL",-15;"RHSEND",-15;"RRPAREN",-15;"WITH",-15;"[",-15;"[|",-15;"]",-15;"{",-15;"|",-15;"|]",-15;"}",-15];["(",-16;")",-16;"*",-16;"+",-16;",",-16;"-",-16;"->",-16;".",-16;";",-16;"=",-16;"ALWAYS_INFIX",-16;"EOF",-16;"IDENT",-16;"LITERAL",-16;"RHSEND",-16;"RRPAREN",-16;"WITH",-16;"[",-16;"[|",-16;"]",-16;"{",-16;"|",-16;"|]",-16;"}",-16];[")",-50;",",-50;":",29;"=",-50];["(",11;"IDENT",113;"TYPAR",14;"appType",3;"atomType",6;"funType",48;"longid",15;"revLongid",75;"tupleType",51;"typeArgument",30];[")",-17;",",-17;"=",-17];[")",-18;",",-18;"=",-18];[")",-19;"*",56;"+",57;",",-19;"-",59;"->",-19;";",-19;"=",61;"ALWAYS_INFIX",62;"EOF",-19;"RHSEND",-19;"RRPAREN",-19;"WITH",-19;"]",-19;"infix",110;"|",-19;"|]",-19;"}",-19];[")",-20;",",140;"=",-20];[")",-21;";",-21;"RRPAREN",-21;"]",-21;"|]",-21];[")",-22;";",-22;"RRPAREN",-22;"]",-22;"|]",-22];["=",37];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"FUN",63;"IDENT",52;"LITERAL",22;"LLPAREN",155;"MATCH",76;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"identExpr",24;"lambdaExpr",152;"listExpr",25;"matchExpr",153;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revTupleExpr",130;"tupleExpr",154;"unaryExpr",112;"valueExpr",157;"valueRhs",38;"{",106];[";",-23;"}",-23];[";",-24;"}",-24];[";",41;"}",107];["IDENT",36;"fieldBinding",42];[";",-25;"}",-25];["IDENT",113;"longid",44;"revLongid",75];["EOF",45;"LET",67;"OPEN",84;"letBinding",86;"openOrLet",116;"revOpenOrLets",46];["",-26];[";",117;"EOF",47];["",-27];[")",-87;",",-87;"->",49;"=",-87;">",-87];["(",11;"IDENT",113;"TYPAR",14;"appType",3;"atomType",6;"longid",15;"revLongid",75;"tupleType",50];[")",-28;"*",145;",",-28;"->",-28;"=",-28;">",-28];[")",-29;"*",145;",",-29;"->",-29;"=",-29;">",-29];["(",-30;")",-30;"*",-30;"+",-30;",",-30;"-",-30;"->",-30;".",-30;";",-30;"<",53;"=",-30;"ALWAYS_INFIX",-30;"EOF",-30;"IDENT",-30;"LITERAL",-30;"RHSEND",-30;"RRPAREN",-30;"WITH",-30;"[",-30;"[|",-30;"]",-30;"{",-30;"|",-30;"|]",-30;"}",-30];["(",11;"IDENT",113;"TYPAR",14;"appType",3;"atomType",6;"funType",48;"longid",15;"revLongid",75;"tupleType",51;"typeArgument",146;"typeArguments",54];[",",147;">",55];["(",-31;")",-31;"*",-31;"+",-31;",",-31;"-",-31;"->",-31;".",-31;";",-31;"=",-31;"ALWAYS_INFIX",-31;"EOF",-31;"IDENT",-31;"LITERAL",-31;"RHSEND",-31;"RRPAREN",-31;"WITH",-31;"[",-31;"[|",-31;"]",-31;"{",-31;"|",-31;"|]",-31;"}",-31];["(",-32;")",-32;"+",-32;"-",-32;"ALWAYS_PREFIX",-32;"IDENT",-32;"LITERAL",-32;"[",-32;"[|",-32;"{",-32];["(",-33;"+",-33;"-",-33;"ALWAYS_PREFIX",-33;"IDENT",-33;"LITERAL",-33;"[",-33;"[|",-33;"{",-33];["(",-54;")",-33;"IDENT",-54;"LITERAL",-54;"[",-54;"[|",-54;"{",-54];["(",-34;"+",-34;"-",-34;"ALWAYS_PREFIX",-34;"IDENT",-34;"LITERAL",-34;"[",-34;"[|",-34;"{",-34];["(",-55;")",-34;"IDENT",-55;"LITERAL",-55;"[",-55;"[|",-55;"{",-55];["(",-35;")",-35;"+",-35;"-",-35;"ALWAYS_PREFIX",-35;"IDENT",-35;"LITERAL",-35;"[",-35;"[|",-35;"{",-35];["(",-36;")",-36;"+",-36;"-",-36;"ALWAYS_PREFIX",-36;"IDENT",-36;"LITERAL",-36;"[",-36;"[|",-36;"{",-36];["(",88;"IDENT",91;"parameterPattern",64];["->",65];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"IDENT",52;"LITERAL",22;"LLPAREN",142;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"identExpr",24;"listExpr",25;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revTupleExpr",130;"tupleExpr",144;"tupleRhs",66;"unaryExpr",112;"{",106];[")",-37;";",-37;"EOF",-37;"RRPAREN",-37;"]",-37;"|]",-37;"}",-37];["(",88;"IDENT",28;"atomicPattern",139;"bindingPattern",68;"parameterPattern",31;"tuplePattern",33];["=",69];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"FUN",63;"IDENT",52;"LITERAL",22;"LLPAREN",155;"MATCH",76;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"identExpr",24;"lambdaExpr",152;"listExpr",25;"matchExpr",153;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revTupleExpr",130;"tupleExpr",154;"unaryExpr",112;"valueExpr",157;"valueRhs",70;"{",106];[")",-38;";",-38;"EOF",-38;"RRPAREN",-38;"]",-38;"|]",-38];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"FUN",63;"IDENT",52;"LET",67;"LITERAL",22;"MATCH",76;"[",71;"[|",7;"]",72;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"declExpr",124;"identExpr",24;"lambdaExpr",152;"letBinding",34;"listExpr",25;"matchExpr",153;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revSequentialExpr",73;"revTupleExpr",130;"tupleExpr",154;"unaryExpr",112;"valueExpr",35;"{",106];["(",-39;")",-39;"*",-39;"+",-39;",",-39;"-",-39;"->",-39;".",-39;";",-39;"=",-39;"ALWAYS_INFIX",-39;"EOF",-39;"IDENT",-39;"LITERAL",-39;"RHSEND",-39;"RRPAREN",-39;"WITH",-39;"[",-39;"[|",-39;"]",-39;"{",-39;"|",-39;"|]",-39;"}",-39];[";",127;"]",74];["(",-40;")",-40;"*",-40;"+",-40;",",-40;"-",-40;"->",-40;".",-40;";",-40;"=",-40;"ALWAYS_INFIX",-40;"EOF",-40;"IDENT",-40;"LITERAL",-40;"RHSEND",-40;"RRPAREN",-40;"WITH",-40;"[",-40;"[|",-40;"]",-40;"{",-40;"|",-40;"|]",-40;"}",-40];[")",-41;"*",-41;",",-41;"->",-41;".",114;";",-41;"<",-41;"=",-41;">",-41;"EOF",-41;"IDENT",-41;"LET",-41;"OPEN",-41;"[",-41];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"IDENT",52;"LITERAL",22;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"identExpr",24;"listExpr",25;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revTupleExpr",130;"tupleExpr",77;"unaryExpr",112;"{",106];["WITH",78];["IDENT",-47;"LITERAL",-47;"opt_bar",79;"|",87];["IDENT",82;"LITERAL",83;"matchPattern",94;"patternAndGuard",133;"revRuleClauses",80;"ruleClause",123];["RHSEND",81;"|",121];[")",-42;";",-42;"EOF",-42;"RRPAREN",-42;"]",-42;"|]",-42;"}",-42];["->",-43;"WHEN",-43];["->",-44;"WHEN",-44];["IDENT",113;"longid",85;"revLongid",75];[";",-45;"EOF",-45];[";",-46;"EOF",-46];["IDENT",-48;"LITERAL",-48];["(",88;"IDENT",28;"atomicPattern",139;"bindingPattern",89;"parameterPattern",31;"tuplePattern",33];[")",90];[")",-49;",",-49;"->",-49;"=",-49];["->",-50];[")",93;";",127];["(",-51;")",-51;"*",-51;"+",-51;",",-51;"-",-51;"->",-51;".",-51;";",-51;"=",-51;"ALWAYS_INFIX",-51;"EOF",-51;"IDENT",-51;"LITERAL",-51;"RHSEND",-51;"RRPAREN",-51;"WITH",-51;"[",-51;"[|",-51;"]",-51;"{",-51;"|",-51;"|]",-51;"}",-51];["->",-52;"WHEN",95];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"IDENT",52;"LITERAL",22;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",96;"identExpr",24;"listExpr",25;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"unaryExpr",112;"{",106];["->",-53];["(",-54;"IDENT",-54;"LITERAL",-54;"[",-54;"[|",-54;"{",-54];["(",-55;"IDENT",-55;"LITERAL",-55;"[",-55;"[|",-55;"{",-55];["(",-56;"IDENT",-56;"LITERAL",-56;"[",-56;"[|",-56;"{",-56];["(",-57;")",-57;"*",-57;"+",-57;",",-57;"-",-57;"->",-57;".",101;";",-57;"=",-57;"ALWAYS_INFIX",-57;"EOF",-57;"IDENT",-57;"LITERAL",-57;"RHSEND",-57;"RRPAREN",-57;"WITH",-57;"[",-57;"[|",-57;"]",-57;"qualificationSuffix",120;"{",-57;"|",-57;"|]",-57;"}",-57];["IDENT",52;"[",102;"identExpr",105];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"IDENT",52;"LITERAL",22;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"identExpr",24;"listExpr",25;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revTupleExpr",130;"tupleExpr",103;"unaryExpr",112;"{",106];["]",104];["(",-58;")",-58;"*",-58;"+",-58;",",-58;"-",-58;"->",-58;".",-58;";",-58;"=",-58;"ALWAYS_INFIX",-58;"EOF",-58;"IDENT",-58;"LITERAL",-58;"RHSEND",-58;"RRPAREN",-58;"WITH",-58;"[",-58;"[|",-58;"]",-58;"{",-58;"|",-58;"|]",-58;"}",-58];["(",-59;")",-59;"*",-59;"+",-59;",",-59;"-",-59;"->",-59;".",-59;";",-59;"=",-59;"ALWAYS_INFIX",-59;"EOF",-59;"IDENT",-59;"LITERAL",-59;"RHSEND",-59;"RRPAREN",-59;"WITH",-59;"[",-59;"[|",-59;"]",-59;"{",-59;"|",-59;"|]",-59;"}",-59];["IDENT",36;"fieldBinding",39;"fieldBindings",40];["(",-60;")",-60;"*",-60;"+",-60;",",-60;"-",-60;"->",-60;".",-60;";",-60;"=",-60;"ALWAYS_INFIX",-60;"EOF",-60;"IDENT",-60;"LITERAL",-60;"RHSEND",-60;"RRPAREN",-60;"WITH",-60;"[",-60;"[|",-60;"]",-60;"{",-60;"|",-60;"|]",-60;"}",-60];["(",-61;")",-61;"*",-61;"+",-61;",",-61;"-",-61;"->",-61;";",-61;"=",-61;"ALWAYS_INFIX",-61;"EOF",-61;"IDENT",-61;"LITERAL",-61;"RHSEND",-61;"RRPAREN",-61;"WITH",-61;"[",-61;"[|",-61;"]",-61;"{",-61;"|",-61;"|]",-61;"}",-61];["(",-62;")",-62;"*",-62;"+",-62;",",-62;"-",-62;"->",-62;";",-62;"=",-62;"ALWAYS_INFIX",-62;"EOF",-62;"IDENT",-62;"LITERAL",-62;"RHSEND",-62;"RRPAREN",-62;"WITH",-62;"[",-62;"[|",-62;"]",-62;"{",-62;"|",-62;"|]",-62;"}",-62];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"IDENT",52;"LITERAL",22;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"identExpr",24;"listExpr",25;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revQualificationExpr",100;"unaryExpr",111;"{",106];[")",-63;"*",-63;"+",-63;",",-63;"-",-63;"->",-63;";",-63;"=",-63;"ALWAYS_INFIX",-63;"EOF",-63;"RHSEND",-63;"RRPAREN",-63;"WITH",-63;"]",-63;"|",-63;"|]",-63;"}",-63];[")",-64;"*",-64;"+",-64;",",-64;"-",-64;"->",-64;";",-64;"=",-64;"ALWAYS_INFIX",-64;"EOF",-64;"RHSEND",-64;"RRPAREN",-64;"WITH",-64;"]",-64;"|",-64;"|]",-64;"}",-64];[")",-65;"*",-65;",",-65;"->",-65;".",-65;";",-65;"<",-65;"=",-65;">",-65;"EOF",-65;"IDENT",-65;"LET",-65;"OPEN",-65;"[",-65];["IDENT",115];[")",-66;"*",-66;",",-66;"->",-66;".",-66;";",-66;"<",-66;"=",-66;">",-66;"EOF",-66;"IDENT",-66;"LET",-66;"OPEN",-66;"[",-66];[";",-67;"EOF",-67];["LET",67;"OPEN",84;"letBinding",86;"openOrLet",118];[";",-68;"EOF",-68];["(",-69;")",-69;"*",-69;"+",-69;",",-69;"-",-69;"->",-69;".",-69;";",-69;"=",-69;"ALWAYS_INFIX",-69;"EOF",-69;"IDENT",-69;"LITERAL",-69;"RHSEND",-69;"RRPAREN",-69;"WITH",-69;"[",-69;"[|",-69;"]",-69;"{",-69;"|",-69;"|]",-69;"}",-69];["(",-70;")",-70;"*",-70;"+",-70;",",-70;"-",-70;"->",-70;".",-70;";",-70;"=",-70;"ALWAYS_INFIX",-70;"EOF",-70;"IDENT",-70;"LITERAL",-70;"RHSEND",-70;"RRPAREN",-70;"WITH",-70;"[",-70;"[|",-70;"]",-70;"{",-70;"|",-70;"|]",-70;"}",-70];["IDENT",82;"LITERAL",83;"matchPattern",94;"patternAndGuard",133;"ruleClause",122];["RHSEND",-71;"|",-71];["RHSEND",-72;"|",-72];[")",-73;";",-73;"RRPAREN",-73;"]",-73;"|]",-73];[";",127;"RRPAREN",143];[";",127;"RRPAREN",156];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"FUN",63;"IDENT",52;"LET",67;"LITERAL",22;"MATCH",76;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"declExpr",128;"identExpr",24;"lambdaExpr",152;"letBinding",34;"listExpr",25;"matchExpr",153;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revTupleExpr",130;"tupleExpr",154;"unaryExpr",112;"valueExpr",35;"{",106];[")",-74;";",-74;"RRPAREN",-74;"]",-74;"|]",-74];[")",-75;",",-75;";",-75;"EOF",-75;"RHSEND",-75;"RRPAREN",-75;"WITH",-75;"]",-75;"|",-75;"|]",-75;"}",-75];[")",-80;",",131;";",-80;"EOF",-80;"RHSEND",-80;"RRPAREN",-80;"WITH",-80;"]",-80;"|",-80;"|]",-80;"}",-80];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"IDENT",52;"LITERAL",22;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",132;"identExpr",24;"listExpr",25;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"unaryExpr",112;"{",106];[")",-76;",",-76;";",-76;"EOF",-76;"RHSEND",-76;"RRPAREN",-76;"WITH",-76;"]",-76;"|",-76;"|]",-76;"}",-76];["->",134];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"IDENT",52;"LITERAL",22;"LLPAREN",142;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"identExpr",24;"listExpr",25;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revTupleExpr",130;"tupleExpr",144;"tupleRhs",135;"unaryExpr",112;"{",106];["RHSEND",-77;"|",-77];["]",137];[")",-78;"*",-78;",",-78;"->",-78;"=",-78;">",-78;"IDENT",-78;"[",-78];[")",-79;"*",-79;",",-79;"->",-79;"=",-79;">",-79;"IDENT",-79;"[",-79];[")",-81;",",-81;"=",-81];["(",88;"IDENT",28;"atomicPattern",141;"parameterPattern",31];[")",-82;",",-82;"=",-82];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"FUN",63;"IDENT",52;"LET",67;"LITERAL",22;"MATCH",76;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"declExpr",124;"identExpr",24;"lambdaExpr",152;"letBinding",34;"listExpr",25;"matchExpr",153;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revSequentialExpr",125;"revTupleExpr",130;"tupleExpr",154;"unaryExpr",112;"valueExpr",35;"{",106];[")",-83;";",-83;"EOF",-83;"RHSEND",-83;"RRPAREN",-83;"]",-83;"|",-83;"|]",-83;"}",-83];[")",-84;";",-84;"EOF",-84;"RHSEND",-84;"RRPAREN",-84;"]",-84;"|",-84;"|]",-84;"}",-84];["(",11;"IDENT",113;"TYPAR",14;"appType",4;"atomType",6;"longid",15;"revLongid",75];[",",-88;">",-88];["(",11;"IDENT",113;"TYPAR",14;"appType",3;"atomType",6;"funType",48;"longid",15;"revLongid",75;"tupleType",51;"typeArgument",148];[",",-89;">",-89];[")",-90;"*",-90;"+",-90;",",-90;"-",-90;"->",-90;";",-90;"=",-90;"ALWAYS_INFIX",-90;"EOF",-90;"RHSEND",-90;"RRPAREN",-90;"WITH",-90;"]",-90;"|",-90;"|]",-90;"}",-90];["(",19;"IDENT",52;"LITERAL",22;"[",71;"[|",7;"appExpr",151;"arrayExpr",23;"atomicExpr",119;"identExpr",24;"listExpr",25;"parenExpr",26;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revQualificationExpr",100;"{",106];[")",-91;"*",-91;"+",-91;",",-91;"-",-91;"->",-91;";",-91;"=",-91;"ALWAYS_INFIX",-91;"EOF",-91;"RHSEND",-91;"RRPAREN",-91;"WITH",-91;"]",-91;"|",-91;"|]",-91;"}",-91];[")",-92;";",-92;"EOF",-92;"RRPAREN",-92;"]",-92;"|]",-92;"}",-92];[")",-93;";",-93;"EOF",-93;"RRPAREN",-93;"]",-93;"|]",-93;"}",-93];[")",-94;";",-94;"EOF",-94;"RRPAREN",-94;"]",-94;"|]",-94;"}",-94];["(",19;"+",97;"-",98;"ALWAYS_PREFIX",99;"FUN",63;"IDENT",52;"LET",67;"LITERAL",22;"MATCH",76;"[",71;"[|",7;"appExpr",149;"arrayExpr",23;"atomicExpr",119;"binaryExpr",129;"declExpr",124;"identExpr",24;"lambdaExpr",152;"letBinding",34;"listExpr",25;"matchExpr",153;"parenExpr",26;"prefix",150;"qualificationExpr",108;"recdLiteralExpr",27;"revAppExpr",2;"revBinaryExpr",32;"revQualificationExpr",100;"revSequentialExpr",126;"revTupleExpr",130;"tupleExpr",154;"unaryExpr",112;"valueExpr",35;"{",106];[")",-95;";",-95;"EOF",-95;"RRPAREN",-95;"]",-95;"|]",-95;"}",-95];[")",-96;";",-96;"EOF",-96;"RRPAREN",-96;"]",-96;"|]",-96;"}",-96]]
 let rules: list<string list*(obj list->obj)> = [
     ["";"file"], (fun (ss:obj list) -> ss.[0])
     ["appExpr";"revAppExpr"], (fun(ss:obj list)->
@@ -20,11 +21,10 @@ let rules: list<string list*(obj list->obj)> = [
         let result:(option<int>*TypeArgument)*((option<int> * SuffixType) list) =
             s0,[]
         box result)
-    ["arrayExpr";"[|";"revSequentialExpr";"opt_semicolon";"|]"], (fun(ss:obj list)->
+    ["arrayExpr";"[|";"revSequentialExpr";"|]"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
         let s1 = unbox<(option<int>*Expr) list> ss.[1]
         let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<option<int>> ss.[3]
         let result:option<int>*Expr =
             s0, ArrayExpr(snd (Expr.ofSequentialExpr s1))
         box result)
@@ -70,8 +70,7 @@ let rules: list<string list*(obj list->obj)> = [
     ["atomicExpr";"LITERAL"], (fun(ss:obj list)->
         let s0 = unbox<option<int>*Literal> ss.[0]
         let result:option<int>*Expr =
-            let i,v = s0
-            i,LiteralExpr v
+            fst s0, LiteralExpr(snd s0)
         box result)
     ["atomicExpr";"arrayExpr"], (fun(ss:obj list)->
         let s0 = unbox<option<int>*Expr> ss.[0]
@@ -111,7 +110,7 @@ let rules: list<string list*(obj list->obj)> = [
             s0
         box result)
     ["binaryExpr";"revBinaryExpr"], (fun(ss:obj list)->
-        let s0 = unbox<((option<int>*string)*(option<int>*Expr)) list> ss.[0]
+        let s0 = unbox<(option<int> * Either<string, Expr>) list> ss.[0]
         let result:option<int>*Expr =
             Expr.ofBinaryExpr s0
         box result)
@@ -130,23 +129,12 @@ let rules: list<string list*(obj list->obj)> = [
         let result:option<int>*Expr =
             s0
         box result)
-    ["fieldBinding";"IDENT";"=";"LLPAREN";"revSequentialExpr";"opt_semicolon";"RRPAREN"], (fun(ss:obj list)->
+    ["fieldBinding";"IDENT";"=";"valueRhs"], (fun(ss:obj list)->
         let s0 = unbox<option<int>*string> ss.[0]
         let s1 = unbox<option<int>> ss.[1]
-        let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<(option<int>*Expr) list> ss.[3]
-        let s4 = unbox<option<int>> ss.[4]
-        let s5 = unbox<option<int>> ss.[5]
+        let s2 = unbox<(option<int>*Expr) list> ss.[2]
         let result:option<int>*RecordFiledBinding =
-            fst s0, RecordFiledBinding(snd s0, snd(Expr.ofSequentialExpr s3))
-        box result)
-    ["fieldBinding";"IDENT";"=";"valueExpr";"RHSEND"], (fun(ss:obj list)->
-        let s0 = unbox<option<int>*string> ss.[0]
-        let s1 = unbox<option<int>> ss.[1]
-        let s2 = unbox<option<int>*Expr> ss.[2]
-        let s3 = unbox<option<int>> ss.[3]
-        let result:option<int>*RecordFiledBinding =
-            fst s0, RecordFiledBinding(snd s0, [snd s2])
+            fst s0, RecordFiledBinding(snd s0, snd(Expr.ofSequentialExpr s2))
         box result)
     ["fieldBindings";"fieldBinding"], (fun(ss:obj list)->
         let s0 = unbox<option<int>*RecordFiledBinding> ss.[0]
@@ -167,12 +155,11 @@ let rules: list<string list*(obj list->obj)> = [
         let result:string list*Expr list =
             snd s1, []
         box result)
-    ["file";"MODULE";"longid";"revOpenOrLets";"opt_semicolon";"EOF"], (fun(ss:obj list)->
+    ["file";"MODULE";"longid";"revOpenOrLets";"EOF"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
         let s1 = unbox<option<int>*string list> ss.[1]
         let s2 = unbox<(option<int>*Expr) list> ss.[2]
         let s3 = unbox<option<int>> ss.[3]
-        let s4 = unbox<option<int>> ss.[4]
         let result:string list*Expr list =
             let ls = s2 |> List.rev |> List.map snd
             snd s1, ls
@@ -230,45 +217,21 @@ let rules: list<string list*(obj list->obj)> = [
         let result:option<int>*string =
             s0
         box result)
-    ["lambdaExpr";"FUN";"parameterPattern";"->";"LLPAREN";"revSequentialExpr";"opt_semicolon";"RRPAREN"], (fun(ss:obj list)->
+    ["lambdaExpr";"FUN";"parameterPattern";"->";"tupleRhs"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
         let s1 = unbox<option<int>*Pattern> ss.[1]
         let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<option<int>> ss.[3]
-        let s4 = unbox<(option<int>*Expr) list> ss.[4]
-        let s5 = unbox<option<int>> ss.[5]
-        let s6 = unbox<option<int>> ss.[6]
+        let s3 = unbox<(option<int>*Expr) list> ss.[3]
         let result:option<int>*Expr =
-            s0, LambdaExpr(snd s1, snd(Expr.ofSequentialExpr s4))
+            s0, LambdaExpr(snd s1, snd(Expr.ofSequentialExpr s3))
         box result)
-    ["lambdaExpr";"FUN";"parameterPattern";"->";"valueExpr";"RHSEND"], (fun(ss:obj list)->
+    ["letBinding";"LET";"bindingPattern";"=";"valueRhs"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
         let s1 = unbox<option<int>*Pattern> ss.[1]
         let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<option<int>*Expr> ss.[3]
-        let s4 = unbox<option<int>> ss.[4]
+        let s3 = unbox<(option<int>*Expr) list> ss.[3]
         let result:option<int>*Expr =
-            s0, LambdaExpr(snd s1, [snd s3])
-        box result)
-    ["letBinding";"LET";"bindingPattern";"=";"LLPAREN";"revSequentialExpr";"opt_semicolon";"RRPAREN"], (fun(ss:obj list)->
-        let s0 = unbox<option<int>> ss.[0]
-        let s1 = unbox<option<int>*Pattern> ss.[1]
-        let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<option<int>> ss.[3]
-        let s4 = unbox<(option<int>*Expr) list> ss.[4]
-        let s5 = unbox<option<int>> ss.[5]
-        let s6 = unbox<option<int>> ss.[6]
-        let result:option<int>*Expr =
-            s0, LetBindingExpr(snd s1, snd(Expr.ofSequentialExpr s4))
-        box result)
-    ["letBinding";"LET";"bindingPattern";"=";"valueExpr";"RHSEND"], (fun(ss:obj list)->
-        let s0 = unbox<option<int>> ss.[0]
-        let s1 = unbox<option<int>*Pattern> ss.[1]
-        let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<option<int>*Expr> ss.[3]
-        let s4 = unbox<option<int>> ss.[4]
-        let result:option<int>*Expr =
-            s0, LetBindingExpr(snd s1, [snd s3])
+            s0, LetBindingExpr(snd s1, snd(Expr.ofSequentialExpr s3))
         box result)
     ["listExpr";"[";"]"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
@@ -276,11 +239,10 @@ let rules: list<string list*(obj list->obj)> = [
         let result:option<int>*Expr =
             s0, ListExpr []
         box result)
-    ["listExpr";"[";"revSequentialExpr";"opt_semicolon";"]"], (fun(ss:obj list)->
+    ["listExpr";"[";"revSequentialExpr";"]"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
         let s1 = unbox<(option<int>*Expr) list> ss.[1]
         let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<option<int>> ss.[3]
         let result:option<int>*Expr =
             s0, ListExpr(snd (Expr.ofSequentialExpr s1))
         box result)
@@ -290,12 +252,13 @@ let rules: list<string list*(obj list->obj)> = [
             let i,ls = s0 |> List.rev |> List.unzip
             i.[0], ls
         box result)
-    ["matchExpr";"MATCH";"tupleExpr";"WITH";"opt_bar";"revRuleClauses"], (fun(ss:obj list)->
+    ["matchExpr";"MATCH";"tupleExpr";"WITH";"opt_bar";"revRuleClauses";"RHSEND"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
         let s1 = unbox<option<int>*Expr> ss.[1]
         let s2 = unbox<option<int>> ss.[2]
         let s3 = unbox<option<int>> ss.[3]
         let s4 = unbox<(option<int>*RuleClause) list> ss.[4]
+        let s5 = unbox<option<int>> ss.[5]
         let result:option<int>*Expr =
             let ruleClauses = s4 |> List.map snd |> List.rev
             s0, MatchExpr(snd s1, ruleClauses)
@@ -330,15 +293,6 @@ let rules: list<string list*(obj list->obj)> = [
         let result:option<int> =
             s0
         box result)
-    ["opt_semicolon"], (fun(ss:obj list)->
-        let result:option<int> =
-            None
-        box result)
-    ["opt_semicolon";";"], (fun(ss:obj list)->
-        let s0 = unbox<option<int>> ss.[0]
-        let result:option<int> =
-            s0
-        box result)
     ["parameterPattern";"(";"bindingPattern";")"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
         let s1 = unbox<option<int>*Pattern> ss.[1]
@@ -351,11 +305,10 @@ let rules: list<string list*(obj list->obj)> = [
         let result:option<int>*Pattern =
             fst s0, IdentPattern(snd s0)
         box result)
-    ["parenExpr";"(";"revSequentialExpr";"opt_semicolon";")"], (fun(ss:obj list)->
+    ["parenExpr";"(";"revSequentialExpr";")"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
         let s1 = unbox<(option<int>*Expr) list> ss.[1]
         let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<option<int>> ss.[3]
         let result:option<int>*Expr =
             s0, ParenExpr(snd (Expr.ofSequentialExpr s1))
         box result)
@@ -405,11 +358,10 @@ let rules: list<string list*(obj list->obj)> = [
         let result:option<int>*Expr =
             s1
         box result)
-    ["recdLiteralExpr";"{";"fieldBindings";"opt_semicolon";"}"], (fun(ss:obj list)->
+    ["recdLiteralExpr";"{";"fieldBindings";"}"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
         let s1 = unbox<(option<int>*RecordFiledBinding) list> ss.[1]
         let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<option<int>> ss.[3]
         let result:option<int>*Expr =
             let ls = s1 |> List.map snd |> List.rev
             s0, RecordLiteralExpr ls
@@ -426,16 +378,18 @@ let rules: list<string list*(obj list->obj)> = [
             s1::s0
         box result)
     ["revBinaryExpr";"revBinaryExpr";"infix";"unaryExpr"], (fun(ss:obj list)->
-        let s0 = unbox<((option<int>*string)*(option<int>*Expr)) list> ss.[0]
+        let s0 = unbox<(option<int> * Either<string, Expr>) list> ss.[0]
         let s1 = unbox<option<int>*string> ss.[1]
         let s2 = unbox<option<int>*Expr> ss.[2]
-        let result:((option<int>*string)*(option<int>*Expr)) list =
-            (s1,s2)::s0
+        let result:(option<int> * Either<string, Expr>) list =
+            let s1 = fst s1,Left(snd s1)
+            let s2 = fst s2,Right(snd s2)
+            s2::s1::s0
         box result)
     ["revBinaryExpr";"unaryExpr"], (fun(ss:obj list)->
         let s0 = unbox<option<int>*Expr> ss.[0]
-        let result:((option<int>*string)*(option<int>*Expr)) list =
-            [(None,""),s0]
+        let result:(option<int> * Either<string, Expr>) list =
+            [fst s0, Right(snd s0)]
         box result)
     ["revLongid";"IDENT"], (fun(ss:obj list)->
         let s0 = unbox<option<int>*string> ss.[0]
@@ -508,26 +462,13 @@ let rules: list<string list*(obj list->obj)> = [
         let result:(option<int>*Expr) list =
             s2::s0
         box result)
-    ["ruleClause";"patternAndGuard";"->";"LLPAREN";"revSequentialExpr";"opt_semicolon";"RRPAREN"], (fun(ss:obj list)->
+    ["ruleClause";"patternAndGuard";"->";"tupleRhs"], (fun(ss:obj list)->
         let s0 = unbox<option<int>*Pattern*Expr option> ss.[0]
         let s1 = unbox<option<int>> ss.[1]
-        let s2 = unbox<option<int>> ss.[2]
-        let s3 = unbox<(option<int>*Expr) list> ss.[3]
-        let s4 = unbox<option<int>> ss.[4]
-        let s5 = unbox<option<int>> ss.[5]
+        let s2 = unbox<(option<int>*Expr) list> ss.[2]
         let result:option<int>*RuleClause =
             let i,p,g = s0
-            let r = s3 |> List.map snd |> List.rev
-            i, RuleClause(p, g, r)
-        box result)
-    ["ruleClause";"patternAndGuard";"->";"valueExpr";"RHSEND"], (fun(ss:obj list)->
-        let s0 = unbox<option<int>*Pattern*Expr option> ss.[0]
-        let s1 = unbox<option<int>> ss.[1]
-        let s2 = unbox<option<int>*Expr> ss.[2]
-        let s3 = unbox<option<int>> ss.[3]
-        let result:option<int>*RuleClause =
-            let i,p,g = s0
-            i, RuleClause(p, g, [snd s2])
+            i, RuleClause(p, g, snd(Expr.ofSequentialExpr s2))
         box result)
     ["suffixType";"[";"]"], (fun(ss:obj list)->
         let s0 = unbox<option<int>> ss.[0]
@@ -556,6 +497,18 @@ let rules: list<string list*(obj list->obj)> = [
         let s2 = unbox<option<int>*Pattern> ss.[2]
         let result:(option<int>*Pattern)list =
             s2::s0
+        box result)
+    ["tupleRhs";"LLPAREN";"revSequentialExpr";"RRPAREN"], (fun(ss:obj list)->
+        let s0 = unbox<option<int>> ss.[0]
+        let s1 = unbox<(option<int>*Expr) list> ss.[1]
+        let s2 = unbox<option<int>> ss.[2]
+        let result:(option<int>*Expr) list =
+            s1
+        box result)
+    ["tupleRhs";"tupleExpr"], (fun(ss:obj list)->
+        let s0 = unbox<option<int>*Expr> ss.[0]
+        let result:(option<int>*Expr) list =
+            [s0]
         box result)
     ["tupleType";"appType"], (fun(ss:obj list)->
         let s0 = unbox<(option<int>*TypeArgument)*((option<int> * SuffixType) list)> ss.[0]
@@ -595,8 +548,7 @@ let rules: list<string list*(obj list->obj)> = [
         let s0 = unbox<option<int>*string> ss.[0]
         let s1 = unbox<option<int>*Expr> ss.[1]
         let result:option<int>*Expr =
-            let indent, op = s0
-            indent, UnaryExpr(op, snd s1)
+            fst s0, UnaryExpr(snd s0, snd s1)
         box result)
     ["valueExpr";"lambdaExpr"], (fun(ss:obj list)->
         let s0 = unbox<option<int>*Expr> ss.[0]
@@ -612,6 +564,18 @@ let rules: list<string list*(obj list->obj)> = [
         let s0 = unbox<option<int>*Expr> ss.[0]
         let result:option<int>*Expr =
             s0
+        box result)
+    ["valueRhs";"LLPAREN";"revSequentialExpr";"RRPAREN"], (fun(ss:obj list)->
+        let s0 = unbox<option<int>> ss.[0]
+        let s1 = unbox<(option<int>*Expr) list> ss.[1]
+        let s2 = unbox<option<int>> ss.[2]
+        let result:(option<int>*Expr) list =
+            s1
+        box result)
+    ["valueRhs";"valueExpr"], (fun(ss:obj list)->
+        let s0 = unbox<option<int>*Expr> ss.[0]
+        let result:(option<int>*Expr) list =
+            [s0]
         box result)
 ]
 let unboxRoot =

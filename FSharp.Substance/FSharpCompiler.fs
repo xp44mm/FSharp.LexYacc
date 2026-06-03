@@ -36,7 +36,7 @@ let compile (input: string) =
     }
     |> Seq.collect(fun (spaces, tok) ->
         Console.WriteLine(stringify(StackOps.getSymbols states |> List.rev))
-        LexFilter.lex_filter states spaces tok
+        LexFilter.lex_filter_refac states spaces tok
     )
     |> Seq.map(fun (i, tok) ->
         Console.WriteLine(stringify(i, tok))

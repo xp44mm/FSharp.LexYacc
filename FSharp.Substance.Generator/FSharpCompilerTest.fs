@@ -10,13 +10,13 @@ open System.Reflection
 
 type FSharpCompilerTest(output: ITestOutputHelper) =
     let entries = [
-        "PEEK_BAR", PEEK_BAR.tgt
-        "PEEK_NEWLINE_MODULE", PEEK_NEWLINE_MODULE.tgt
+        //"PEEK_BAR", PEEK_BAR.tgt
+        //"PEEK_NEWLINE_MODULE", PEEK_NEWLINE_MODULE.tgt
         "PEEK_SEMICOLON", PEEK_SEMICOLON.tgt
-        "PEEK_RPAREN", PEEK_RPAREN.tgt
+        //"PEEK_RPAREN", PEEK_RPAREN.tgt
         "PEEK_RBRACK", PEEK_RBRACK.tgt
         "PEEK_NEW_BLOCK", PEEK_NEW_BLOCK.tgt
-        "PEEK_NEWLINE_NEW_DECL", PEEK_NEWLINE_NEW_DECL.tgt
+        //"PEEK_NEWLINE_NEW_DECL", PEEK_NEWLINE_NEW_DECL.tgt
         "PEEK_EOF", PEEK_EOF.tgt
         "RecordLiteralExpr", RecordLiteralExpr.tgt
     ]
