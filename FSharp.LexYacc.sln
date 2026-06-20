@@ -17,6 +17,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Substance.Generator"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.fsproj", "{07A576AF-7AA3-4F0E-AF66-75C55A697CB6}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.SyntaxTreeX", "FSharp.Compiler.SyntaxTreeX\FSharp.Compiler.SyntaxTreeX.fsproj", "{F338A906-32D9-0323-D0B2-7583A5E43215}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{07A576AF-7AA3-4F0E-AF66-75C55A697CB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07A576AF-7AA3-4F0E-AF66-75C55A697CB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07A576AF-7AA3-4F0E-AF66-75C55A697CB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F338A906-32D9-0323-D0B2-7583A5E43215}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F338A906-32D9-0323-D0B2-7583A5E43215}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F338A906-32D9-0323-D0B2-7583A5E43215}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F338A906-32D9-0323-D0B2-7583A5E43215}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

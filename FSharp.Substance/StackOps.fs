@@ -119,17 +119,15 @@ let rrparen_or_rhsend (states: YaccState list) : (int option * FSharpToken) list
     let rec loop (currentStates: YaccState list) =
         [
             match currentStates with
-            | Lookahead LookaheadConfig0.RHSEND ls ->
-                Console.WriteLine("loop rhsend:")
-                Console.WriteLine(stringify ls)
+            //| Lookahead LookaheadConfig0.RHSEND ls ->
 
-                yield None, RHSEND
-                let nextStates = parser.shift currentStates Light.None_RHSEND
-                yield! loop nextStates
-            | Lookahead LookaheadConfig0.RRPAREN _ ->
-                yield None, RRPAREN
-                let nextStates = parser.shift currentStates Light.None_RRPAREN
-                yield! loop nextStates
+            //    yield None, RHSEND
+            //    let nextStates = parser.shift currentStates Light.None_RHSEND
+            //    yield! loop nextStates
+            //| Lookahead LookaheadConfig0.RRPAREN _ ->
+            //    yield None, RRPAREN
+            //    let nextStates = parser.shift currentStates Light.None_RRPAREN
+            //    yield! loop nextStates
             | _ -> ()
         ]
     loop states
@@ -144,41 +142,41 @@ let newline_decl_rhsend_or_rrparen (i: int) (states: YaccState list) =
             ]
 
         match current_states with
-        | Lookahead LookaheadConfig0.LLPAREN st ->
-            let prefix, _ = Seq.exactlyOne st
-            let firstDecl = YaccStateInfo.from current_states.[prefix.Length - 2]
-            match firstDecl.position with
-            | Some j ->
-                if i = j then
-                    //内部对齐，停止补充
-                    []
-                elif i < j then
-                    //offside
-                    continue_loop LLPAREN
-                else
-                    //更加缩进
-                    []
-            | None -> failwith "llparen must newline."
+        //| Lookahead LookaheadConfig0.LLPAREN st ->
+        //    let prefix, _ = Seq.exactlyOne st
+        //    let firstDecl = YaccStateInfo.from current_states.[prefix.Length - 2]
+        //    match firstDecl.position with
+        //    | Some j ->
+        //        if i = j then
+        //            //内部对齐，停止补充
+        //            []
+        //        elif i < j then
+        //            //offside
+        //            continue_loop LLPAREN
+        //        else
+        //            //更加缩进
+        //            []
+        //    | None -> failwith "llparen must newline."
 
-        | Lookahead LookaheadConfig0.RHSEND st ->
-            let prefix, heads = st |> Seq.exactlyOne
-            //match,function
-            let keyword = YaccStateInfo.from current_states.[prefix.Length - 1]
+        //| Lookahead LookaheadConfig0.RHSEND st ->
+        //    let prefix, heads = st |> Seq.exactlyOne
+        //    //match,function
+        //    let keyword = YaccStateInfo.from current_states.[prefix.Length - 1]
 
-            match keyword.position with
-            | Some j ->
-                if i = j then
-                    //内部对齐，停止补充
-                    [ None, RHSEND ]
-                elif i < j then
-                    //offside
-                    continue_loop RHSEND
-                else
-                    //更加缩进
-                    []
-            | None ->
-                //嵌套的match/function
-                continue_loop RHSEND
+        //    match keyword.position with
+        //    | Some j ->
+        //        if i = j then
+        //            //内部对齐，停止补充
+        //            [ None, RHSEND ]
+        //        elif i < j then
+        //            //offside
+        //            continue_loop RHSEND
+        //        else
+        //            //更加缩进
+        //            []
+        //    | None ->
+        //        //嵌套的match/function
+        //        continue_loop RHSEND
 
         | _ -> []
 

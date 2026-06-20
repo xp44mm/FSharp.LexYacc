@@ -20,9 +20,7 @@ let transform (tokens: FSharpToken seq) =
                 yield ident, tok
                 yield! loop tok
         }
-
     loop(NEW_LINE 0)
-
 
 let tokenRow indent tok : TokenRow<int option * FSharpToken> =
     {
@@ -54,24 +52,44 @@ let getName (symbol: string) =
     else
         symbol
 
-let important = set [ 
-    FSharpToken.tag FSharpToken.LLPAREN
-    FSharpToken.tag FSharpToken.RHSEND
-    FSharpToken.tag FSharpToken.RRPAREN
-    FSharpToken.tag FSharpToken.SEMICOLON
-    ]
+let important =
+    set
+        [
+            FSharpToken.tag FSharpToken.LLPAREN
+            FSharpToken.tag FSharpToken.RHSEND
+            FSharpToken.tag FSharpToken.RRPAREN
+            FSharpToken.tag FSharpToken.SEMICOLON
+        ]
 
-let famous = set [ 
-    //FSharpToken.tag FSharpToken.BAR
-    FSharpToken.tag FSharpToken.BAR_RBRACK
-    //FSharpToken.tag FSharpToken.EOF
-    FSharpToken.tag FSharpToken.LBRACE
-    FSharpToken.tag FSharpToken.LBRACK
-    FSharpToken.tag FSharpToken.LBRACK_BAR
-    FSharpToken.tag FSharpToken.LPAREN
-    FSharpToken.tag FSharpToken.RBRACE
-    FSharpToken.tag FSharpToken.RBRACK
-    FSharpToken.tag FSharpToken.RPAREN
+let famous =
+    set
+        [
+            //FSharpToken.tag FSharpToken.BAR
+            FSharpToken.tag FSharpToken.BAR_RBRACK
+            //FSharpToken.tag FSharpToken.EOF
+            FSharpToken.tag FSharpToken.LBRACE
+            FSharpToken.tag FSharpToken.LBRACK
+            FSharpToken.tag FSharpToken.LBRACK_BAR
+            FSharpToken.tag FSharpToken.LPAREN
+            FSharpToken.tag FSharpToken.RBRACE
+            FSharpToken.tag FSharpToken.RBRACK
+            FSharpToken.tag FSharpToken.RPAREN
+        ]
+
+/// 蜕化
+let degenerate ctor (revList: (option<int> * 'a) list) =
+    let i, ls = revList |> List.rev |> List.unzip
+
+    let pat =
+        if ls.Length > 1 then
+            ctor ls
+        else
+            ls.[0]
+    i.[0], pat
 
 
-    ]
+/// 
+let mapsnd (revList: (option<int> * 'a) list) =
+    revList |> List.rev |> List.map snd
+
+

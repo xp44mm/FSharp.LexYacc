@@ -2,7 +2,6 @@
 module FSharp.Substance.FSharpYacc
 open FSharp.LexYacc
 open FSharp.Idioms
-
 }
 
 file:
@@ -20,7 +19,7 @@ revOpenOrLets:
 
 openOrLet:
     | OPEN longid {s0, OpenExpr(snd s1)}
-    | letBinding { s0 }
+    | bindExpr { s0 }
 
 longid:
     | revLongid  {
@@ -37,28 +36,111 @@ revSequentialExpr:
     | revSequentialExpr ";" declExpr  { s2::s0 }
 
 declExpr:
-    | letBinding { s0 }
+    | bindExpr { s0 }
+    | qualificationExpr "<-" valueRhs {
+        fst s0, AssignmentExpr(snd s0, snd(Expr.ofSequentialExpr s2))
+        }
+    | whileKeyword binaryExpr DO valueRhs {
+        fst s0, WhileExpr(snd s0, snd s1, snd(Expr.ofSequentialExpr s3)) 
+        }
+    | FOR AliasPattern IN binaryExpr DO valueRhs {
+        s0,ForExpr(snd s1, snd s3, snd(Expr.ofSequentialExpr s5))
+        }
+    | produceKeyword valueExpr {
+        fst s0, ProduceExpr(snd s0, snd s1)
+        }
     | valueExpr { s0 }
 
-letBinding:
-    | LET bindingPattern "=" valueRhs {
-        s0, LetBindingExpr(snd s1, snd(Expr.ofSequentialExpr s3))
+bindExpr:
+    | bindKeyword opt_rec opt_mutable bindPattern "=" valueRhs {
+        let opts =
+            [
+                snd s1
+                snd s2
+            ]
+            |> List.choose id
+        fst s0, LetBindingExpr(snd s0, opts, snd s3, snd(Expr.ofSequentialExpr s5))
         }
+        
+opt_rec:
+    | {None,None}
+    | REC {s0, Some "rec"}
+    
+opt_mutable:
+    | {None,None}
+    | MUTABLE {s0, Some "mutable"}
+    
+bindKeyword:
+    | LET{s0,"let"}
+    | LET_BANG{s0,"let!"}
+    | USE{s0,"use"}
+    | USE_BANG{s0,"use!"}
+    | AND{s0,"and"}
+    | AND_BANG{s0,"and!"}
+    
+whileKeyword:
+    | WHILE {s0,"while"}
+    | WHILE_BANG {s0,"while!"}
 
-valueRhs:
-    | valueExpr { [s0] }
-    | LLPAREN revSequentialExpr RRPAREN { s1 }
-
+produceKeyword:
+    | DO_BANG {s0,"do!"}
+    | YIELD {s0,"yield"}
+    | YIELD_BANG {s0,"yield!"}
+    | RETURN {s0,"return"}
+    | RETURN_BANG {s0,"return!"}
+    
 valueExpr:
     | matchExpr { s0 }
+    | functionExpr {s0}
     | lambdaExpr { s0 }
+    | ifExpr { s0 }
+    | tryWithExpr {}
+    | tryFinallyExpr {}
     | tupleExpr { s0 }
     
+ifExpr:
+    | revIfParts RHSEND { Expr.ofIfExpr s0 }
+
+revIfParts:
+    | IF thenPart {
+        [s0, snd s1]
+    }
+    | revIfParts ELIF thenPart {
+        (s1, snd s2) :: s0
+    }
+    | revIfParts ELSE valueRhs {
+        let branch = IfBranch(None, snd(Expr.ofSequentialExpr s2))
+        (s1, branch) :: s0
+    }
+    
+thenPart:
+    | binaryExpr THEN valueRhs {
+        fst s0, IfBranch(Some(snd s0), snd(Expr.ofSequentialExpr s2))
+        }
+    
 matchExpr:
-  | MATCH tupleExpr WITH opt_bar revRuleClauses RHSEND { 
-    let ruleClauses = s4 |> List.map snd |> List.rev
-    s0, MatchExpr(snd s1, ruleClauses)
-  }
+    | matchKeyword tupleExpr WITH opt_bar revRuleClauses RHSEND {
+        fst s0, MatchExpr(snd s0, snd s1, s4 |> List.rev |> List.map snd)
+        }
+        
+matchKeyword:
+    | MATCH {s0,"match"}
+    | MATCH_BANG {s0,"match!"}
+
+functionExpr:
+    | FUNCTION opt_bar revRuleClauses RHSEND {
+        s0, FunctionExpr(s2 |> List.rev |> List.map snd)
+        }
+
+tryWithExpr:
+    | TRY tupleRhs WITH opt_bar revRuleClauses RHSEND {
+        s0, TryWithExpr(s1 |> List.rev |> List.map snd, s4 |> List.rev |> List.map snd)
+        }
+    
+tryFinallyExpr:
+    | TRY tupleRhs FINALLY tupleRhs {
+        s0, TryFinallyExpr(s1 |> List.rev |> List.map snd, s3 |> List.rev |> List.map snd)
+        }
 
 revRuleClauses:
   | ruleClause { [s0] }
@@ -70,30 +152,37 @@ ruleClause:
     i, RuleClause(p, g, snd(Expr.ofSequentialExpr s2))
     }
 
+valueRhs:
+    | valueExpr { [s0] }
+    | LLPAREN revSequentialExpr RRPAREN { s1 }
+    
 tupleRhs:
     | tupleExpr { [s0] }
     | LLPAREN revSequentialExpr RRPAREN { s1 }
 
-
 patternAndGuard:
-  | matchPattern { fst s0,snd s0, None }
-  | matchPattern WHEN binaryExpr { fst s0,snd s0, Some(snd s2) }
+    | DisjunctivePattern { fst s0, snd s0, None }
+    | DisjunctivePattern WHEN binaryExpr { fst s0, snd s0, Some(snd s2) }
 
 lambdaExpr:
-    | FUN parameterPattern "->" tupleRhs {
-            s0, LambdaExpr(snd s1, snd(Expr.ofSequentialExpr s3))
+    | FUN AppPattern "->" tupleRhs {
+        s0, LambdaExpr(snd s1, snd(Expr.ofSequentialExpr s3))
         }
 
 tupleExpr:
-    | revTupleExpr {Expr.ofTupleExpr s0}
+    | revTupleExpr { Expr.ofTupleExpr s0 }
 
 revTupleExpr:
-    | binaryExpr { [s0] }
-    | revTupleExpr "," binaryExpr { s2::s0 }
-
+    | annotatedExpr { [s0] }
+    | revTupleExpr "," annotatedExpr { s2::s0 }
+    
+annotatedExpr:
+    | binaryExpr ":" typeArgument { fst s0, TypeAnnotatedExpr(snd s0, snd s2) }
+    | binaryExpr { s0 }
+    
 binaryExpr:
     | revBinaryExpr { Expr.ofBinaryExpr s0 }
-
+    
 revBinaryExpr:
     | unaryExpr { [fst s0, Right(snd s0)] }
     | revBinaryExpr infix unaryExpr {
@@ -105,9 +194,9 @@ revBinaryExpr:
 unaryExpr:
     | prefix appExpr {
         fst s0, UnaryExpr(snd s0, snd s1)
-    }
+        }
     | appExpr {s0}
-
+    
 appExpr:
     | revAppExpr {
         Expr.ofAppExpr s0
@@ -124,12 +213,18 @@ revQualificationExpr:
     | atomicExpr { [s0] }
     | revQualificationExpr qualificationSuffix { s1::s0 }
 
+qualificationSuffix:
+    | "." identExpr { s1 }
+    | "." "[" tupleExpr "]" { s2 }
+
 atomicExpr:
     | LITERAL {
         fst s0, LiteralExpr(snd s0)
         }
     | identExpr { s0 }
-    | "(" infix ")" { s0, OperatorSectionExpr(snd s1) }
+    | "(" infix ")" { 
+        s0, OperatorSectionExpr(snd s1) 
+        }
     | parenExpr { s0 }
     | listExpr { s0 }
     | arrayExpr { s0 }
@@ -142,10 +237,6 @@ identExpr:
         fst s0, TypeApplicationExpr(snd s0,targs)
         }
     
-qualificationSuffix:
-    | "." identExpr { s1 }
-    | "." "[" tupleExpr "]" { s2 }
-      
 parenExpr:
     | "(" revSequentialExpr ")" { s0, ParenExpr(snd (Expr.ofSequentialExpr s1)) }
 
@@ -172,27 +263,6 @@ infix:
 opt_bar:
     | {None}
     | "|" {s0}
-
-bindingPattern:
-  | tuplePattern { Pattern.ofTuplePattern s0 }
-    
-atomicPattern:
-  | parameterPattern { s0 }
-  | IDENT ":" typeArgument {
-    fst s0, TypeAnnotationPattern(snd s0, snd s2)
-    }
-    
-parameterPattern:
-  | IDENT { fst s0, IdentPattern(snd s0) }
-  | "(" bindingPattern ")" { s0, snd s1 }
-
-tuplePattern:
-    | atomicPattern { [s0] }
-    | tuplePattern "," atomicPattern { s2::s0 }
-
-matchPattern:
-  | LITERAL { fst s0, LiteralPattern(snd s0) }
-  | IDENT { fst s0, IdentPattern(snd s0) }
 
 typeArgument:
     | funType { TypeArgument.ofFun s0 }
@@ -233,41 +303,148 @@ typeArguments:
     | typeArguments "," typeArgument { s2::s0 }
 
 recdLiteralExpr:
-  | "{" fieldBindings "}"  {
-    let ls = s1 |> List.map snd |> List.rev
-    s0, RecordLiteralExpr ls
-  }
+    | "{" fieldBindings "}"  {
+        let ls = s1 |> List.map snd |> List.rev
+        s0, RecordLiteralExpr ls
+        }
 
 fieldBindings:
-  | fieldBinding { [s0] }
-  | fieldBindings ";" fieldBinding { s2::s0 }
+    | fieldBinding { [s0] }
+    | fieldBindings ";" fieldBinding { s2::s0 }
   
 fieldBinding:
-  | IDENT "=" valueRhs {
-    fst s0, RecordFiledBinding(snd s0, snd(Expr.ofSequentialExpr s2))
-  }
+    | IDENT "=" valueRhs {
+        fst s0, RecordFiledBinding(snd s0, snd(Expr.ofSequentialExpr s2))
+        }
+
+DisjunctivePattern:
+    | revDisjunctivePattern {Pattern.toDisjunctivePattern(List.rev s0)}
+    
+revDisjunctivePattern:
+    | ConjunctivePattern { [s0] }
+    | revDisjunctivePattern "|" ConjunctivePattern { s2::s0 }
+
+ConjunctivePattern:
+    | revConjunctivePattern {Pattern.toConjunctivePattern(List.rev s0)}
+    
+revConjunctivePattern:
+    | AliasPattern { [s0] }
+    | revConjunctivePattern "&" AliasPattern { s2::s0 }
+
+AliasPattern:
+    | ":?" tupleType { 
+        let _, tt = TypeArgument.ofTuple s1
+        s0, DynamicTypeTestPattern(tt,"") 
+        }
+    | ":?" tupleType AS IDENT {
+        let _, tt = TypeArgument.ofTuple s1
+        s0, DynamicTypeTestPattern(tt, snd s3)}
+    | TuplePattern {s0}
+    | TuplePattern AS IDENT {
+        fst s0, AliasPattern(snd s0,snd s2) }
+    
+    
+TuplePattern:
+    | revTuplePattern { Pattern.toTuplePattern s0 }
+    
+revTuplePattern:
+    | ConsPattern { [s0] }
+    | revTuplePattern "," ConsPattern { s2::s0 }
+    
+ConsPattern:
+    | revConsPattern {Pattern.toConsPattern s0}
+    
+revConsPattern:
+    | revConsPattern "::" unaryPattern { s2::s0 }
+    | unaryPattern { [s0] }
+    
+    
+unaryPattern:
+    | AppPattern { s0 }
+    | annotatedPattern { s0 }
+    
+annotatedPattern:
+    | AtomicPattern ":" tupleType {fst s0, TypeAnnotatedPattern(snd s0, snd(TypeArgument.ofTuple s2))}
+    
+AppPattern:
+    | revAppPattern { Pattern.toAppPattern s0 }
+    | AtomicPattern {s0}
+
+revAppPattern:
+    | NamedPattern AtomicPattern {[s1;s0]}
+    | revAppPattern AtomicPattern { s1::s0 }
+
+AtomicPattern:
+    | LITERAL { fst s0, LiteralPattern(snd s0) }
+    | longid { fst s0, NamedPattern(snd s0, []) }
+    | "(" DisjunctivePattern ")" { s0, snd s1 }
+    | "[" revElementPatterns "]" {
+        s0,ListPattern(s1 |> List.map snd |> List.rev) 
+        }
+    | "[|" revElementPatterns "|]" {
+        s0,ArrayPattern(s1 |> List.map snd |> List.rev) 
+        }
+    | "{" revFieldPatterns "}" {
+        s0,RecordPattern(s1 |> List.map snd |> List.rev) 
+        }
+
+revElementPatterns:
+    | TuplePattern { [s0] }
+    | revElementPatterns ";" TuplePattern { s2::s0 }
+
+revFieldPatterns:
+    | fieldPattern { [s0] }
+    | revFieldPatterns ";" fieldPattern { s2::s0 }
+  
+fieldPattern:
+    | IDENT "=" TuplePattern {fst s0, (snd s0, snd s2)}
+
+bindPattern:
+    | revAppPattern opt_topReturnTypeWithTypeConstraints {}
+//    | AliasPattern { s0, snd s1 }
+
+opt_topReturnTypeWithTypeConstraints:
+    | { None, None }
+    | ":" typeArgument { s0, Some(snd s1) }
+
+%type<int option*Pattern> AliasPattern AppPattern AtomicPattern ConjunctivePattern ConsPattern 
+    DisjunctivePattern TuplePattern  unaryPattern NamedPattern
+    annotatedPattern bindPattern headPattern paramPattern revParamsPattern
+     
+%type<(int option*Pattern)list> revTuplePattern revConjunctivePattern revConsPattern revAppPattern
+    revDisjunctivePattern revElementPatterns
+%type<int option*(string*Pattern)> fieldPattern
+%type<(int option*(string*Pattern))list> revFieldPatterns
 
 %type<string list*Expr list> file
 %type<option<int>*RecordFiledBinding> fieldBinding
 %type<(option<int>*RecordFiledBinding) list> fieldBindings
 %type<(option<int>*string) list> revLongid
 %type<option<int>*string list> longid
-%type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr revOpenOrLets valueRhs tupleRhs
-%type<option<int>*Expr> openOrLet declExpr letBinding matchExpr valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr 
+
+%type<option<int>*Expr> openOrLet declExpr bindExpr matchExpr valueExpr lambdaExpr tupleExpr binaryExpr unaryExpr 
     appExpr qualificationExpr atomicExpr identExpr qualificationSuffix parenExpr arrayExpr listExpr recdLiteralExpr
-%type<option<int>*string> prefix infix
+    ifExpr annotatedExpr functionExpr tryFinallyExpr tryWithExpr
+%type<(option<int>*Expr) list> revSequentialExpr revTupleExpr revAppExpr revQualificationExpr revOpenOrLets valueRhs tupleRhs
 %type<(option<int>*RuleClause) list> revRuleClauses
 %type<option<int>*RuleClause> ruleClause
-%type<option<int>*string> IDENT TYPAR ALWAYS_INFIX ALWAYS_PREFIX
 %type<option<int>*Literal> LITERAL
-%type<option<int>> DO EOF FUN LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WITH WHEN opt_bar 
-    "(" "(|" ")" "+" "*" "," "-" "->" "." ":" ";" "<" "<-" "=" ">" "[" "[|" "]" "{" "|" "|)" "|]" "}"
 %type<(option<int> * Either<string, Expr>) list> revBinaryExpr
 %type<option<int>*TypeArgument> typeArgument
+%type<option<int>*TypeArgument option> opt_topReturnTypeWithTypeConstraints
+
 %type<(option<int>*TypeArgument)*((option<int> * SuffixType) list)> appType
 %type<(option<int>*TypeArgument) list> tupleType funType typeArguments
 %type<option<int>*SuffixType> suffixType
 %type<option<int>*TypeArgument> atomType
-%type<option<int>*Pattern> bindingPattern atomicPattern parameterPattern matchPattern
-%type<(option<int>*Pattern)list> tuplePattern
 %type<option<int>*Pattern*Expr option> patternAndGuard
+%type<option<int>*IfBranch> thenPart
+%type<(option<int>*IfBranch) list> revIfParts
+%type<option<int>*string> IDENT TYPAR ALWAYS_INFIX ALWAYS_PREFIX
+    bindKeyword matchKeyword produceKeyword whileKeyword prefix infix
+%type<option<int>*string option> opt_mutable opt_rec
+ 
+%type<option<int>> DO EOF FUN FUNCTION LET LLPAREN MATCH MODULE OPEN RHSEND RRPAREN WITH WHEN opt_bar 
+    "(" "(|" ")" "+" "*" "," "-" "->" "." ":" ";" "<" "<-" "=" ">" "[" "[|" "]" "{" "|" "|)" "|]" "}" "&" "::" ":?" AS 
+    AND AND_BANG DO_BANG ELIF ELSE FOR IF IN LET_BANG MATCH_BANG RETURN RETURN_BANG THEN USE USE_BANG 
+    WHILE WHILE_BANG YIELD YIELD_BANG FINALLY TRY MUTABLE REC

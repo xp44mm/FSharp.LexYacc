@@ -9,26 +9,38 @@ type BnfAnalysisRecord =
     }
 
     static member Create(flatFsyacc: FlatFsyaccFile) =
-        let yacc = flatFsyacc.getYacc()
-        let bnf: BNF = yacc.bnf
+        let get_symbols (productions:Set<string list>) =
+            productions
+            |> Set.map Set.ofList
+            |> Set.unionMany
+
+        let productions =
+            flatFsyacc.augmentRules
+            |> Set.map(fun rule -> rule.production)
+        let symbols = 
+            get_symbols productions
+            |> Set.remove ""
 
         let newRules = Symbol.crawl "" flatFsyacc.augmentRules
 
-        let newBNF =
+        let newProductions =
             newRules
             |> Set.ofList
             |> Set.map(fun rule -> rule.production)
-            |> BNF.just
 
-        let orphan_bnf = bnf.symbols - newBNF.symbols
+        let newSymbols = 
+            get_symbols newProductions
+            |> Set.remove ""
+
+        let orphan_bnf = symbols - newSymbols
 
         let decls =
             flatFsyacc.declarations
             |> Map.keys
             |> Set.ofSeq
 
-        let absence_decl = newBNF.symbols.Remove "" - decls
-        let orphan_decl = decls - newBNF.symbols
+        let absence_decl = newSymbols - decls
+        let orphan_decl = decls - newSymbols
 
         {
             OrphanBnf = orphan_bnf

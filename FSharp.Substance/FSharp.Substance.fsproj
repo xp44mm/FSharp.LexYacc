@@ -21,10 +21,6 @@
         <Compile Include="FSharpLexer.fs" />
         <Compile Include="FSharpLexerTailer.fs" />
         <Compile Include="FSharpYacc.fs" />
-        <Compile Include="LookaheadConfig0.fs" />
-        <Compile Include="LookaheadConfig1.fs" />
-        <Compile Include="LookaheadConfig2.fs" />
-        <Compile Include="LookaheadConfig.fs" />
         <Compile Include="TopConfig.fs" />
         <Compile Include="GrammarData.fs" />
         <Compile Include="ViablePrefix.fs" />
@@ -33,6 +29,7 @@
         <Compile Include="StackOps.fs" />
         <Compile Include="LexFilter.fs" />
         <Compile Include="FSharpCompiler.fs" />
+        <Compile Include="FSharpYacc1.fs" />
     </ItemGroup>
 
     <ItemGroup>

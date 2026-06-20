@@ -52,7 +52,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         let src = yaccFile.printYaccModule(flatFsyacc.header)
         //output.WriteLine(src)
 
-        let path = Path.Combine(Dir.main, name + "Yacc.fs")
+        let path = Path.Combine(Dir.main, name + "Yacc1.fs")
         File.WriteAllText(path, src, Encoding.UTF8)
         output.WriteLine($"output:\r\n{path}")
 
@@ -84,7 +84,12 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             flatFsyacc.declarations
             |> FlatFsyaccFileUtils.printDeclarations
 
-        output.WriteLine(declarations)
+        let outputPath = Path.Combine(__SOURCE_DIRECTORY__, "FsYaccData.fs")
+        use writer = new StreamWriter(outputPath, false, Encoding.UTF8)
+        writer.WriteLine("module FSharp.Substance.FsYaccData")
+        writer.WriteLine("open System")
+        writer.WriteLine("open FSharp.Idioms")
+        writer.WriteLine(declarations)
 
     [<Fact>]
     member _.``generate YaccStateInfo``() =
@@ -115,30 +120,6 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             else
                 false
 
-        // 特殊类型：嵌套元组 (option<int> * A) * list<option<int> * B>
-        let isNestedTupleWithList (t: Type) =
-            if FSharpType.IsTuple t then
-                let elements = FSharpType.GetTupleElements t
-                elements.Length = 2
-                && isPairAndFirstIsIntOption elements.[0]
-                && isListOfPairAndFirstIsIntOption elements.[1]
-            else
-                false
-
-        // 特殊类型：list<(option<int> * A) * (option<int> * B)>
-        let isListOfPairPair (t: Type) =
-            if isListType t then
-                let elementType = t.GetGenericArguments().[0]
-                if FSharpType.IsTuple elementType then
-                    let elements = FSharpType.GetTupleElements elementType
-                    elements.Length = 2
-                    && isPairAndFirstIsIntOption elements.[0]
-                    && isPairAndFirstIsIntOption elements.[1]
-                else
-                    false
-            else
-                false
-
         // 生成 match 分支
         let generateBranch (symbols: string list) (typ: Type) =
             let symbolList =
@@ -148,11 +129,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
 
             match symbols, typ with
             | _, t when t = typeof<option<int>> ->
-                [
-                    symbolList
-                    Line.indent 4 "->"
-                    Line.indent 4 $"unbox<{stringifyTypeDynamic t}> state.lexeme, tag"
-                ]
+                [ symbolList; Line.indent 4 "->"; Line.indent 4 $"unbox<{stringifyTypeDynamic t}> state.lexeme, tag" ]
 
             | _, t when isPairAndFirstIsIntOption t ->
                 [
@@ -183,18 +160,14 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
                 [
                     symbolList
                     Line.indent 4 "->"
-                    Line.indent
-                        4
-                        $"None, stringifyDynamic typeof<{stringifyTypeDynamic t}> state.lexeme"
+                    Line.indent 4 $"None, stringifyDynamic typeof<{stringifyTypeDynamic t}> state.lexeme"
                 ]
 
             | _, t when t = typeof<(option<int> * TypeArgument) * ((option<int> * SuffixType) list)> ->
                 [
                     symbolList
                     Line.indent 4 "->"
-                    Line.indent
-                        4
-                        $"let (i, targ), ls = unbox<{stringifyTypeDynamic t}> state.lexeme"
+                    Line.indent 4 $"let (i, targ), ls = unbox<{stringifyTypeDynamic t}> state.lexeme"
                     Line.indent 4 "let ls = ls |> List.map snd"
                     Line.indent 4 "i, stringify(targ, ls)"
 
@@ -233,7 +206,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
 
     [<Fact>]
     member _.``check bnf``() =
-        let rawFsyacc = FsyaccCompiler.compile text
+        let rawFsyacc: RawFsyaccFile = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
 
         let analysis = BnfAnalysisRecord.Create(flatFsyacc)
@@ -251,29 +224,24 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
             + stringify analysis.OrphanDecl
         )
 
+        let rep =
+            DeclarationStatementUtils.duplicated_type_annotations rawFsyacc.declarationStmts
+            |> Set.ofList
+            |> Set.toList
+
+        output.WriteLine($"let duplicate typedef = " + stringify rep)
+
     [<Fact>]
-    member _.``LookaheadConfig and TopConfig``() =
+    member _.``TopConfig``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc
         let yacc = flatFsyacc.getYacc()
         let bnf: BNF = yacc.bnf
         let names = Light.nameofsymbols
 
-        let comp =
-            bnf.terminals
-            - Light.important
-            - Light.famous
-        let sq =
-            [
-                Light.important
-                Light.famous
-                comp
-            ]
+        let topPath = Path.Combine(Dir.main, "TopConfig.fs")
+        Configuration.generateTopConfig bnf names topPath
 
-        //output.WriteLine(stringify impr)
-        //output.WriteLine(stringify comp)
-
-        Configuration.generateAllConfigs_many bnf names sq Dir.main
         output.WriteLine("ok! 成功")
 
     [<Fact>]
@@ -318,8 +286,8 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
         let f = bnf.firsts.[appExprSymbol]
         let l = bnf.lasts.[appExprSymbol]
 
-        writer.WriteLine($"let first_appExpr = {stringify f}")
-        writer.WriteLine($"let last_appExpr = {stringify l}")
+        writer.WriteLine($"let first_appExpr: string Set = {stringify f}")
+        writer.WriteLine($"let last_appExpr: string Set = {stringify l}")
 
     [<Fact>]
     member _.``viable prefix``() =
@@ -333,13 +301,7 @@ type FSharpYaccTest(output: ITestOutputHelper) as this =
 
         writer.WriteLine("module FSharp.Substance.ViablePrefix")
         writer.WriteLine("let module_statement: string list Set = set [")
-        let module_statement =
-            BnfUtils.derive
-                bnf
-                [
-                    "longid"
-                    "MODULE"
-                ]
+        let module_statement = BnfUtils.derive bnf [ "longid"; "MODULE" ]
         for prefix in module_statement do
             writer.WriteLine($"  {stringify prefix}")
         writer.WriteLine("]")

@@ -7,6 +7,7 @@ open System.IO
 open System.Text
 open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
+open FSharp.Idioms.Literal
 
 type FslexYaccTest(output: ITestOutputHelper) as this =
     let name =
@@ -16,6 +17,52 @@ type FslexYaccTest(output: ITestOutputHelper) as this =
     let srcPath = Path.Combine(__SOURCE_DIRECTORY__, "fslex.fsyacc")
 
     let text = File.ReadAllText(srcPath, Encoding.UTF8)
+
+    [<Fact>]
+    member _.``check bnf``() =
+        let rawFsyacc: RawFsyaccFile = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+
+        let analysis = BnfAnalysisRecord.Create(flatFsyacc)
+
+        output.WriteLine(
+            $"let orphan_bnf = "
+            + stringify analysis.OrphanBnf
+        )
+        output.WriteLine(
+            $"let absence_decl = "
+            + stringify analysis.AbsenceDecl
+        )
+        output.WriteLine(
+            $"let orphan_decl = "
+            + stringify analysis.OrphanDecl
+        )
+
+        let rep =
+            DeclarationStatementUtils.duplicated_type_annotations rawFsyacc.declarationStmts
+            |> Set.ofList
+            |> Set.toList
+
+        output.WriteLine($"let duplicate typedef = " + stringify rep)
+
+    [<Fact>]
+    member _.``conflicted productions``() =
+        let rawFsyacc = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+        let yacc = flatFsyacc.getYacc()
+        let bnf: BNF = yacc.bnf
+
+        let prods = bnf.getConflictedProductions()
+
+        let e = set [
+            ["expr";"expr";"&";"expr"]
+            ["expr";"expr";"*"]
+            ["expr";"expr";"+"]
+            ["expr";"expr";"?"]
+            ["expr";"expr";"|";"expr"]            
+        ]
+
+        Should.equal e prods
 
     [<Fact(Skip = "没有改变，不必重复生成")>] //
     member _.``生成FslexYacc文件``() =

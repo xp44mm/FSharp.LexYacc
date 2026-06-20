@@ -42,7 +42,6 @@ rule : char list -> FSharpToken list =
 
 ' ' + { [WHITESPACE] }
 '!' { [EXCLAM] }
-// '#' { [HASH] }
 '%' { [ALWAYS_INFIX "%"] }
 '&' { [ALWAYS_INFIX "&"] }
 '(' { [LPAREN] }
@@ -115,17 +114,50 @@ single {[LITERAL(Literal.single buff)]}
 ident_start_char ident_char* {
     let tok =
         match String.build buff with
-        | "module" -> MODULE
-        | "open" -> OPEN
-        | "let" -> LET
-        | "fun" -> FUN
-        | "match" -> MATCH
-        | "with" -> WITH
+        | "and" -> AND
+        | "as" -> AS
         | "do" -> DO
-        | "true" -> LITERAL(Literal.TRUE)
+        | "elif" -> ELIF
+        | "else" -> ELSE
+        | "finally" -> FINALLY
+        | "for" -> FOR
         | "false" -> LITERAL(Literal.FALSE)
+        | "fun" -> FUN
+        | "function" -> FUNCTION
+        | "if" -> IF
+        | "in" -> IN
+        | "let" -> LET
+        | "match" -> MATCH
+        | "module" -> MODULE
+        | "mutable" -> MUTABLE
         | "null" -> LITERAL(Literal.NULL)
+        | "open" -> OPEN
+        | "rec" -> REC
+        | "return" -> RETURN
+        | "then" -> THEN
+        | "try" -> TRY
+        | "type" -> TYPE
+        | "use" -> USE
+        | "when" -> WHEN
+        | "while" -> WHILE
+        | "true" -> LITERAL(Literal.TRUE)
+        | "with" -> WITH
+        | "yield" -> YIELD
         | s -> IDENT s
+    [tok]
+ }
+[ 'a'-'z' ]+ '!' {
+    let tok =
+        match String.build buff with
+        | "and!" -> AND_BANG
+        | "do!" -> DO_BANG
+        | "let!" -> LET_BANG
+        | "match!" -> MATCH_BANG
+        | "return!" -> RETURN_BANG
+        | "use!" -> USE_BANG
+        | "while!" -> WHILE_BANG
+        | "yield!" -> YIELD_BANG
+        | _ -> failwith $"{buff}"
     [tok]
  }
 

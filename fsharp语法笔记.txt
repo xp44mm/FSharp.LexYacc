@@ -19,36 +19,21 @@ hack
 preprocessor
 序列表达式的位置，
 
-declExpr:
-  // | letBinding     { }
-  | tupleExpr { }
+LookaheadConfig0.LLPAREN
+LookaheadConfig0.RHSEND
+LookaheadConfig0.RRPAREN
+LookaheadConfig0.SEMICOLON
+LookaheadConfig1.BAR_RBRACK
+LookaheadConfig1.RBRACE
+LookaheadConfig1.RBRACK
+LookaheadConfig1.RPAREN
+LookaheadConfig2.EOF
 
-tupleExpr:
-  // | tupleExpr COMMA binaryExpr    {}
-  | binaryExpr      {}
-  
-binaryExpr:
-  //| binaryExpr INFIX_OP unaryExpr     {  }
-  | unaryExpr {  }
-    
-unaryExpr:
-  //| PREFIX_OP appExpr      {  }
-  | appExpr      {  }
+constrPattern
+parenPattern
+tupleParenPatternElements
+conjParenPatternElements
 
-appExpr:
-  //| appExpr APP_OP atomicExpr       {  }
-  | atomicExpr      {  }
 
-atomicExpr:
-  | LITERAL      {  }
-  | delimitedExpr      { }
 
-delimitedExpr:
-  | "(" sequentialExpr ")"      { }
-  | "[" sequentialExpr "]"      {  }  
-  | "{" sequentialExpr "}"   {  }
-  | "[|" sequentialExpr "|]"      {  }
-  | "{|" sequentialExpr "|}"   {  }
-// semicolons:
-//   | maybe_semicolon {}
-//   | semicolons ";" { }
+

@@ -21,11 +21,9 @@ let compile (input: string) =
 
     iter
     |> FsyaccLexerTailer.tokenize
-    |> Seq.map(fun tok -> 
-        Console.WriteLine(stringify tok)
-        tok
-    
-    )
+    //|> Seq.map(fun tok -> 
+    //    tok
+    //)
     |> parseTokens
     |> FsyaccYacc.unboxRoot
 

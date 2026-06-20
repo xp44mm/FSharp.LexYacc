@@ -3,9 +3,9 @@
 /// 3.3 正则表达式
 type RegExp =
     | RgxLeaf of CharClass
-    /// 'a' | 'b'
+    /// 'a' | 'b' disjunction
     | RgxAlt of a: RegExp * b: RegExp
-    /// 'a' 'b'
+    /// 'a' 'b' & conjunction
     | RgxCat of a: RegExp * b: RegExp
     /// a*
     | RgxStar of RegExp

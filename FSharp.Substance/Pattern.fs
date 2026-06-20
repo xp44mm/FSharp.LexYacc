@@ -2,22 +2,37 @@ namespace FSharp.Substance
 
 type Pattern =
     | LiteralPattern of Literal
-    | IdentPattern of string
-    | TypeAnnotationPattern of string * TypeArgument
-    | ParenPattern of Pattern
+    | NamedPattern of string list * TypeArgument list
+    | AppPattern of Pattern list
+    | AliasPattern of Pattern * string
+    | DisjunctivePattern of Pattern list
+    | ConjunctivePattern of Pattern list
+    | ConsPattern of Pattern list
+    | TypeAnnotatedPattern of Pattern * TypeArgument
     | TuplePattern of Pattern list
+    | ParenPattern of Pattern
+    | ListPattern of Pattern list
+    | ArrayPattern of Pattern list
+    | RecordPattern of (string * Pattern) list
+    | DynamicTypeTestPattern of TypeArgument * string
+    | BindingPattern of Pattern * TypeArgument option
 
 module Pattern =
-    let ofTuplePattern (molecularPatterns: (option<int> * Pattern) list) =
-        let i, ls =
-            molecularPatterns
-            |> List.rev
-            |> List.unzip
+    let toDisjunctivePattern (revPatterns: (option<int> * Pattern) list) =
+        Light.degenerate DisjunctivePattern revPatterns
 
-        let pat =
-            if ls.Length > 1 then
-                TuplePattern(ls)
-            else
-                ls.[0]
+    let toConjunctivePattern (revPatterns: (option<int> * Pattern) list) =
+        Light.degenerate ConjunctivePattern revPatterns
 
-        i.[0], pat
+    let toTuplePattern (revPatterns: (option<int> * Pattern) list) = 
+        Light.degenerate TuplePattern revPatterns
+
+    let toConsPattern (revPatterns: (option<int> * Pattern) list) = 
+        Light.degenerate ConsPattern revPatterns
+
+    let toListPattern (revElementPatterns: (option<int> * Pattern) list) =
+        Light.degenerate ListPattern revElementPatterns
+
+    let toAppPattern (patterns: (option<int> * Pattern) list) =
+        Light.degenerate AppPattern patterns
+

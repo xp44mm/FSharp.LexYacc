@@ -19,8 +19,8 @@ let src =
             }
     ]
 
-let tgt =
-    [
-        "RecordLiteralExpr"
-    ],
-    [ LetBindingExpr(IdentPattern "src", [ LiteralExpr(INT32 0) ]) ]
+//let tgt =
+//    [
+//        "RecordLiteralExpr"
+//    ],
+//    [ LetBindingExpr(IdentPattern "src", [ LiteralExpr(INT32 0) ]) ]

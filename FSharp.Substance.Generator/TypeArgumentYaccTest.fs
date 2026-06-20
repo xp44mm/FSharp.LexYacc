@@ -16,9 +16,36 @@ type TypeArgumentYaccTest(output: ITestOutputHelper) as this =
     let name =
         let x = this.GetType().Name
         x.Substring(0, x.Length - "YaccTest".Length)
-
     let srcPath = Path.Combine(__SOURCE_DIRECTORY__, name + ".fsyacc")
     let text = File.ReadAllText(srcPath, Encoding.UTF8)
+
+    [<Fact>]
+    member _.``check bnf``() =
+        let rawFsyacc: RawFsyaccFile = FsyaccCompiler.compile text
+        let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+
+        let analysis = BnfAnalysisRecord.Create(flatFsyacc)
+
+        output.WriteLine(
+            $"let orphan_bnf = "
+            + stringify analysis.OrphanBnf
+        )
+        output.WriteLine(
+            $"let absence_decl = "
+            + stringify analysis.AbsenceDecl
+        )
+        output.WriteLine(
+            $"let orphan_decl = "
+            + stringify analysis.OrphanDecl
+        )
+
+        let rep =
+            DeclarationStatementUtils.duplicated_type_annotations rawFsyacc.declarationStmts
+            |> Set.ofList
+            |> Set.toList
+
+        output.WriteLine($"let duplicate typedef = " + stringify rep)
+
 
     [<Fact>]
     member _.``conflicted productions``() =
@@ -37,7 +64,7 @@ type TypeArgumentYaccTest(output: ITestOutputHelper) as this =
             for cp in prods do
                 output.WriteLine($"{stringify cp}")
 
-    [<Fact(Skip = "不必重复生成")>] //
+    [<Fact>] //(Skip = "不必重复生成")
     member _.``生成``() =
         let rawFsyacc = FsyaccCompiler.compile text
         let flatFsyacc = FlatFsyaccFile.from rawFsyacc

@@ -3,14 +3,97 @@ module FSharp.Substance.TypeArgumentYacc
 open FSharp.LexYacc
 }
 
-recdLiteralExpr:
-  | "{" fieldBindings opt_semicolon "}"  { }
+DisjunctivePattern:
+    | revDisjunctivePattern {Pattern.toDisjunctivePattern(List.rev s0)}
+    
+revDisjunctivePattern:
+    | ConjunctivePattern { [s0] }
+    | revDisjunctivePattern "|" ConjunctivePattern { s2::s0 }
 
-fieldBindings:
-  | fieldBinding {  }
-  | fieldBindings ";" fieldBinding {  }
+ConjunctivePattern:
+    | revConjunctivePattern {Pattern.toConjunctivePattern(List.rev s0)}
+    
+revConjunctivePattern:
+    | AliasPattern { [s0] }
+    | revConjunctivePattern "&" AliasPattern { s2::s0 }
+
+AliasPattern:
+    | ":?" tupleType { s0, DynamicTypeTestPattern(snd s1,"") }
+    | ":?" tupleType AS IDENT {
+        s0, DynamicTypeTestPattern(snd s1, snd s3)}
+    | TuplePattern AS IDENT { 
+        fst s0, AliasPattern(snd s0,snd s2) }        
+    | TuplePattern {s0}
+    
+TuplePattern:
+    | revTuplePattern { Pattern.toTuplePattern s0 }
+    
+revTuplePattern:
+    | ConsPattern { [s0] }
+    | revTuplePattern "," ConsPattern { s2::s0 }
+    
+ConsPattern:
+    | revConsPattern {Pattern.toConsPattern s0}
+    
+revConsPattern:
+    | revConsPattern "::" unaryPattern { s2::s0 }
+    | unaryPattern { [s0] }
+    | annotatedPattern { [s0] }
+        
+annotatedPattern:
+    | AtomicPattern ":" tupleType {fst s0, TypeAnnotatedPattern(snd s0, snd s2)}
+    
+unaryPattern:
+    | AppPattern {s0}
+    
+AppPattern:
+    | revAppPattern { }
+    | AtomicPattern {[s0]}
+
+revAppPattern:
+    | NamedPattern AtomicPattern {[s1;s0]}
+    | revAppPattern AtomicPattern { s1::s0 }
+
+NamedPattern:
+    | longid {fst s0, NamedPattern(snd s0,[])}
+    | longid "<" typeArguments ">" {fst s0, NamedPattern(snd s0, s2 |> List.rev |> List.map snd)}
+
+AtomicPattern:
+    | LITERAL { fst s0, LiteralPattern(snd s0) }
+    | NamedPattern { s0 }
+    | "(" DisjunctivePattern ")" { s0, snd s1 }
+    | "[" revElementPatterns "]" {
+        s0,ListPattern(s1 |> List.map snd |> List.rev) 
+        }
+    | "[|" revElementPatterns "|]" {
+        s0,ArrayPattern(s1 |> List.map snd |> List.rev) 
+        }
+    | "{" revFieldPatterns "}" {
+        s0,RecordPattern(s1 |> List.map snd |> List.rev) 
+        }
+
+revElementPatterns:
+    | TuplePattern { [s0] }
+    | revElementPatterns ";" TuplePattern { s2::s0 }
+
+revFieldPatterns:
+    | fieldPattern { [s0] }
+    | revFieldPatterns ";" fieldPattern { s2::s0 }
   
-fieldBinding:
-  | IDENT "=" valueExpr RHSEND {  }
-  | IDENT "=" LLPAREN revSequentialExpr opt_semicolon RRPAREN {  }
+fieldPattern:
+    | IDENT "=" TuplePattern {fst s0, (snd s0, snd s2)}
 
+%type<int option> "&" "(" ")" "," ":" "::" ":?" ";" "<" "=" ">" "{" "|" "|]" "}" "[" "[|" "]" AS 
+%type<int option*Pattern> pattern AliasPattern AppPattern AtomicPattern ConjunctivePattern ConsPattern 
+    DisjunctivePattern TuplePattern  parenPattern unaryPattern NamedPattern
+    
+%type<(int option*Pattern)list> revTuplePattern revConjunctivePattern revConsPattern parenPatterns
+    revDisjunctivePattern revElementPatterns
+%type<int option*(string*Pattern)> fieldPattern
+%type<(int option*(string*Pattern))list> revFieldPatterns
+
+%type<int option*string> IDENT
+%type<option<int>*Literal> LITERAL
+%type<int option*string list> longid
+%type<option<int>*TypeArgument> typeArgument
+%type<(option<int>*TypeArgument) list> typeArguments

@@ -11,15 +11,7 @@ open FSharp.Idioms.Literal
 open FSharp.LexYacc
 
 ///decl中的常见运算符号
-let connectors =
-    set
-        [
-            ","
-            "."
-            "infix"
-            ":"
-            "*"
-        ]
+let connectors = set [ ","; "."; "infix"; ":"; "*" ]
 
 /// 是否是decl的开始，前面是分界符号
 let is_new_decl =
@@ -32,20 +24,9 @@ let is_new_decl =
 let left_valueExpr =
     let left =
         [
-            //[";"]
-            for l in
-                [
-                    "{"
-                    "["
-                    "("
-                    "[|"
-                ] do
+            for l in [ "{"; "["; "("; "[|" ] do
                 [ l ]
-                [
-                    ";"
-                    "revSequentialExpr"
-                    l
-                ]
+                [ ";"; "revSequentialExpr"; l ]
         ]
     set
         [
@@ -58,23 +39,11 @@ let dot_lbrack_tupleExpr =
     set
         [
             for prefix in ViablePrefix.tupleExpr do
-                prefix
-                @ [
-                    "["
-                    "."
-                ]
+                prefix @ [ "["; "." ]
         ]
 
 let lbrack_declExpr =
-    let left =
-        [
-            [ "[" ]
-            [
-                ";"
-                "revSequentialExpr"
-                "["
-            ]
-        ]
+    let left = [ [ "[" ]; [ ";"; "revSequentialExpr"; "[" ] ]
     set
         [
             for prefix in ViablePrefix.declExpr do
@@ -83,15 +52,7 @@ let lbrack_declExpr =
         ]
 
 let lparen_declExpr =
-    let left =
-        [
-            [ "(" ]
-            [
-                ";"
-                "revSequentialExpr"
-                "("
-            ]
-        ]
+    let left = [ [ "(" ]; [ ";"; "revSequentialExpr"; "(" ] ]
     set
         [
             for prefix in ViablePrefix.declExpr do
@@ -101,43 +62,13 @@ let lparen_declExpr =
 
 //从TopConfig手动总结而来LLPAREN+fieldBinding
 let LLPAREN: string list Set =
-    set
-        [
-            [ "->" ]
-            [
-                "="
-                "bindingPattern"
-                "LET"
-            ]
-            [
-                "="
-                "IDENT"
-                ";"
-                "fieldBindings"
-            ]
-            [
-                "="
-                "IDENT"
-                "{"
-            ]
-        ]
-
-//["LITERAL";"->";"patternAndGuard"],set ["revRuleClauses"]
-//["LITERAL";"->";"patternAndGuard";"|";"revRuleClauses"],set ["revRuleClauses"]
-//["RRPAREN";"revSequentialExpr";"LLPAREN";"->";"patternAndGuard";"|";"revRuleClauses";"opt_bar";"WITH";"tupleExpr";"MATCH"]
+    set [ [ "->" ]; [ "="; "bindingPattern"; "LET" ]; [ "="; "IDENT"; ";"; "fieldBindings" ]; [ "="; "IDENT"; "{" ] ]
 
 ///前瞻Bar，回溯到对应的Match关键字
 let BAR_MATCH: string list Set =
     let left: string list list =
         [
-            [
-                "->"
-                "patternAndGuard"
-                "opt_bar"
-                "WITH"
-                "tupleExpr"
-                "MATCH"
-            ]
+            [ "->"; "patternAndGuard"; "opt_bar"; "WITH"; "tupleExpr"; "MATCH" ]
             [
                 "->"
                 "patternAndGuard"
@@ -151,18 +82,10 @@ let BAR_MATCH: string list Set =
         ]
     set
         [
-            [
-                "WITH"
-                "tupleExpr"
-                "MATCH"
-            ]
+            [ "WITH"; "tupleExpr"; "MATCH" ]
             for l in left do
                 for prefix in ViablePrefix.tupleExpr do
                     prefix @ l
-                [
-                    "RRPAREN"
-                    "revSequentialExpr"
-                    "LLPAREN"
-                ]
+                [ "RRPAREN"; "revSequentialExpr"; "LLPAREN" ]
                 @ l
         ]

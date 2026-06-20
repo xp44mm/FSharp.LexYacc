@@ -22,7 +22,7 @@ type FSharpLexerTest(output: ITestOutputHelper) as this =
     member _.``生成``() =
         let printer = FslexFilePrinter.forChar text
         let src = printer.print()
-        output.WriteLine(src)
+        //output.WriteLine(src)
 
         let path = Path.Combine(Dir.main, name + "Lexer.fs")
         File.WriteAllText(path, src, Encoding.UTF8)

@@ -96,8 +96,8 @@ let generateManyLookaheadConfig (bnf: BNF) (names: Map<string, string>) (sq: seq
 
 /// 同时生成所有配置
 let generateAllConfigs_many (bnf: BNF) (names: Map<string, string>) (sq: seq<Set<string>>) (outputDir: string) =
-    let topPath = Path.Combine(outputDir, "TopConfig.fs")
     generateManyLookaheadConfig bnf names sq outputDir
+    let topPath = Path.Combine(outputDir, "TopConfig.fs")
     generateTopConfig bnf names topPath
 
 

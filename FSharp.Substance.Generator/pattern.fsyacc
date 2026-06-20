@@ -1,54 +1,112 @@
+bindingPattern:
+  | headBindingPattern      { }
+  
+headBindingPattern:
+  | atomicPattern      { }
+  | tuplePatternElements      { }
+  | headBindingPattern AS IDENT       { }
+  | headBindingPattern COLON_COLON headBindingPattern      { }
+  | conjPatternElements      { }
+  | atomicPatternLongIdent explicitValTyparDecls      { }
+  | atomicPatternLongIdent atomicPatsOrNamePatPairs      { }
+  | atomicPatternLongIdent explicitValTyparDecls atomicPatsOrNamePatPairs      { }
+  
+tuplePatternElements:
+  | tuplePatternElements COMMA headBindingPattern      { }
+  | headBindingPattern COMMA headBindingPattern      { }
+  
+tupleParenPatternElements:
+  | tupleParenPatternElements COMMA parenPattern      { }
+  | parenPattern COMMA parenPattern      { }
+  
+conjPatternElements:
+  | conjPatternElements AMP headBindingPattern      { }
+  | headBindingPattern AMP headBindingPattern      { }
+  
+conjParenPatternElements:
+  | conjParenPatternElements AMP parenPattern      { }
+  | parenPattern AMP parenPattern      { }
+  
+  
+atomicPatterns:
+  | atomicPattern      { }
+  | atomicPattern atomicPatterns      { }
+  
+atomicPattern:
+  | LPAREN parenPattern RPAREN      { }
+  | STRUCT LPAREN tupleParenPatternElements RPAREN      { }
+  | LBRACK listPatternElements RBRACK      { }
+  | LBRACK_BAR listPatternElements BAR_RBRACK      { }
+  | LBRACE recordPatternElementsAux RBRACE      { }
+  
+  | atomicPatternLongIdent      { }
+  | UNDERSCORE      { }
+  | constant      { }
+  | FALSE      { }
+  | TRUE      { }
+  | NULL      { }
+  
+//二元模式
 parenPattern:
   | parenPattern AS constrPattern      { }
-  | parenPattern "|" parenPattern  {  }
-  | tupleParenPatternElements      {  }
-  | conjParenPatternElements      {  }
-  | parenPattern ":" typeWithTypeConstraints   {  }
-  | parenPattern "::" parenPattern      {  }
-  | constrPattern { $1 }
+  | tupleParenPatternElements   { }
+  | parenPattern COLON typeWithTypeConstraints      { }
+  | conjParenPatternElements      { }
+  | parenPattern COLON_COLON parenPattern      { }
+  
+listPatternElements:
+  |       { }
+  | parenPattern opt_seps      { }
+  | parenPattern seps listPatternElements      { }
 
-tupleParenPatternElements:
-  | tupleParenPatternElements "," parenPattern      {  }
-  | parenPattern "," parenPattern      {  }
-
-conjParenPatternElements:
-  | conjParenPatternElements "&" parenPattern      {  }
-  | parenPattern "&" parenPattern      {  }
-
+  
 constrPattern:
-  | atomicPatternLongIdent explicitValTyparDecls      {  }
-  | atomicPatternLongIdent explicitValTyparDecls atomicPatsOrNamePatPairs     {  }
-  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs      {  }
-  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs      {  }
-  | atomicPatternLongIdent atomicPatsOrNamePatPairs       {  }
-  | atomicPatternLongIdent HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs      {  }
-  | atomicPatternLongIdent HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs      {  }
-  | atomicPattern      {  }
-
-atomicPattern:
-  | quoteExpr      {  }
-
-  | LBRACE recordPatternElementsAux rbrace      {  }
-
-
-  | UNDERSCORE      {          }
-
-  | QMARK ident      {  }
-
-  | atomicPatternLongIdent       {  }
-
-  | constant      {  }
-
-  | FALSE      {  }
-
-  | TRUE      {  }
-
-  | NULL      {  }
-
-  | LPAREN parenPatternBody rparen      {  }
-
-
-  | STRUCT LPAREN tupleParenPatternElements rparen      {  }
-
-
-      
+  | atomicPattern      { }
+  | COLON_QMARK atomTypeOrAnonRecdType {}
+  | atomicPatternLongIdent explicitValTyparDecls      { }
+  | atomicPatternLongIdent explicitValTyparDecls atomicPatsOrNamePatPairs      { }
+  | atomicPatternLongIdent atomicPatsOrNamePatPairs      { }
+  
+atomicPatternLongIdent:
+  | UNDERSCORE DOT pathOp      { }
+  | GLOBAL DOT pathOp      { }
+  | pathOp      { }
+  | access UNDERSCORE DOT pathOp      { }
+  | access pathOp      { }
+  
+atomicPatsOrNamePatPairs:
+  | LPAREN namePatPairs RPAREN      { }
+  | atomicPatterns      { }
+  
+namePatPairs:
+  | namePatPair opt_seps_block      { }
+  | namePatPair seps_block namePatPairs      { }
+  | namePatPair seps_block seps_block namePatPairs      { }
+  
+namePatPair:
+  | ident EQUALS parenPattern      { }
+  
+recordPatternElementsAux:
+  | recordPatternElement opt_seps_block      { }
+  | recordPatternElement seps_block recordPatternElementsAux      { }
+  | recordPatternElement seps_block seps_block recordPatternElementsAux      { }
+  
+recordPatternElement:
+  | path EQUALS parenPattern      { }
+  
+  
+withPatternClauses:
+  | patternClauses      { }
+patternClauses:
+  | patternAndGuard patternResult      { }
+patternResult:
+  | RARROW typedSequentialExprBlockR      { }
+patternGuard:
+  | WHEN declExpr      { }
+  |       { }
+patternAndGuard:
+  | parenPattern patternGuard      { }
+localBinding:
+  | opt_inline opt_mutable bindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedExprWithStaticOptimizationsBlock      { }
+forLoopBinder:
+  | parenPattern IN declExpr      { }

@@ -1,0 +1,119 @@
+{}
+
+DisjunctivePattern:
+    | revDisjunctivePattern {}
+    
+revDisjunctivePattern:
+    | ConjunctivePattern { [s0] }
+    | revDisjunctivePattern "|" ConjunctivePattern { s1::s0 }
+
+ConjunctivePattern:
+    | revConjunctivePattern {}
+    
+revConjunctivePattern:
+    | AliasPattern { [s0] }
+    | revConjunctivePattern "|" AliasPattern { s1::s0 }
+
+AliasPattern:
+    | TuplePattern AS IDENT { AliasPattern(s0,s2) }
+    
+TuplePattern:
+    | revTuplePattern {}
+    
+revTuplePattern:
+    | ConsPattern { [s0] }
+    | revTuplePattern "," ConsPattern { s1::s0 }
+    
+ConsPattern:
+    | revConsPattern {}
+    
+revConsPattern:
+    | unaryPattern { [s0] }
+    | revConsPattern "::" unaryPattern { s1::s0 }
+        
+unaryPattern:
+    | AppPattern ":" typeArgument {}
+    | revAppPattern {}
+    | AtomicPattern {}
+    
+revAppPattern:
+    | longid {s0,[]}
+    | longid "<" typeArgument ">" {}
+    | revAppPattern parenPattern { fst s0, s1::snd s0 }
+    
+parenPattern:
+    | LITERAL { fst s0, LiteralPattern(snd s0) }
+    | IDENT { fst s0, IdentPattern(snd s0) }
+    | "(" pattern ")" { }
+    
+AtomicPattern:
+    | parenPattern {}
+    | ":?" typeArgument {}
+    | ":?" typeArgument AS IDENT {}
+    | "[" listPatternElements "]"      { }
+    | "[|" listPatternElements "|]"      { }
+    | "{" revFieldPatterns "}"      { }
+
+revElementPatterns:
+    | pattern { [s0] }
+    | revElementPatterns ";" pattern { s1::s0 }
+
+revFieldPatterns:
+    | fieldPattern { [s0] }
+    | revFieldPatterns ";" fieldPattern { s2::s0 }
+  
+fieldPattern:
+    | IDENT "=" pattern {}
+
+pattern:
+    | DisjunctivePattern {}
+
+pat := 
+    const            -- constant pattern
+    null            -- null-test pattern
+    long-ident pat-param.opt pat.opt    -- named pattern
+    _                -- wildcard pattern
+    pat as ident        -- "as" pattern
+    pat '|' pat        -- disjunctive pattern
+    pat '&' pat        -- conjunctive pattern
+    pat :: pat            -- "cons" pattern
+    pat : type            -- pattern with type constraint
+    :? atomic-type        -- dynamic type test pattern
+    :? atomic-type as ident    -- dynamic type test pattern
+    pat,...,pat        -- tuple pattern
+    (pat)            -- parenthesized pattern
+    list-pat            -- list pattern
+    array-pat            -- array pattern
+    record-pat            -- record pattern
+    attributes pat        -- pattern with attributes
+
+list-pat :=  
+    [ ]
+    [ pat ; ... ; pat ]
+
+array-pat :=    
+    [| |]
+    [| pat ; ... ; pat |]
+
+record-pat := 
+    { field-pat ; ... ; field-pat }
+
+atomic-pat :=
+    pat :     one of 
+          const  long-ident  list-pat  record-pat  array-pat  (pat)  
+          :? atomic-type  
+          null  _ 
+
+field-pat := long-ident = pat
+
+pat-param :=
+    | const 
+    | long-ident 
+    | [ pat-param ; ... ; pat-param ]
+    | ( pat-param, ..., pat-param )
+    | long-ident pat-param 
+    | pat-param : type
+    | null 
+
+pats :=  pat , ... , pat 
+field-pats := field-pat ; ... ; field-pat 

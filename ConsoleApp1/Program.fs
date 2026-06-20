@@ -8,67 +8,64 @@ open FSharp.LexYacc
 open FSharp.LexYacc.Bootstrap
 open System.Diagnostics
 
-let path = Path.Combine(__SOURCE_DIRECTORY__, "Sample.fs")
-
-let heads () =
-    let lines = File.ReadAllLines(path, Encoding.UTF8)
-    let groups = Pen.getTopLevels lines
-    Console.WriteLine($"组数：{groups.Length}")
-    for g in groups do
-        Console.WriteLine($"每组第一行：{g.[0]}")
-
-
-let test () =
-    let lines = File.ReadAllLines(path, Encoding.UTF8)
-    let groups = Pen.getTopLevels lines
-    let len = groups.Length
-    let src =
-        groups.[.. len - 2]
-        |> List.concat
-        |> String.concat "\n"
-
-    let nodes = FSharpCompiler.compile src
-    Console.WriteLine("let tgt = " + stringify nodes)
-
-let collects () =
-    let tops =
-        TopConfig.catalog
-        |> Map.toSeq
-        |> Seq.collect(fun (top, ls) ->
-            ls
-            |> List.filter(fun (prefix, heads) -> heads.Contains "listExpr")
-            |> List.map(fun (prefix, heads) -> top, prefix, heads)
-        )
-        |> Seq.toList
-
-    for hd in tops do
-        Console.WriteLine(stringify hd)
-
-let second () =
-    let las =
-        LookaheadConfig2.EOF
-        |> List.map(fun (prefix, heads) -> List.rev prefix)
-        |> List.sort
-    for hd in las do
-        Console.WriteLine(stringify hd)
-
-//collects ()
-
 let smoke () =
-    let text = File.ReadAllText(path, Encoding.UTF8)
+    let srcPath = ""
+    let text = File.ReadAllText(srcPath, Encoding.UTF8)
     let nodes = FSharpCompiler.compile text
     //Debug.Assert((snd nodes = expected))
     Console.WriteLine(stringify nodes)
 
-smoke()
 
-//second ()
+let yacc() =
+    let srcPath = @"D:\Application Data\GitHub\xp44mm\FSharp.LexYacc\FSharp.Substance.Generator\fsharp.fsyacc"
+    let text = File.ReadAllText(srcPath, Encoding.UTF8)
+    let rawFsyacc = FsyaccCompiler.compile text
+    let flatFsyacc = FlatFsyaccFile.from rawFsyacc
+
+    let get_symbols (productions:Set<string list>) =
+        productions
+        |> Set.map Set.ofList
+        |> Set.unionMany
+
+    let productions =
+        flatFsyacc.augmentRules
+        |> Set.map(fun rule -> rule.production)
+
+    let newRules = Symbol.crawl "" flatFsyacc.augmentRules
+
+    let newProductions =
+        newRules
+        |> Set.ofList
+        |> Set.map(fun rule -> rule.production)
+
+    let symbols = get_symbols productions
+    let newSymbols = get_symbols newProductions
+    let orphan_bnf = symbols - newSymbols
+
+    let decls =
+        flatFsyacc.declarations
+        |> Map.keys
+        |> Set.ofSeq
+
+    let absence_decl = newSymbols - decls
+    let orphan_decl = decls - newSymbols
+
+    Console.WriteLine(
+        $"let orphan_bnf = "
+        + stringify orphan_bnf
+    )
+
+    Console.WriteLine(
+        $"let absence_decl = "
+        + stringify absence_decl
+    )
+
+    Console.WriteLine(
+        $"let orphan_decl = "
+        + stringify orphan_decl
+    )
 
 
-//let lookaheads =
-//    lookaheads
-//    |> Set.filter(fun v -> v.head = "revSequentialExpr")
+    //Console.WriteLine(stringify bnf.symbols)
 
-//Console.WriteLine(stringify lookaheads)
-//for p in lookaheads do
-//    Console.WriteLine(stringify p)
+yacc()
