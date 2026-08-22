@@ -29,7 +29,6 @@
         <Compile Include="StackOps.fs" />
         <Compile Include="LexFilter.fs" />
         <Compile Include="FSharpCompiler.fs" />
-        <Compile Include="FSharpYacc1.fs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -45,7 +44,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.1.300" />
+        <PackageReference Update="FSharp.Core" Version="10.1.400" />
     </ItemGroup>
 
 </Project>

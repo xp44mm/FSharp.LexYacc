@@ -1,5 +1,7 @@
 namespace rec FSharp.Compiler.SyntaxTreeX
 
+open System
+
 type Ident = string
 type LongIdent = string list
 
@@ -122,7 +124,10 @@ type XType =
     | LongIdent of longDotId: LongIdent
     | App of typeName: XType * typeArgs: XType list * isPostfix: bool
     | LongIdentApp of typeName: XType * longDotId: LongIdent * typeArgs: XType list
-    | Tuple of isStruct: bool * path: XTupleTypeSegment list
+    | Tuple of 
+        isStruct: bool * 
+        //path: XTupleTypeSegment list
+        path: XType list
     | AnonRecd of isStruct: bool * fields: (Ident * XType) list
     | Array of rank: int * elementType: XType
     | Fun of argType: XType * returnType: XType
@@ -178,7 +183,6 @@ type XExpr =
         argExpr: XExpr
     | TypeApp of expr: XExpr * typeArgs: XType list
     | LetOrUse of isRecursive: bool * bindings: XBinding list * body: XExpr * isFromSource: bool
-
     | TryWith of tryExpr: XExpr * withCases: XMatchClause list
     | TryFinally of tryExpr: XExpr * finallyExpr: XExpr
     | Lazy of expr: XExpr

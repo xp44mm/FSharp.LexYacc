@@ -35,6 +35,11 @@ let ident_start_char = [ '_' letter bmp ]
 let ident_char = [ ident_start_char digit '\'' ]
 let type_param_start = [ '_' letter ]
 
+// long ident: string list a.b.c
+// hash ident
+// active pattern: string list (|xxx|_|)
+// empty: []  [,,,,] [||] ()
+
 rule : char list -> FSharpToken list =
 '\r' ? '\n' ' ' * {
     let len = buff |> List.skipWhile ((<>) ' ') |> List.length

@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Title>FSharp.LexYacc的辅助工具</Title>
-        <Version>0.0.4</Version>
+        <Version>0.0.6</Version>
         <Description>FSharp.LexYacc的辅助工具</Description>
         <Authors>xp44m</Authors>
         <Company>34696643@qq.com</Company>
@@ -35,7 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.1.300" />
+        <PackageReference Update="FSharp.Core" Version="10.1.400" />
     </ItemGroup>
 
 </Project>
